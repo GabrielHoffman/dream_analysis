@@ -138,7 +138,7 @@ dreamList = foreach(ds = unique( info$differentiation_state) ) %do% {
   idx = info$differentiation_state == ds
 
   form <- ~ 0 + genotype + (1|Donor)
-  L = getContrast( geneExpr[,idx], form, info[idx,], c('genotypeTS', 'genotypecontrol'))
+  L = getContrast( geneExpr[,idx], form, info[idx,], c('genotype TS', 'genotype control'))
   fitmm = dream( geneExpr[,idx], form, info[idx,], L)
   fitmm = eBayes( fitmm )
   fitmm
@@ -151,7 +151,7 @@ names(dreamList) = unique(info$differentiation_state)
 figList = foreach( ds = names(dupCorList) ) %do% {
 
   # Compare p-values and make plot
-  t1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
+  t1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotype control", number=Inf, sort.by="none")$P.Value
   t2 = topTable(dreamList[[ds]], number=Inf, sort.by="none")$P.Value
 
   plotCompareP( t1, t2, with(vpList[[ds]], Donor + genotype), dupCorList[[ds]]$consensus) + ggtitle( ds )
@@ -163,7 +163,7 @@ do.call("grid.arrange", c(figList, ncol=2))
 ```{r degenes}
 deCount = foreach( ds = names(dupCorList), .combine=rbind ) %do% {
   a = sum(topTable(dreamList[[ds]], number=Inf)$adj.P.Val < 0.05)
-  b = sum(topTable(dupCorList[[ds]]$fitDupCor, coef='genotypeTS', number=Inf)$adj.P.Val < 0.05)
+  b = sum(topTable(dupCorList[[ds]]$fitDupCor, coef='genotype control', number=Inf)$adj.P.Val < 0.05)
 
   rbind(c(cellType=ds, count = a, method = "dream"), 
     c(cellType=ds, count = b, method = "DupCor"))

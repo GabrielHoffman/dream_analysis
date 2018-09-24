@@ -1,6 +1,6 @@
 ---
 title: "Analysis of AMP-AD with dream"
-subtitle: 'Data from  '
+subtitle: 'Data from [Wang, et al.](https://www.nature.com/articles/sdata2018185)'
 author: "Developed by [Gabriel Hoffman](http://gabrielhoffman.github.io/)"
 date: "Run on `r Sys.time()`"
 documentclass: article
