@@ -78,10 +78,10 @@ geneCounts = geneCounts_in[,colnames(geneCounts_in) %in% indivs]
 
 Meta data is available from https://www.synapse.org/#!Synapse:syn7392158
 ```{r metadata}
-df_rna_covariates = fread(getFileLocation(synGet( 'syn6100548' ))
-df_clinical = fread(getFileLocation(synGet( 'syn6101474' ))
-df_wes = fread(getFileLocation(synGet( 'syn6101472' ))
-sampleInfo = fread(getFileLocation(synGet( 'syn12178047' ))
+df_rna_covariates = fread(getFileLocation(synGet( 'syn6100548' )))
+df_clinical = fread(getFileLocation(synGet( 'syn6101474' )))
+df_wes = fread(getFileLocation(synGet( 'syn6101472' )))
+sampleInfo = fread(getFileLocation(synGet( 'syn12178047' )))
 
 
 idx = match(c('BrainID (final)', 'BrainID by annotation'),colnames(sampleInfo))
