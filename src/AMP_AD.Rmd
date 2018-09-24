@@ -289,7 +289,7 @@ plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
 ```
 
 
-# To 20 categories from each analysis
+# Top 20 categories from each analysis
 ```{r camera_enrich_braak}
 res = topTable(fitDupCor, number=1e7) 
 enrich_dupCor_camera = get_enrich_order( res ) 
@@ -328,10 +328,10 @@ fig + theme(aspect.ratio=length(gset)/3)
 ```
 
 # Number of DE genes from DupCor 
-```sum(topTable(fitDupCor, number=Inf)$adj.P.Val < 0.05)```
+`sum(topTable(fitDupCor, number=Inf)$adj.P.Val < 0.05)`
 
 # Number of DE genes from dream 
-```sum(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)```     
+`sum(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)`    
 
 
 # Variance fractions of expression plots for two example genes
