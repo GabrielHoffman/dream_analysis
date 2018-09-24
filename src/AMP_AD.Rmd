@@ -328,10 +328,14 @@ fig + theme(aspect.ratio=length(gset)/3)
 ```
 
 # Number of DE genes from DupCor 
-`sum(topTable(fitDupCor, number=Inf)$adj.P.Val < 0.05)`
+```{r}
+sum(topTable(fitDupCor, number=Inf)$adj.P.Val < 0.05)
+```
 
 # Number of DE genes from dream 
-`sum(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)`    
+```{r}
+sum(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)
+```
 
 
 # Variance fractions of expression plots for two example genes
