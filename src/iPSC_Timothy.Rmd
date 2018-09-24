@@ -1,0 +1,625 @@
+---
+title: "Analysis of Timothy Syndrome iPSC with dream"
+subtitle: 'Data from [Tian, et al.](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-014-0075-5)'
+author: "Developed by [Gabriel Hoffman](http://gabrielhoffman.github.io/)"
+date: "Run on `r Sys.Date()`"
+documentclass: article
+output: 
+  html_document:
+  toc: true
+  smart: false
+---
+
+<!--- 
+# run analysis
+rmarkdown::render("src/iPSC_Timothy.Rmd", output_dir='./', intermediates_dir='./')
+--->
+
+
+```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
+nthreads = 4
+```
+
+```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
+suppressPackageStartupMessages(library(doParallel))
+suppressPackageStartupMessages(library(synapseClient))
+ 
+if( ! exists("cl") ){
+  cl <- makeCluster(nthreads)
+  registerDoParallel(cl) 
+}
+```
+
+```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(recount))
+suppressPackageStartupMessages(library(scales))
+suppressPackageStartupMessages(library(qvalue))
+suppressPackageStartupMessages(library(limma))
+suppressPackageStartupMessages(library(edgeR))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(variancePartition))
+suppressPackageStartupMessages(library(ggplot2))
+
+options(xtable.type="html")
+
+knitr::opts_chunk$set(
+  echo=FALSE,
+  warning=FALSE,
+  message=TRUE,
+  error = FALSE,
+  tidy = FALSE,
+  cache = TRUE,
+  dev = c("png", "pdf"), 
+  fig.width=7, fig.height=7)
+
+options(markdown.HTML.stylesheet = 'css/custom.css')
+```
+
+```{r download}
+library(Biobase)
+library(GEOquery)
+
+# load series and platform data from GEO
+gset <- getGEO("GSE25542", GSEMatrix =TRUE, getGPL=FALSE)
+if (length(gset) > 1) idx <- grep("GPL6883", attr(gset, "names")) else idx <- 1
+gset <- gset[[idx]]
+```
+
+```{r preprocess, echo=TRUE}
+# prep data
+geneExpr = exprs(gset)
+info = phenoData(gset)@data
+colnames(info) = gsub(' ', '_', gsub(":ch1$", '', colnames(info)))
+
+keep = grep("ESC", info$cell_line_of_origin, invert=TRUE)
+geneExpr = geneExpr[,keep]
+info = info[keep,]
+
+keep = grep("fibro", info$differentiation_state, invert=TRUE)
+geneExpr = geneExpr[,keep]
+info = info[keep,]
+
+info$Donor = gsub(".* (\\S+)$", "\\1", info$cell_line_of_origin)
+info$cell_type[is.na(info$cell_type)] = 'neurospheres'
+
+info$state = NA
+info$state[info$differentiation_state == 'neurons at rest (day 45 of differentiation)'] = "rest"
+info$state[info$differentiation_state == 'neurons kept in 67mM KCl for 9h'] = "KCl"
+```
+
+
+## variancePartition
+```{r vp, echo=TRUE}
+
+form <- ~ (1|differentiation_state) + (1|Donor) + (1|genotype)
+vp = fitExtractVarPartModel( geneExpr, form, info)
+
+plotVarPart(sortCols(vp))
+```
+
+```{r vp.list}
+vpList = foreach(ds = unique(info$differentiation_state) ) %do% {
+   
+  idx = info$differentiation_state == ds
+
+  form <- ~ (1|Donor) + (1|genotype)
+  fitExtractVarPartModel( geneExpr[,idx], form, info[idx,])
+}
+names(vpList) = unique(info$differentiation_state)
+```
+
+```{r plotVPlist}
+figList = foreach( ds = names(vpList), .packages="variancePartition" ) %do% {
+
+  plotVarPart( vpList[[ds]], main=ds ) 
+}
+do.call("grid.arrange", c(figList, ncol=2))
+```
+
+
+```{r dp1, echo=TRUE}
+dupCorList = foreach(ds = unique(info$differentiation_state) ) %do% {
+  cat("\r", ds, '        ')  
+  idx = info$differentiation_state == ds
+
+  design = model.matrix( ~ genotype, info[idx,])
+  dupcor <- duplicateCorrelation(geneExpr[,idx], design, block=info$Donor[idx])
+
+  # dupcor = list(consensus=0.047)
+  fitDupCor <- lmFit(geneExpr[,idx], design, block=info$Donor[idx], correlation=dupcor$consensus)
+  fitDupCor = eBayes( fitDupCor )
+  list(fitDupCor = fitDupCor, consensus=dupcor$consensus)
+} 
+names(dupCorList) = unique(info$differentiation_state) 
+```
+
+
+```{r dream, echo=TRUE}
+dreamList = foreach(ds = unique( info$differentiation_state) ) %do% {
+    
+  cat("\r", ds, '        ')  
+  idx = info$differentiation_state == ds
+
+  form <- ~ 0 + genotype + (1|Donor)
+  L = getContrast( geneExpr[,idx], form, info[idx,], c('genotype TS', 'genotype control'))
+  fitmm = dream( geneExpr[,idx], form, info[idx,], L)
+  fitmm = eBayes( fitmm )
+  fitmm
+}  
+names(dreamList) = unique(info$differentiation_state) 
+```
+
+
+```{r plotCompare, echo=TRUE, fig.height=12, fig.width=12}
+figList = foreach( ds = names(dupCorList) ) %do% {
+
+  # Compare p-values and make plot
+  t1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotype control", number=Inf, sort.by="none")$P.Value
+  t2 = topTable(dreamList[[ds]], number=Inf, sort.by="none")$P.Value
+
+  plotCompareP( t1, t2, with(vpList[[ds]], Donor + genotype), dupCorList[[ds]]$consensus) + ggtitle( ds )
+}
+do.call("grid.arrange", c(figList, ncol=2))
+```
+
+## Count DE genes between cases and controls in each cell type
+```{r degenes}
+deCount = foreach( ds = names(dupCorList), .combine=rbind ) %do% {
+  a = sum(topTable(dreamList[[ds]], number=Inf)$adj.P.Val < 0.05)
+  b = sum(topTable(dupCorList[[ds]]$fitDupCor, coef='genotype control', number=Inf)$adj.P.Val < 0.05)
+
+  rbind(c(cellType=ds, count = a, method = "dream"), 
+    c(cellType=ds, count = b, method = "DupCor"))
+}
+deCount = data.frame(deCount, stringsAsFactors=FALSE)
+deCount$count = as.numeric(deCount$count)
+
+kable(deCount, row.names=FALSE)
+```
+
+```{r biomart}
+library(biomaRt)
+ensembl = useMart(biomart="ENSEMBL_MART_ENSEMBL", host="grch37.ensembl.org", path="/biomart/martservice" ,dataset="hsapiens_gene_ensembl")
+getAtt = c("chromosome_name",'start_position','end_position',"illumina_humanref_8_v3","ensembl_gene_id","hgnc_symbol")
+geneInfoBiomart = getBM(getAtt,filters="illumina_humanref_8_v3",values=rownames(geneExpr),mart = ensembl)
+```
+
+
+# Enrichments
+```{r enrich}
+# load("enrich.RDATA")
+load(getFileLocation(synGet( 'syn16816471' ))
+
+# exlucde some gensets: mSigDB C4
+geneSetsCombined = geneSetsCombined[grep("^c4", names(geneSetsCombined), invert=TRUE)]
+
+# geneInfo = readRDS("geneInfo.RDS")
+geneInfo = readRDS(getFileLocation(synGet( 'syn16816472' ))
+```
+
+```{r enrich_order}
+get_enrich_order = function( res ){
+  res$qvalue = qvalue( res$P.Value )$qvalue
+  rownames(res) = gsub("\\..*$", "", rownames(res))
+  res$gene = geneInfo$geneName[match(rownames(res), geneInfo$Geneid)]
+  res$symbol = sub("^(ENSG.*)$", NA, res$gene)
+
+  tstat = res$t
+  names(tstat) = res$symbol
+  tstat = tstat[!is.na(names(tstat))]
+
+  index = ids2indices(geneSetsCombined, names(tstat))
+
+  cameraPR( tstat, index)
+}
+
+enrichList_dream_tstat = foreach( ds = names(dreamList) ) %do% {
+
+  tab = topTable(dreamList[[ds]], number=Inf )
+  tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
+  tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
+  tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
+  rownames(tab2) = tab2$ensembl_gene_id
+
+  get_enrich_order( tab2 )
+}
+names(enrichList_dream_tstat) = names(dreamList)
+
+enrichList_dp_tstat = foreach( ds = names(dreamList) ) %do% {
+
+  tab = topTable( dupCorList[[ds]]$fitDupCor, coef="genotype control", number=Inf )
+  tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
+  tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
+  tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
+  rownames(tab2) = tab2$ensembl_gene_id
+
+  get_enrich_order( tab2 )
+}
+names(enrichList_dp_tstat) = names(dreamList)
+
+```
+
+
+```{r}
+de_dream = foreach( ds = names(dreamList) ) %do% {
+
+  tab = topTable(dreamList[[ds]], number=Inf )
+  tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
+  tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
+  tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
+  rownames(tab2) = tab2$ensembl_gene_id
+
+  tab2[order(tab2$adj.P.Val),]
+}
+names(de_dream) = names(dreamList)
+
+```
+
+
+```{r formTable}
+formTable = function(x,digits, stop=40){
+  if(missing(digits)){
+    digits = rep(2, ncol(x))
+  }
+  if( length(digits) != ncol(x)){
+    stop("Lengths don't match")
+  }
+  x = data.frame(x)
+  ret = sapply(1:ncol(x), function(i){
+    format(x[,i,drop=FALSE],digits=digits[i])})
+  ret = do.call("cbind", ret)
+  rownames(ret) = rownames(x)
+  ret[,1] = substring(ret[,1], 1, stop)
+  rownames(ret) = substring(rownames(ret), 1, stop)
+  ret
+}
+```
+
+
+## dupCor: `r names(enrichList_dp_tstat)[1]`
+```{r enrich_dupcor_1, cache=FALSE}
+kable( formTable(enrichList_dp_tstat[[1]][1:10,]), row.names=TRUE )
+```
+
+## dream: `r names(enrichList_dp_tstat)[1]`
+```{r enrich_dream_1, cache=FALSE}
+kable( formTable(enrichList_dream_tstat[[1]][1:10,]), row.names=TRUE )
+```
+
+## dupCor: `r names(enrichList_dp_tstat)[2]`
+```{r enrich_dupcor_2, cache=FALSE}
+kable( formTable(enrichList_dp_tstat[[2]][1:10,]), row.names=TRUE )
+```
+
+## dream: `r names(enrichList_dp_tstat)[2]`
+```{r enrich_dream_2, cache=FALSE}
+kable( formTable(enrichList_dream_tstat[[2]][1:10,]), row.names=TRUE )
+```
+
+## dupCor: `r names(enrichList_dp_tstat)[3]`
+```{r enrich_dupcor_3, cache=FALSE}
+kable( formTable(enrichList_dp_tstat[[3]][1:10,]), row.names=TRUE )
+```
+
+## dream: `r names(enrichList_dp_tstat)[3]`
+```{r enrich_dream_3, cache=FALSE}
+kable( formTable(enrichList_dream_tstat[[3]][1:10,]), row.names=TRUE )
+```
+
+## dupCor: `r names(enrichList_dp_tstat)[4]`
+```{r enrich_dupcor_4, cache=FALSE}
+kable( formTable(enrichList_dp_tstat[[4]][1:10,]), row.names=TRUE )
+```
+
+## dream: `r names(enrichList_dp_tstat)[4]`
+```{r enrich_dream_4, cache=FALSE}
+kable( formTable(enrichList_dream_tstat[[4]][1:10,]), row.names=TRUE )
+```
+
+# Compare enrichment
+```{r compare_enrichment, fig.height=30, fig.width=20}
+
+library(data.table)
+
+plot_compare_enrichment = function( res1, res2, gset, col=c("grey60", "royalblue1"),maxValue=30){
+
+  res1 = res1[rownames(res1) %in% gset,]
+  res2 = res2[rownames(res2) %in% gset,]
+
+  res1$dataset = 'dupCor'
+  res2$dataset = 'dream'
+
+  res1$name = rownames(res1)
+  res2$name = rownames(res2)
+
+  res = data.table(rbind(res1, res2))
+  # res$name = substring(rownames(res), 1, 30)
+  res$dataset = factor(res$dataset, c("dupCor", "dream"))
+
+  res$name = substring( res$name, 1,60)
+
+  df = res[,min(FDR),by='name']
+
+  res$name = factor(res$name, df[,name[order(V1, decreasing=TRUE)]])
+
+  res = res[order(res$name),]
+
+  ggplot(res, aes(name, -log10(FDR), fill=dataset)) + geom_bar(stat='identity', position=position_dodge()) + coord_flip() + theme_bw(12) + theme(aspect.ratio=2, plot.title = element_text(hjust = 0.5), legend.position="none") + ylab(bquote(-log[10]~FDR)) + xlab("Gene sets") + scale_fill_manual(values=col) + geom_hline(yintercept=-log10(0.05), linetype=2) + geom_hline(yintercept=-log10(0.01), linetype=3) + scale_y_continuous(expand = c(0, 0), lim=c(0, maxValue))
+}
+ 
+maxValue1 = -log10(min(sapply(enrichList_dp_tstat, function(x) min(x$FDR))))
+maxValue2 = -log10(min(sapply(enrichList_dream_tstat, function(x) min(x$FDR))))
+maxValue = max(maxValue1, maxValue2) * 1.03
+
+# col = c('#00b6eb', '#fb61d7')
+col = c('#00b6eb', '#a58affff')
+figList = foreach( ds = names(enrichList_dream_tstat) ) %do% {
+  idx = c(1:20, 
+    grep("ION", rownames(enrichList_dream_tstat[[ds]]))[1:4], 
+    grep("SYN", rownames(enrichList_dream_tstat[[ds]]))[1:4])
+
+  gset = rownames(enrichList_dream_tstat[[ds]])[sort(idx)]
+
+  plot_compare_enrichment( enrichList_dp_tstat[[ds]],
+                          enrichList_dream_tstat[[ds]], 
+                          gset, col, maxValue=maxValue) + ggtitle( ds )
+}
+
+do.call("grid.arrange", c(figList, ncol=2))
+```
+# Publication plot
+```{r publ.plot, fig.height=10, fig.width=20}
+# neurons at rest
+gset = list()
+gset[[1]] = c('tissue_exp_brain', 'c2.MARTORIATI_MDM4_TARGETS_NEUROEPITHELIUM_DN', 'c2.LEIN_NEURON_MARKERS', 'c5.GO_PRESYNAPTIC_ACTIVE_ZONE', ' Cholesterol_biosynthesis', 'c5.GO_NEURON_RECOGNITION', 'c5.GO_PRESYNAPTIC_PROCESS_INVOLVED_IN_SYNAPTIC_TRANSMISSION')
+
+# iPSC
+gset[[2]] = c('c2.PID_INTEGRIN1_PATHWAY','h.HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION','kegg_ECM-receptor_interaction','c2.PID_SYNDECAN_1_PATHWAY')
+
+# neurospheres
+gset[[3]] = c('c5.GO_RESPONSE_TO_ZINC_ION','response to cadmium ion','Synaptic_vesicle_trafficking')
+
+# neurons Kcl
+gset[[4]] = c('c2.ZHANG_TLX_TARGETS_DN','tissue_exp_brain','c2.REACTOME_TRANSMISSION_ACROSS_CHEMICAL_SYNAPSES')
+
+names(gset) = names(enrichList_dream_tstat)
+
+# ds = names(enrichList_dream_tstat)[4]
+
+# gset[[ds]][!gset[[ds]] %in% rownames(enrichList_dream_tstat[[ds]])]
+
+library(data.table)
+# col = c('#00b6eb', '#fb61d7')
+col = c('#00b6eb', '#a58affff')
+figList = foreach( ds = names(enrichList_dream_tstat) ) %do% {
+ 
+  fig = plot_compare_enrichment( enrichList_dp_tstat[[ds]],
+                          enrichList_dream_tstat[[ds]], 
+                          gset[[ds]], col, maxValue=maxValue) + ggtitle( ds )
+  fig = fig + theme(aspect.ratio=length(gset[[ds]])/3)
+
+  ggplotGrob(fig)
+}
+
+fig = rbind(figList[[1]], figList[[2]], figList[[3]], figList[[4]], size='last')
+
+grid.draw(arrangeGrob(fig))
+
+```
+
+
+
+```{r, cache=FALSE}
+ # knitr::knit_exit()
+```
+
+
+
+
+
+
+# reverse
+```{r reverse, fig.height=30, fig.width=20}
+figList = foreach( ds = names(enrichList_dream_tstat) ) %do% {
+   idx = c(1:10, 
+    grep("ION", rownames(enrichList_dream_tstat[[ds]]))[1:4], 
+    grep("SYN", rownames(enrichList_dream_tstat[[ds]]))[1:4])
+
+  gset = rownames(enrichList_dream_tstat[[ds]])[sort(idx)] 
+  
+  plot_compare_enrichment( enrichList_dp_tstat[[ds]],
+                          enrichList_dream_tstat[[ds]], 
+                          gset, col, maxValue=maxValue) + ggtitle( ds ) 
+}
+ 
+do.call("grid.arrange", c(figList, ncol=2))
+```
+
+
+```{r, cache=FALSE}
+ # knitr::knit_exit()
+```
+
+
+
+# Combined analysis
+
+# ```{r vp2, echo=TRUE}
+# form <- ~ (1|differentiation_state) + (1|Donor) + (differentiation_state+0|genotype)
+# vp2 = fitExtractVarPartModel( geneExpr, form, info)
+
+# plotVarPart(sortCols(vp2))
+# ```
+
+
+# ```{r dp1_combine, echo=TRUE}
+# info$genotype = factor(gsub(" ", '', info$genotype), c("control", "TS"))
+
+# design = model.matrix( ~ 0+ differentiation_state + differentiation_state:genotype, info)
+
+# dupcor <- duplicateCorrelation(geneExpr, design, block=info$Donor)
+
+# fitDupCor <- lmFit(geneExpr, design, block=info$Donor, correlation=dupcor$consensus)
+# fitDupCor = eBayes( fitDupCor )
+# ```
+
+
+# ```{r dream_combine, echo=TRUE}
+# form <- ~ differentiation_state + differentiation_state:genotype + (differentiation_state|Donor)
+# # form <- ~ differentiation_state + differentiation_state:genotype + (1|Donor)
+
+# # get contrasts
+# L = foreach( i = 5:8, .combine=cbind) %do% {
+#   getContrast( geneExpr, form, info, colnames(design)[i])
+
+# }
+# colnames(L) = colnames(design)[5:8]
+ 
+# fitDream = dream( geneExpr, form, info, L)
+# fitDream = eBayes( fitDream )
+# ```
+
+
+# ```{r plotCompare_combine, echo=TRUE, fig.height=12, fig.width=12}
+# figList = foreach( ds = colnames(coef(fitDupCor))[5:8] ) %do% {
+
+#   # Compare p-values and make plot
+#   t1 = topTable(fitDupCor, coef=ds, number=Inf, sort.by="none")$P.Value
+#   t2 = topTable(fitDream, coef=ds, number=Inf, sort.by="none")$P.Value
+ 
+#   plotCompareP( t1, t2, vp$Donor, dupcor$consensus) + ggtitle( ds ) 
+# }
+# do.call("grid.arrange", c(figList, ncol=2))
+# ```
+
+# ```{r enrich_combine}
+# enrichList_dream_tstat = foreach( ds = colnames(coef(fitDupCor))[5:8] ) %do% {
+
+#   tab = topTable(fitDream,coef=ds, number=Inf )
+#   tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
+#   tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
+#   tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
+#   rownames(tab2) = tab2$ensembl_gene_id 
+
+#   # get_enrich( tab2, cutoff=.10 )
+#   get_enrich_order( tab2 )
+# }
+# names(enrichList_dream_tstat) = names(dreamList)
+
+# enrichList_dp_tstat = foreach( ds = colnames(coef(fitDupCor))[5:8] ) %do% {
+
+#   tab = topTable( fitDupCor, coef=ds, number=Inf )
+#   tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
+#   tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
+#   tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
+#   rownames(tab2) = tab2$ensembl_gene_id
+
+#   # get_enrich( tab2, cutoff=.10 )
+#   get_enrich_order( tab2 )
+# } 
+# names(enrichList_dp_tstat) = names(dreamList)
+
+# ```
+
+# ```{r plot_gset, fig.height=30, fig.width=20}
+# maxValue1 = -log10(min(sapply(enrichList_dp_tstat, function(x) min(x$FDR))))
+# maxValue2 = -log10(min(sapply(enrichList_dream_tstat, function(x) min(x$FDR))))
+# maxValue = max(maxValue1, maxValue2) * 1.03
+
+# # col = c('#00b6eb', '#fb61d7')
+# col = c('#00b6eb', '#a58affff') 
+# figList = foreach( ds = names(enrichList_dream_tstat) ) %do% {
+#   idx = c(1:20, 
+#     grep("ION", rownames(enrichList_dream_tstat[[ds]]))[1:4], 
+#     grep("SYN", rownames(enrichList_dream_tstat[[ds]]))[1:4])
+
+#   gset = rownames(enrichList_dream_tstat[[ds]])[sort(idx)]
+ 
+#   plot_compare_enrichment( enrichList_dp_tstat[[ds]],
+#                           enrichList_dream_tstat[[ds]], 
+#                           gset, col, maxValue=maxValue) + ggtitle( ds )
+# }
+
+# do.call("grid.arrange", c(figList, ncol=2))
+# ```
+
+
+
+
+
+# GAGE
+```{r gage_define}
+library(gage)
+get_enrich_gage = function( res ){
+  res$qvalue = qvalue( res$P.Value )$qvalue
+  rownames(res) = gsub("\\..*$", "", rownames(res))
+  res$gene = geneInfo$geneName[match(rownames(res), geneInfo$Geneid)]
+  res$symbol = sub("^(ENSG.*)$", NA, res$gene)
+
+  tstat = res$t
+  names(tstat) = res$symbol
+  tstat = tstat[!is.na(names(tstat))]
+
+  gage(abs(tstat), gsets = geneSetsCombined, ref = NULL, samp = NULL)
+}
+```
+
+```{r enrich_combine_gage}
+enrichList_dream_tstat = foreach( ds =  names(dreamList) ) %do% {
+
+  tab = topTable(dreamList[[ds]], number=Inf )
+  tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
+  tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
+  tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
+  rownames(tab2) = tab2$ensembl_gene_id 
+
+  # get_enrich( tab2, cutoff=.10 )
+  g = get_enrich_gage( tab2 )
+  g = as.data.frame(g$greater)
+  g$FDR = g$q.val
+  g
+}
+names(enrichList_dream_tstat) = names(dreamList)
+
+enrichList_dp_tstat = foreach( ds =  names(dreamList) ) %do% {
+
+  tab = topTable( dupCorList[[ds]]$fitDupCor, coef='genotype control', number=Inf )
+  tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
+  tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
+  tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
+  rownames(tab2) = tab2$ensembl_gene_id
+
+  # get_enrich( tab2, cutoff=.10 )
+  g = get_enrich_gage( tab2 )
+  g = as.data.frame(g$greater)
+  g$FDR = g$q.val
+  g
+} 
+names(enrichList_dp_tstat) = names(dreamList)
+
+```
+
+```{r plot_gset_gage, fig.height=30, fig.width=20}
+maxValue1 = -log10(min(sapply(enrichList_dp_tstat, function(x) min(x$FDR))))
+maxValue2 = -log10(min(sapply(enrichList_dream_tstat, function(x) min(x$FDR))))
+maxValue = max(maxValue1, maxValue2) * 1.03
+
+# col = c('#00b6eb', '#fb61d7')
+col = c('#00b6eb', '#a58affff') 
+figList = foreach( ds = names(enrichList_dream_tstat) ) %do% {
+  idx = c(1:20, 
+    grep("ION", rownames(enrichList_dream_tstat[[ds]]))[1:4], 
+    grep("SYN", rownames(enrichList_dream_tstat[[ds]]))[1:4])
+
+  gset = rownames(enrichList_dream_tstat[[ds]])[sort(idx)]
+ 
+  plot_compare_enrichment( enrichList_dp_tstat[[ds]],
+                          enrichList_dream_tstat[[ds]], 
+                          gset, col, maxValue=maxValue) + ggtitle( ds )
+}
+
+do.call("grid.arrange", c(figList, ncol=2))
+```
+

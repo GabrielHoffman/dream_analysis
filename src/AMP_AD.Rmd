@@ -1,0 +1,395 @@
+---
+title: "Analysis of AMP-AD with dream"
+subtitle: 'Data from  '
+author: "Developed by [Gabriel Hoffman](http://gabrielhoffman.github.io/)"
+date: "Run on `r Sys.time()`"
+documentclass: article
+output: 
+  html_document:
+  toc: true
+  smart: false
+---
+
+<!--- 
+# run analysis
+cd /Users/gabrielhoffman/workspace/scripts/dream
+rmarkdown::render("~/scripts/dream/ampad_v4.Rmd", output_dir='./', intermediates_dir='./')
+--->
+
+
+```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
+nthreads = 1
+# rm(cl)
+```
+
+```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
+suppressPackageStartupMessages(library(doParallel))
+
+if( ! exists("cl") ){
+	cl <- makeCluster(nthreads)
+	registerDoParallel(cl) 
+}
+```
+
+```{r load.packages, echo=TRUE, message=FALSE, results='hide'}
+suppressPackageStartupMessages(library(qvalue))
+suppressPackageStartupMessages(library(limma))
+suppressPackageStartupMessages(library(edgeR))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(variancePartition))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(synapseClient))
+
+options(xtable.type="html")
+
+knitr::opts_chunk$set(
+  echo=FALSE,
+  warning=FALSE,
+  message=TRUE,
+  error = FALSE,
+  tidy = FALSE,
+  cache = TRUE,
+  dev = c("png", "pdf"), 
+  fig.width=7, fig.height=7)
+
+options(markdown.HTML.stylesheet = 'css/custom.css')
+```
+
+
+```{r load.data}
+library(data.table)
+
+# load meta data
+info = fread("/hpc/users/hoffmg01/work/dev_dream/ampad/msbb.good.samples.renamed.tsv")
+
+# load gene expression counts
+geneCounts = readRDS("/sc/orga/projects/va-biobank/resources/DATA-SETS/AMP-AD/expression/featureCounts/AMP-AD.featurecounts.exon.geneID.rds")
+
+# format counts
+geneInfo = geneCounts[,1:6]
+# geneCounts = geneCounts[,-c(1:6)]
+# rownames(geneCounts) = geneInfo$Geneid
+
+# # restrict to individuals in both files
+# indivs = intersect(info$Lib, colnames(geneCounts))
+# info = info[info$Lib %in% indivs,]
+# geneCounts = geneCounts[,colnames(geneCounts) %in% indivs]
+```
+
+```{r read.geneCounts}
+files = dir('/sc/orga/scratch/wangm05/synapse/','AMP-AD_MSBB_MSSM_BM_.*.raw_counts.tsv', full.names=TRUE)
+
+geneCounts_in = foreach( file = files, .combine=cbind) %do% {
+  read.table( file, header=TRUE, row.names=1 )
+} 
+colnames(geneCounts_in) = gsub("^(\\S+)\\.", "", colnames(geneCounts_in))
+
+indivs = intersect(info$Lib, colnames(geneCounts_in))
+info = info[info$Lib %in% indivs,]
+geneCounts = geneCounts_in[,colnames(geneCounts_in) %in% indivs]
+```
+
+
+
+
+Meta data is available from https://www.synapse.org/#!Synapse:syn7392158
+```{r metadata}
+df_rna_covariates = fread('/hpc/users/hoffmg01/work/dev_dream/ampad/MSBB_RNAseq_covariates.csv')
+df_clinical = fread('/hpc/users/hoffmg01/work/dev_dream/ampad/MSBB_clinical.csv')
+df_wes = fread('/hpc/users/hoffmg01/work/dev_dream/ampad/MSBB_WES_covariates.csv')
+
+# syn12178047
+sampleInfo = fread('/hpc/users/hoffmg01/work/dev_dream/ampad/MSBB_RNAseq.WES.WGS_sample_QC_info.csv')
+
+idx = match(c('BrainID (final)', 'BrainID by annotation'),colnames(sampleInfo))
+
+metadata = merge(info, sampleInfo[Datatype=='RNA-seq',-idx,with=FALSE], by.x="Lib", by.y='Sampleid')
+
+metadata2 = merge(metadata, df_rna_covariates[grep(".bam$", fileName),], by.x="Lib", by.y='sampleIdentifier')
+
+metadata3 = merge(metadata2, df_clinical, by='individualIdentifier')
+
+# when samples were seqenced in multiple batches, 
+# take the one with the largest RIN
+metadata = metadata3[,.SD[which.max(RIN),],by='Lib']
+
+# keep only OKay
+metadata = metadata[(Action=="OKay") & (Region %in% c('BM10', 'BM22', 'BM36', 'BM44')),]
+
+# convert NP1 to disease class
+# 1= control
+# 2=definite AD
+# 3=possible AD
+# 4=probable AD
+# so control is 1
+# and AD is 2-4
+Dx = metadata$NP.1 
+Dx[Dx==1] = "control"
+Dx[Dx==2] = "AD"
+Dx[!(Dx %in% c("control", "AD"))] = NA
+metadata$DiseaseClass = factor(Dx, c("control", "AD"))
+
+# only individuals with 4 samples, and Braak state and Apo genotype
+i1 = table(metadata$individualIdentifier)
+idx = metadata[,(individualIdentifier %in% names(i1[i1 ==4])) &  (!is.na(Apo1)) & (!is.na(bbscore)) &(!is.na(DiseaseClass)) &(`Race (final)` %in% c('White')) ]
+
+metadata = metadata[idx,]
+
+# order metadata to batch geneCounts
+jointID = intersect(colnames(geneCounts), metadata$Lib)
+
+geneCounts = geneCounts[,colnames(geneCounts) %in% jointID]
+metadata = metadata[Lib %in% jointID,]
+
+idx = match(colnames(geneCounts), metadata$Lib)
+metadata = metadata[idx,]
+
+identical(colnames(geneCounts), metadata$Lib)
+
+# Age as numeric
+metadata$Age = as.numeric(gsub("\\+", "", metadata$AOD))
+metadata[,mappingRate := Mapped / TotalReads]
+```
+
+
+```{r RNA.seq_processing}
+isexpr = rowSums(cpm(geneCounts)>1) >= 0.1*ncol(geneCounts)
+
+# Standard usage of limma/voom
+genes = DGEList( geneCounts[isexpr,] ) 
+genes = calcNormFactors( genes)
+
+design = model.matrix( ~ Region + LIMS , metadata)
+vobj_tmp = voom( genes, design, plot=TRUE)
+
+# apply duplicateCorrelation 
+dupcor <- duplicateCorrelation(vobj_tmp,design,block=metadata$individualIdentifier)
+
+# run voom considering the duplicateCorrelation results
+# in order to compute more accurate precision weights
+# Otherwise, use the results from the first voom run
+vobj = voom( genes, design, plot=FALSE, block=metadata$individualIdentifier, correlation=dupcor$consensus)
+```
+
+```{r define}
+load("~/work/dev_dream/enrich/enrich.RDATA")
+geneInfo = readRDS("~/work/dev_dream/enrich/geneInfo.RDS")
+
+geneSetsCombined = geneSetsCombined[grep("^c4", names(geneSetsCombined), invert=TRUE)]
+geneSetsCombined = geneSetsCombined[grep("^CMC", names(geneSetsCombined), invert=TRUE)]
+
+get_enrich_order = function( res ){
+  res$qvalue = qvalue( res$P.Value )$qvalue
+  rownames(res) = gsub("\\..*$", "", rownames(res))
+  res$gene = geneInfo$geneName[match(rownames(res), geneInfo$Geneid)]
+  res$symbol = sub("^(ENSG.*)$", NA, res$gene)
+
+  tstat = res$t
+  names(tstat) = res$symbol
+  tstat = tstat[!is.na(names(tstat))]
+
+  index = ids2indices(geneSetsCombined, names(tstat))
+
+  cameraPR( tstat, index )
+}
+
+plot_compare_enrichment = function( res1, res2, gset, col=c("grey60", "royalblue1"),maxValue=30){
+
+  res1 = res1[rownames(res1) %in% gset,]
+  res2 = res2[rownames(res2) %in% gset,]
+
+  res1$dataset = 'dupCor'
+  res2$dataset = 'dream'
+
+  res1$name = rownames(res1)
+  res2$name = rownames(res2)
+
+  res = data.table(rbind(res1, res2))
+  # res$name = substring(rownames(res), 1, 30)
+  res$dataset = factor(res$dataset, c("dupCor", "dream"))
+
+  res$name = substring( res$name, 1,60)
+
+  df = res[,min(FDR),by='name']
+
+  res$name = factor(res$name, df[,name[order(V1, decreasing=TRUE)]])
+
+  res = res[order(res$name),]
+
+  ggplot(res, aes(name, -log10(FDR), fill=dataset)) + geom_bar(stat='identity', position=position_dodge()) + coord_flip() + theme_bw(12) + theme(aspect.ratio=2, plot.title = element_text(hjust = 0.5), legend.position="none") + ylab(bquote(-log[10]~FDR)) + xlab("Gene sets") + scale_fill_manual(values=col) + geom_hline(yintercept=-log10(0.05), linetype=2) + geom_hline(yintercept=-log10(0.01), linetype=3) + scale_y_continuous(expand = c(0, 0), lim=c(0, maxValue))
+}
+
+formTable = function(x,digits, stop=40){
+  if(missing(digits)){
+    digits = rep(2, ncol(x))
+  }
+  if( length(digits) != ncol(x)){
+    stop("Lengths don't match")
+  }
+  x = data.frame(x)
+  ret = sapply(1:ncol(x), function(i){
+    format(x[,i,drop=FALSE],digits=digits[i])})
+  ret = do.call("cbind", ret)
+  rownames(ret) = rownames(x)
+  ret[,1] = substring(ret[,1], 1, stop)
+  rownames(ret) = substring(rownames(ret), 1, stop)
+  ret
+}
+```
+
+
+```{r vp}
+form = ~ (1|Region:bbscore) + (1|individualIdentifier) + (1|Run) + (1|LIMS) + (1|Region) + (1|`Sex (final)`) + RIN + rRNA.rate + PMI + Age + mappingRate + Apo1 + Apo2 
+vp = fitExtractVarPartModel( vobj, form, metadata)
+```
+
+```{r vp.plot}
+plotVarPart( sortCols( vp ) )      
+```
+
+
+# Braak stage
+```{r limma_braak}
+n_samples = table(metadata$individualIdentifier)
+
+# idx = with(metadata, !is.na(DiseaseClass) & (!is.na(Apo1)) &(!is.na(bbscore)) &(individualIdentifier %in%  names(n_samples[n_samples==4])) )
+idx = rep(TRUE, nrow(metadata))
+
+design = model.matrix( ~ 0 + Region + Region:bbscore + Run + LIMS + `Sex (final)` + RIN + rRNA.rate + PMI + Age + Apo1  + Apo2, metadata[idx,])
+ 
+# Estimate linear mixed model with a single variance component
+# Fit the model for each gene, 
+dupcor <- duplicateCorrelation(vobj[,idx],design,block=metadata$individualIdentifier[idx])
+
+# But this step uses only the genome-wide average for the random effect
+fitDupCor <- lmFit(vobj[,idx], design, block=metadata$individualIdentifier[idx], correlation=dupcor$consensus)
+
+Lc = matrix(0, ncol=ncol(design)) 
+colnames(Lc) = colnames(design)
+Lc[length(Lc):(length(Lc)-3)] = 1
+
+fitDupCor = contrasts.fit( fitDupCor, t(Lc))
+ 
+# Fit Empirical Bayes for moderated t-statistics
+fitDupCor <- eBayes( fitDupCor )
+```
+
+## dream
+```{r dream_analysis_braak}
+form = ~ 0 + Region + Region:bbscore + (1|individualIdentifier) + (1|Run) + (1|LIMS)  + `Sex (final)` + scale(RIN) + scale(rRNA.rate) + scale(PMI) + scale(Age) + scale(mappingRate) + Apo1  + Apo2 
+ 
+# Get the contrast matrix for the hypothesis test
+L = getContrast( vobj[,idx], form, metadata[idx,], "RegionBM44:bbscore")
+L['RegionBM10:bbscore'] = 1
+L['RegionBM22:bbscore'] = 1 
+L['RegionBM36:bbscore'] = 1 
+
+# Fit the dream model on each gene
+# Apply the contrast matrix L for the hypothesis test  
+# By default, uses the Satterthwaite approximation for the hypothesis test
+fitmm = dream( vobj[,idx], form, metadata[idx,], L)
+
+fitmm = eBayes( fitmm )
+```
+
+```{r compare_braak}
+p1 = topTable(fitDupCor, number=Inf, sort.by="none")$P.Value
+p2 = topTable(fitmm, number=Inf, sort.by="none")$P.Value
+      
+plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
+```
+
+
+
+```{r camera_enrich_braak}
+res = topTable(fitDupCor, number=1e7) 
+enrich_dupCor_camera = get_enrich_order( res ) 
+   
+res = topTable(fitmm, number=1e7)  
+enrich_dream_camera = get_enrich_order( res )   
+```
+ 
+```{r compare_enrichment_braak, fig.width=12}
+res1 = enrich_dupCor_camera 
+    
+res2 = enrich_dream_camera     
+
+col = c('#00b6eb', '#a58affff') 
+ 
+maxValue = -log10(min(c(min(res1$FDR), min(res2$FDR)))) * 1.03
+
+plot_compare_enrichment( res1, res2, rownames(res1)[1:20], col, maxValue)
+plot_compare_enrichment( res1, res2, rownames(res2)[1:20], col, maxValue)  
+```
+
+
+```{r plot_enrichment_publish}
+gset = c(
+'c2.BURTON_ADIPOGENESIS_PEAK_AT_2HR',
+'c2.UZONYI_RESPONSE_TO_LEUKOTRIENE_AND_THROMBIN',
+'h.HALLMARK_HYPOXIA',
+'c2.PHONG_TNF_TARGETS_UP',
+'c2.BURTON_ADIPOGENESIS_1',
+'c7.GSE9988_ANTI_TREM1_AND_LPS_VS_CTRL_TREATED_MONOCYTES_DN',
+'h.HALLMARK_TNFA_SIGNALING_VIA_NFKB',
+'GSE9988_LPS_VS_VEHICLE_TREATED_MONOCYTE_DN')
+
+fig = plot_compare_enrichment( res1, res2, gset, col, maxValue) 
+fig + theme(aspect.ratio=length(gset)/3) 
+```
+
+```{r DE.counts_braak}
+table(topTable(fitDupCor, number=Inf)$adj.P.Val < 0.05)
+table(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)     
+```
+
+
+```{r plotStratify.TUB}
+vp2 = with( vp, data.frame(Batch = LIMS + Run, Brain_region = Region, Individual = individualIdentifier + Apo1 + Apo2 + `Sex (final)`, QC_metrics =  RIN + rRNA.rate + PMI + mappingRate, Age = Age, Braak_stage = `Region:bbscore`,  Residuals = Residuals)) 
+vp2 = sortCols( vp2 )
+rownames(vp2) = rownames(vp)
+
+ensGene = rownames(topTable(fitDupCor))[1]
+
+GE = data.frame( Expression = vobj$E[ensGene,], Indiv = metadata$individualIdentifier,  bbscore = metadata$bbscore)
+     
+fig1 = plotStratify( Expression ~ Indiv, GE, colorBy = GE$bbscore, main= ensGene) + theme(aspect.ratio=1, legend.position="bottom")
+
+fig2 = plotPercentBars( vp2[ensGene,]) + theme(aspect.ratio=.1) 
+
+grid.arrange( fig1, fig2, ncol=1, layout_matrix = t(t(c(1, .1))) )
+```
+
+
+```{}
+topTable(fitDupCor,number=Inf)[ensGene,]
+topTable(fitmm,number=Inf)[ensGene,]
+```
+
+```{r plotStratify1}
+ensGene = rownames(topTable(fitmm))[1]
+ 
+GE = data.frame( Expression = vobj$E[ensGene,], Indiv = metadata$individualIdentifier,  bbscore = metadata$bbscore)
+     
+fig1 = plotStratify( Expression ~ Indiv, GE, colorBy = GE$bbscore, main= ensGene) + theme(aspect.ratio=1, legend.position="bottom")
+
+fig2 = plotPercentBars( vp2[ensGene,]) + theme(aspect.ratio=.1)  
+
+grid.arrange( fig1, fig2, ncol=1, layout_matrix = t(t(c(1, .1))) )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

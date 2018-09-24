@@ -1,0 +1,394 @@
+---
+title: "Analysis of COS with dream"
+subtitle: 'Data from [Hoffman, et al.](https://www.nature.com/articles/s41467-017-02330-5)'
+author: "Developed by [Gabriel Hoffman](http://gabrielhoffman.github.io/)"
+date: "Run on `r Sys.Date()`"
+documentclass: article
+output: 
+  html_document:
+  toc: true
+  smart: false
+---
+
+<!--- 
+# run analysis
+cd /Users/gabrielhoffman/workspace/scripts/dream
+rmarkdown::render("COS.Rmd", output_dir='./', intermediates_dir='./')
+rmarkdown::render("~/scripts/dream/COS.Rmd", output_dir='./', intermediates_dir='./')
+--->
+
+
+```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
+nthreads = 12
+```
+
+```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
+suppressPackageStartupMessages(library(doParallel))
+suppressPackageStartupMessages(library(synapseClient))
+
+cl <- makeCluster(nthreads)
+registerDoParallel(cl)
+```
+
+```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
+
+suppressPackageStartupMessages(library(recount))
+suppressPackageStartupMessages(library(scales))
+suppressPackageStartupMessages(library(qvalue))
+suppressPackageStartupMessages(library(limma))
+suppressPackageStartupMessages(library(edgeR))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(variancePartition))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(grid))
+
+suppressPackageStartupMessages(library(synapseClient))
+
+synapseLogin()
+
+options(xtable.type="html")
+
+knitr::opts_chunk$set(
+  echo=FALSE,
+  warning=FALSE,
+  message=TRUE,
+  error = FALSE,
+  tidy = FALSE,
+  cache = TRUE,
+  dev = c("png", "pdf"), 
+  fig.width=7, fig.height=7)
+
+options(markdown.HTML.stylesheet = 'css/custom.css')
+```
+
+```{r download}
+suppressPackageStartupMessages(library(doParallel))
+cl <- makeCluster(4)
+registerDoParallel(cl)
+
+# get gene counts and expression cutoff
+geneCounts = as.matrix(read.csv(getFileLocation(synGet( 'syn9908113' )), header=TRUE, row.names=1, check.names=FALSE))
+# exonCounts = as.matrix(read.csv(getFileLocation(synGet( 'syn7113739' )), header=TRUE, row.names=1, check.names=FALSE))
+isexpr = read.csv(getFileLocation(synGet( 'syn9908114' )), row.names=1, header=FALSE)[,1]
+# isexpr_exon = read.csv(getFileLocation(synGet( 'syn7113733' )), row.names=1, header=FALSE)[,1]
+
+# get gene annotations
+geneInfo = read.table(getFileLocation(synGet( 'syn9909914' )), header=TRUE, stringsAsFactors=FALSE, sep="\t")
+
+# get my metadata
+info = read.csv(getFileLocation(synGet( 'syn9908174' )), header=TRUE)
+info$Donor = factor(info$Donor)
+idx = grep("(N|F)$", info$ID, invert=TRUE)
+info$ID[idx] = gsub("-2$", "", as.character(info$ID[idx]))
+colnames(geneCounts)[idx] = gsub("-2$", "R", as.character(colnames(geneCounts)[idx]))
+# colnames(exonCounts)[idx] = gsub("-2$", "R", as.character(colnames(exonCounts)[idx]))
+
+# get Brig's metdata
+metadata = read.csv(getFileLocation(synGet( 'syn9908107' )), header=TRUE)
+metadata$Cell.Type = factor(gsub(' ', '_',metadata$Cell.Type), c('6_wk_FB_neuron', 'NPC'))
+# metadata = droplevels(metadata[-nrow(metadata),])
+metadata$Donor = factor(sapply(strsplit(as.character(metadata$Sample.Name), '-'), function(x) x[1]))
+metadata$Cell.Type_make.names = make.names(metadata$Cell.Type)
+metadata$Exclusion = as.character(metadata$Exclusion)
+# check that sample are present
+# which(! (colnames(geneCounts) %in% metadata$Sample.Name))
+
+# only keep samples present in data and metadata
+idx = match(colnames(geneCounts), metadata$Sample.Name)
+metadata = metadata[idx,]
+
+# add sendai reads
+sendaiReads = read.csv(getFileLocation(synGet( 'syn9908176' )), header=TRUE, stringsAsFactors=FALSE)
+sendaiReads$RNA_Sample_ID = gsub("-2$", "R",sendaiReads$RNA_Sample_ID)
+
+idx = match(metadata$Sample.Name, sendaiReads$RNA_Sample_ID)
+metadata$SendaiReads = sendaiReads$SendaiCounts[idx]
+
+# Sendai results
+metadata$totalReads = colSums(geneCounts)
+metadata$SendaiCPM = with(metadata, (SendaiReads) / (totalReads/1e6))
+
+# change mislabeling
+i = metadata$Sample.Name %in% c("499-X-CF", "499-X-CN")
+metadata$Donor = as.character(metadata$Donor)
+metadata$Donor[i] = "449"
+metadata$Sex[i] = "Female"
+metadata$Donor = factor(metadata$Donor)
+
+excludeBasedOnSexGenes = c("1275-B-3F", "1275-B-3N", "1275-C-1F", "1275-C-1N", "2476-1-4F", "2476-1-4N", "2484-2aF", "2484-2aN", "3113-3-21F", "3113-3-21N", "3121-2-1F", "3121-2-1N", "3121-2-MSSM2F", "3121-2-MSSM2N", "676-1-2N")
+
+metadata$Exclusion[metadata$Sample.Name %in% excludeBasedOnSexGenes] = 'yes' #"maybe"
+
+# apply exclusion
+idx_exclude = which(metadata$Exclusion == "yes")
+
+
+metadata = metadata[-idx_exclude,]   
+geneCounts = geneCounts[,-idx_exclude]
+# exonCounts = exonCounts[,-idx_exclude]  
+metadata$color = rainbow(nlevels(metadata$Donor))[metadata$Donor]
+```
+
+```{r cibersort}
+cibersort = read.table(getFileLocation(synGet( 'syn9908124' )), row.names=1, header=TRUE)
+rownames(cibersort) = gsub("-2$", "R", rownames(cibersort))
+
+# missing samples
+#  metadata$Sample.Name[!metadata$Sample.Name %in% rownames(cibersort)]
+
+metadata2 = merge(metadata, cibersort, by.x='Sample.Name', by.y='row.names')
+rownames(metadata2) = metadata2$Sample.Name
+```
+
+
+```{r preprocess}
+library(limma)
+library(edgeR)
+
+genes = DGEList(counts=geneCounts[isexpr,])
+genes = calcNormFactors(genes)
+design = model.matrix(~Cell.Type + Sex, metadata)
+
+vobj_tmp <- voom(genes, design) 
+
+dupcor_init <- duplicateCorrelation(vobj_tmp, design, block=metadata$Donor)
+
+vobj = voom(genes, design, block = metadata$Donor, correlation=dupcor_init$consensus)
+
+dupcor <- duplicateCorrelation(vobj, design, block=metadata$Donor)
+
+```
+
+```{r vp, echo=TRUE}
+form = ~ (1|Dx) + (1|Cell.Type) + (1|Sex) + (1|Donor)
+vp = fitExtractVarPartModel( vobj, form, metadata)
+plotVarPart(sortCols(vp))
+```
+
+# duplicateCorrelation
+```{r cell.de, echo=TRUE}
+metadata2$Interaction = with(metadata, gsub(" ", ".", paste( Dx, Cell.Type, sep='_')))
+
+form = ~ Interaction - 1 + MEF + Fibroblast + Sex
+
+design = model.matrix( form , metadata2)
+
+cons_separate_cell_type = makeContrasts( 
+    SZNPC = InteractionSZ_NPC - InteractionCT_NPC, 
+    SZNeuron = InteractionSZ_6_wk_FB_neuron - InteractionCT_6_wk_FB_neuron,  
+    SZinteraction = (InteractionSZ_NPC - InteractionCT_NPC) - (InteractionSZ_6_wk_FB_neuron - InteractionCT_6_wk_FB_neuron),
+    levels = colnames(design))
+
+fit = lmFit( vobj, design, block=metadata$Donor, correlation=dupcor$consensus )
+fit2 <- contrasts.fit(fit, cons_separate_cell_type)
+fit2 = eBayes(fit2)
+```
+
+
+
+# Dream
+```{r dream2, echo=TRUE, message=FALSE}
+form = ~ Interaction - 1 + MEF + Fibroblast + Sex + (1|Donor)
+
+# SZNPC = InteractionSZ_NPC - InteractionCT_NPC, 
+L_npc = getContrast( vobj, form, metadata2, "InteractionSZ_NPC")
+L_npc['InteractionCT_NPC'] = -1
+
+# SZNeuron = InteractionSZ_6_wk_FB_neuron - InteractionCT_6_wk_FB_neuron, 
+L_neuron = getContrast( vobj, form, metadata2, "InteractionSZ_6_wk_FB_neuron")
+L_neuron['InteractionCT_6_wk_FB_neuron'] = -1 
+
+fitDream_npc = dream( vobj, form, metadata2, L_npc) 
+fitDream_npc_eb = eBayes( fitDream_npc )
+   
+fitDream_neuron = dream( vobj, form, metadata2, L_neuron) 
+fitDream_neuron_eb = eBayes( fitDream_neuron )
+```
+
+# Compare p-values from dream and duplicateCorrelation
+```{r compare.neuron}
+t1 = topTable(fit2, coef="SZNeuron", number=Inf, sort.by="none")$P.Value
+t2 = topTable(fitDream_neuron_eb, number=Inf, sort.by="none")$P.Value
+
+plotCompareP( t1, t2, vp$Donor, dupcor$consensus, fraction=.1) + ggtitle("Neuron")
+```
+
+```{r compare.npc}
+t1 = topTable(fit2, coef="SZNPC", number=Inf, sort.by="none")$P.Value
+t2 = topTable(fitDream_npc_eb, number=Inf, sort.by="none")$P.Value
+
+plotCompareP( t1, t2, vp$Donor, dupcor$consensus, fraction=.1) + ggtitle("NPC")
+```
+
+# Enrichments
+```{r enrich}
+library(knitr)
+load("~/work/dev_dream/enrich/enrich.RDATA")
+geneInfo = readRDS("~/work/dev_dream/enrich/geneInfo.RDS")
+
+geneSetsCombined = geneSetsCombined[grep("^c4", names(geneSetsCombined), invert=TRUE)]
+```
+
+```{r formTable}
+formTable = function(x,digits, stop=40){
+  if(missing(digits)){
+    digits = rep(2, ncol(x))
+  }
+  if( length(digits) != ncol(x)){
+    stop("Lengths don't match")
+  }
+  x = data.frame(x)
+  ret = sapply(1:ncol(x), function(i){
+    format(x[,i,drop=FALSE],digits=digits[i])})
+  ret = do.call("cbind", ret)
+  rownames(ret) = rownames(x)
+  ret[,1] = substring(ret[,1], 1, stop)
+  rownames(ret) = substring(rownames(ret), 1, stop)
+  ret
+}
+```
+
+```{r enrich_order}
+get_enrich_order = function( res ){
+  res$qvalue = qvalue( res$P.Value )$qvalue
+  rownames(res) = gsub("\\..*$", "", rownames(res))
+  res$gene = geneInfo$geneName[match(rownames(res), geneInfo$Geneid)]
+  res$symbol = sub("^(ENSG.*)$", NA, res$gene)
+
+  tstat = res$t
+  names(tstat) = res$symbol
+  tstat = tstat[!is.na(names(tstat))]
+
+  index = ids2indices(geneSetsCombined, names(tstat))
+
+  cameraPR( tstat, index )
+}
+
+library(data.table)
+
+plot_compare_enrichment = function( res1, res2, gset, col=c("grey60", "royalblue1"),maxValue=30){
+
+  res1 = res1[rownames(res1) %in% gset,]
+  res2 = res2[rownames(res2) %in% gset,]
+
+  res1$dataset = 'dupCor'
+  res2$dataset = 'dream'
+
+  res1$name = rownames(res1)
+  res2$name = rownames(res2)
+
+  res = data.table(rbind(res1, res2))
+  # res$name = substring(rownames(res), 1, 30)
+  res$dataset = factor(res$dataset, c("dupCor", "dream"))
+
+  res$name = substring( res$name, 1,60)
+
+  df = res[,min(FDR),by='name']
+
+  res$name = factor(res$name, df[,name[order(V1, decreasing=TRUE)]])
+
+  res = res[order(res$name),]
+
+  ggplot(res, aes(name, -log10(FDR), fill=dataset)) + geom_bar(stat='identity', position=position_dodge()) + coord_flip() + theme_bw(12) + theme(aspect.ratio=2, plot.title = element_text(hjust = 0.5), legend.position="none") + ylab(bquote(-log[10]~FDR)) + xlab("Gene sets") + scale_fill_manual(values=col) + geom_hline(yintercept=-log10(0.05), linetype=2) + geom_hline(yintercept=-log10(0.01), linetype=3) + scale_y_continuous(expand = c(0, 0), lim=c(0, maxValue))
+}
+
+res = topTable(fit2, coef="SZNPC", number=Inf, sort.by="none")
+camera_dupCor_NPC = get_enrich_order( res )
+
+res = topTable(fit2, coef="SZNeuron", number=Inf, sort.by="none")
+camera_dupCor_neuron = get_enrich_order( res )
+
+res = topTable(fitDream_npc_eb, number=1e7 , sort.by='P')
+camera_dream_npc = get_enrich_order( res )
+
+res = topTable(fitDream_neuron_eb, number=1e7 , sort.by='P')
+camera_dream_neuron = get_enrich_order( res )
+```
+
+### dupcor NPC
+```{r camera_dupCor_NPC}
+kable( formTable(camera_dupCor_NPC[1:30,]), row.names=TRUE )       
+```
+
+### dupcor neuron
+```{r camera_dupCor_neuron}
+kable( formTable(camera_dupCor_neuron[1:30,]), row.names=TRUE )       
+```
+
+### dream NPC
+```{r camera_dream_npc}
+kable( formTable(camera_dream_npc[1:30,]), row.names=TRUE )       
+```
+
+### dream neuron
+```{r camera_dream_neuron}
+kable( formTable(camera_dream_neuron[1:30,]), row.names=TRUE )       
+```
+
+
+# Compare NPC
+```{r compare_NPC, fig.width=20, fig.height=10}
+
+# col = c('#00b6eb', '#fb61d7')
+col = c('#00b6eb', '#a58affff') 
+ 
+combineRes = rbind(camera_dupCor_NPC, camera_dream_npc, camera_dupCor_neuron, camera_dream_neuron)
+
+maxValue = -log10(min(combineRes$FDR)) * 1.03
+
+res1 = camera_dupCor_NPC   
+res2 = camera_dream_npc    
+plot_compare_enrichment( res1, res2, rownames(res1)[res1$FDR < 0.05][1:60], col, maxValue)
+plot_compare_enrichment( res1, res2, rownames(res2)[res2$FDR < 0.05][1:60], col, maxValue)   
+```
+
+
+# Compare neuron
+```{r compare_neuron, fig.width=20, fig.height=10}
+res1 = camera_dupCor_neuron 
+res2 = camera_dream_neuron      
+plot_compare_enrichment( res1, res2, rownames(res1)[res1$FDR < 0.05], col, maxValue)
+plot_compare_enrichment( res1, res2, rownames(res2)[res2$FDR < 0.05], col, maxValue)  
+```
+
+
+
+
+# Publication plot
+```{r publ.plot, fig.height=10, fig.width=20}
+# neurons at rest
+gset = list()
+gset[['NPC']] = c('c2.KEGG_OXIDATIVE_PHOSPHORYLATION',
+'c2.ZHANG_TLX_TARGETS_60HR_DN', 'c5.GO_CLATHRIN_VESICLE_COAT',
+' kirov_synaptic.sets_Pre−synaptic_active_zone',
+'c5.GO_HYDROGEN_ION_TRANSMEMBRANE_TRANSPORTER_ACTIVITY',
+' DARPP-32_events')
+
+gset[['neuron']] = c('c5.GO_BITTER_TASTE_RECEPTOR_ACTIVITY', 'c2.HORTON_SREBF_TARGETS', ' DARPP-32_events')
+
+res1 = camera_dupCor_NPC   
+res2 = camera_dream_npc    
+fig1 = plot_compare_enrichment( res1, res2, gset[['NPC']], col, maxValue)
+fig1 = fig1 + theme(aspect.ratio=length(gset[['NPC']])/3) + ggtitle('NPC')
+
+res1 = camera_dupCor_neuron 
+res2 = camera_dream_neuron      
+fig2 = plot_compare_enrichment( res1, res2, gset[['neuron']], col, maxValue)
+fig2 = fig2 + theme(aspect.ratio=length(gset[['neuron']])/3) + ggtitle('neuron')
+
+fig = rbind(ggplotGrob(fig1), ggplotGrob(fig2), size='last')
+
+grid.draw(arrangeGrob(fig))
+```
+
+
+
+```{r, cache=FALSE}
+ knitr::knit_exit()
+```
+
+
+
+
+
+
