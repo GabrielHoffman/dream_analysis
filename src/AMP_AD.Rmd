@@ -237,8 +237,8 @@ plotVarPart( sortCols( vp ) )
 ```
 
 
-# Comapre expression with Braak stage
-```{r limma_braak, echo=FALSE}
+# Compare expression with Braak stage
+```{r limma_braak, echo=FALSE, message=FALSE}
 n_samples = table(metadata$individualIdentifier)
 
 # idx = with(metadata, !is.na(DiseaseClass) & (!is.na(Apo1)) &(!is.na(bbscore)) &(individualIdentifier %in%  names(n_samples[n_samples==4])) )
@@ -263,7 +263,7 @@ fitDupCor = contrasts.fit( fitDupCor, t(Lc))
 fitDupCor <- eBayes( fitDupCor )
 ```
 
-```{r dream_analysis_braak, echo=FALSE}
+```{r dream_analysis_braak, echo=FALSE, message=FALSE}
 form = ~ 0 + Region + Region:bbscore + (1|individualIdentifier) + (1|Run) + (1|LIMS)  + `Sex (final)` + scale(RIN) + scale(rRNA.rate) + scale(PMI) + scale(Age) + scale(mappingRate) + Apo1  + Apo2 
  
 # Get the contrast matrix for the hypothesis test
