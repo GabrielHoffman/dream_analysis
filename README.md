@@ -10,15 +10,15 @@ See code in `sims/master_analysis.sh`
 
 Data and annotation are stored on [Synapse](synapse.org).  In order to run these scripts, you will need the [Synapse client for R](https://docs.synapse.org/articles/getting_started.html) and a [Synapse account](https://www.synapse.org/#!RegisterAccount:0)
 
-- ##### Timothy Syndrome
+- ##### Timothy Syndrome | [paper](https://www.nature.com/articles/nm.2576), [data](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE25542)
 
 `rmarkdown::render("src/iPSC_Timothy.Rmd", output_dir='./', intermediates_dir='./')`
 
-- ##### Alzheimer's disease
+- ##### Alzheimer's disease | [paper](https://www.nature.com/articles/sdata2018185), [data](https://www.synapse.org/#!Synapse:syn3159438)
 
 `rmarkdown::render("src/AMP_AD.Rmd", output_dir='./', intermediates_dir='./')`
 
-- ##### Childhood onset schizophrenia
+- ##### Childhood onset schizophrenia | [paper](https://www.nature.com/articles/s41467-017-02330-5), [data](www.synapse.org/hiPSC_COS)
 
 `rmarkdown::render("src/COS.Rmd", output_dir='./', intermediates_dir='./')`
 
