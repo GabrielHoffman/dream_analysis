@@ -191,7 +191,7 @@ load(getFileLocation(synGet( 'syn16816471' )))
 geneSetsCombined = geneSetsCombined[grep("^c4", names(geneSetsCombined), invert=TRUE)]
 
 # geneInfo = readRDS("geneInfo.RDS")
-geneInfo = readRDS(getFileLocation(synGet( 'syn16816472' ))
+geneInfo = readRDS(getFileLocation(synGet( 'syn16816472' )))
 ```
 
 ```{r enrich_order}
