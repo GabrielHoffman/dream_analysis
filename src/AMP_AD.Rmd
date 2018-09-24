@@ -237,7 +237,7 @@ plotVarPart( sortCols( vp ) )
 
 
 # Braak stage
-```{r limma_braak}
+```{r limma_braak, message=FALSE}
 n_samples = table(metadata$individualIdentifier)
 
 # idx = with(metadata, !is.na(DiseaseClass) & (!is.na(Apo1)) &(!is.na(bbscore)) &(individualIdentifier %in%  names(n_samples[n_samples==4])) )
@@ -288,7 +288,7 @@ plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
 ```
 
 
-
+# To 20 categories from each analysis
 ```{r camera_enrich_braak}
 res = topTable(fitDupCor, number=1e7) 
 enrich_dupCor_camera = get_enrich_order( res ) 
@@ -310,7 +310,7 @@ plot_compare_enrichment( res1, res2, rownames(res1)[1:20], col, maxValue)
 plot_compare_enrichment( res1, res2, rownames(res2)[1:20], col, maxValue)  
 ```
 
-
+## Plot for publication
 ```{r plot_enrichment_publish}
 gset = c(
 'c2.BURTON_ADIPOGENESIS_PEAK_AT_2HR',
@@ -331,7 +331,7 @@ table(topTable(fitDupCor, number=Inf)$adj.P.Val < 0.05)
 table(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)     
 ```
 
-
+# Variance fractions of expression plots for two example genes
 ```{r plotStratify.TUB}
 vp2 = with( vp, data.frame(Batch = LIMS + Run, Brain_region = Region, Individual = individualIdentifier + Apo1 + Apo2 + `Sex (final)`, QC_metrics =  RIN + rRNA.rate + PMI + mappingRate, Age = Age, Braak_stage = `Region:bbscore`,  Residuals = Residuals)) 
 vp2 = sortCols( vp2 )

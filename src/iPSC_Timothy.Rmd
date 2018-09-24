@@ -185,7 +185,7 @@ geneInfoBiomart = getBM(getAtt,filters="illumina_humanref_8_v3",values=rownames(
 # Enrichments
 ```{r enrich}
 # load("enrich.RDATA")
-load(getFileLocation(synGet( 'syn16816471' ))
+load(getFileLocation(synGet( 'syn16816471' )))
 
 # exlucde some gensets: mSigDB C4
 geneSetsCombined = geneSetsCombined[grep("^c4", names(geneSetsCombined), invert=TRUE)]
