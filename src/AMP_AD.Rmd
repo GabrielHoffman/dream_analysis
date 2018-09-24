@@ -137,6 +137,7 @@ metadata[,mappingRate := Mapped / TotalReads]
 
 ```{r RNA.seq_processing}
 isexpr = rowSums(cpm(geneCounts)>1) >= 0.1*ncol(geneCounts)
+isexpr['ENSG00000104356'] = FALSE # very inconsistent bewteen hg19 and hg38
 
 # Standard usage of limma/voom
 genes = DGEList( geneCounts[isexpr,] ) 
@@ -326,6 +327,7 @@ fig = plot_compare_enrichment( res1, res2, gset, col, maxValue)
 fig + theme(aspect.ratio=length(gset)/3) 
 ```
 
+# Number of DE genes from 1) DupCor and 2) dream
 ```{r DE.counts_braak}
 table(topTable(fitDupCor, number=Inf)$adj.P.Val < 0.05)
 table(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)     
