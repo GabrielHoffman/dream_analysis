@@ -237,7 +237,7 @@ plotVarPart( sortCols( vp ) )
 ```
 
 
-# Braak stage
+# Comapre expression with Braak stage
 ```{r limma_braak, echo=FALSE}
 n_samples = table(metadata$individualIdentifier)
 
@@ -263,8 +263,7 @@ fitDupCor = contrasts.fit( fitDupCor, t(Lc))
 fitDupCor <- eBayes( fitDupCor )
 ```
 
-## dream
-```{r dream_analysis_braak}
+```{r dream_analysis_braak, echo=FALSE}
 form = ~ 0 + Region + Region:bbscore + (1|individualIdentifier) + (1|Run) + (1|LIMS)  + `Sex (final)` + scale(RIN) + scale(rRNA.rate) + scale(PMI) + scale(Age) + scale(mappingRate) + Apo1  + Apo2 
  
 # Get the contrast matrix for the hypothesis test
@@ -281,6 +280,7 @@ fitmm = dream( vobj[,idx], form, metadata[idx,], L)
 fitmm = eBayes( fitmm )
 ```
 
+# Compare -log10 p from dream and duplicateCorrelation
 ```{r compare_braak}
 p1 = topTable(fitDupCor, number=Inf, sort.by="none")$P.Value
 p2 = topTable(fitmm, number=Inf, sort.by="none")$P.Value
@@ -327,11 +327,12 @@ fig = plot_compare_enrichment( res1, res2, gset, col, maxValue)
 fig + theme(aspect.ratio=length(gset)/3) 
 ```
 
-# Number of DE genes from 1) DupCor and 2) dream
-```{r DE.counts_braak}
-table(topTable(fitDupCor, number=Inf)$adj.P.Val < 0.05)
-table(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)     
-```
+# Number of DE genes from DupCor 
+```sum(topTable(fitDupCor, number=Inf)$adj.P.Val < 0.05)```
+
+# Number of DE genes from dream 
+```sum(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)```     
+
 
 # Variance fractions of expression plots for two example genes
 ## TUBB2B: p-values are very different between the two methods

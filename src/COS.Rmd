@@ -32,7 +32,7 @@ registerDoParallel(cl)
 
 ```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
 
-suppressPackageStartupMessages(library(recount))
+suppressPackageStartupMessages(library(knitr))
 suppressPackageStartupMessages(library(scales))
 suppressPackageStartupMessages(library(qvalue))
 suppressPackageStartupMessages(library(limma))
