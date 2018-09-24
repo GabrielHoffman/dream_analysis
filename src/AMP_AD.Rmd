@@ -56,29 +56,8 @@ knitr::opts_chunk$set(
 options(markdown.HTML.stylesheet = 'css/custom.css')
 ```
 
-
-```{r load.data}
-library(data.table)
-
-# load meta data
-info = fread("/hpc/users/hoffmg01/work/dev_dream/ampad/msbb.good.samples.renamed.tsv")
-
-# load gene expression counts
-geneCounts = readRDS("/sc/orga/projects/va-biobank/resources/DATA-SETS/AMP-AD/expression/featureCounts/AMP-AD.featurecounts.exon.geneID.rds")
-
-# format counts
-geneInfo = geneCounts[,1:6]
-# geneCounts = geneCounts[,-c(1:6)]
-# rownames(geneCounts) = geneInfo$Geneid
-
-# # restrict to individuals in both files
-# indivs = intersect(info$Lib, colnames(geneCounts))
-# info = info[info$Lib %in% indivs,]
-# geneCounts = geneCounts[,colnames(geneCounts) %in% indivs]
-```
-
 ```{r read.geneCounts}
-files = dir('/sc/orga/scratch/wangm05/synapse/','AMP-AD_MSBB_MSSM_BM_.*.raw_counts.tsv', full.names=TRUE)
+files = dir(getFileLocation(synGet( 'syn7391749' )),'AMP-AD_MSBB_MSSM_BM_.*.raw_counts.tsv', full.names=TRUE)
 
 geneCounts_in = foreach( file = files, .combine=cbind) %do% {
   read.table( file, header=TRUE, row.names=1 )
