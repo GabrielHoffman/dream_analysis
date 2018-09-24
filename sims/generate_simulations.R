@@ -27,7 +27,7 @@ suppressPackageStartupMessages(library(doParallel))
 suppressPackageStartupMessages(library(edgeR))
 suppressPackageStartupMessages(library(limma))
 
-source("~/scripts/varPartSims/helper_functions.R")
+source("helper_functions.R")
 
 # cl = makeCluster(opt$nthreads)
 # registerDoParallel( cl )

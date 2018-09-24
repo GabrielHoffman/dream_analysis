@@ -10,7 +10,7 @@ a = matrix(c(
 
 opt = getopt( t(a));
 
-source("~/scripts/varPartSims/helper_functions.R")
+source("helper_functions.R")
 
 suppressPackageStartupMessages(library(lme4))
 suppressPackageStartupMessages(library(variancePartition))
