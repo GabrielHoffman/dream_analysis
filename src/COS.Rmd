@@ -222,7 +222,6 @@ plotCompareP( t1, t2, vp$Donor, dupcor$consensus, fraction=.1) + ggtitle("NPC")
 
 # Enrichments
 ```{r enrich}
-synapseLogin()
 # load("enrich.RDATA")
 load(getFileLocation(synGet( 'syn16816471' )))
 
