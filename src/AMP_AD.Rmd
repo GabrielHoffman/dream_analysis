@@ -154,12 +154,6 @@ dupcor <- duplicateCorrelation(vobj_tmp,design,block=metadata$individualIdentifi
 vobj = voom( genes, design, plot=FALSE, block=metadata$individualIdentifier, correlation=dupcor$consensus)
 ```
 
-# Enrichments
-```{r enrich}
-
-```
-
-
 ```{r define}
 # load("enrich.RDATA")
 load(getFileLocation(synGet( 'syn16816471' )))
@@ -169,7 +163,7 @@ geneSetsCombined = geneSetsCombined[grep("^c4", names(geneSetsCombined), invert=
 geneSetsCombined = geneSetsCombined[grep("^CMC", names(geneSetsCombined), invert=TRUE)]
 
 # geneInfo = readRDS("geneInfo.RDS")
-geneInfo = readRDS(getFileLocation(synGet( 'syn16816472' ))
+geneInfo = readRDS(getFileLocation(synGet( 'syn16816472' )))
 
 get_enrich_order = function( res ){
   res$qvalue = qvalue( res$P.Value )$qvalue
