@@ -222,14 +222,15 @@ plotCompareP( t1, t2, vp$Donor, dupcor$consensus, fraction=.1) + ggtitle("NPC")
 
 # Enrichments
 ```{r enrich}
+synapseLogin()
 # load("enrich.RDATA")
-load(getFileLocation(synGet( 'syn16816471' ))
+load(getFileLocation(synGet( 'syn16816471' )))
 
 # exlucde some gensets: mSigDB C4
 geneSetsCombined = geneSetsCombined[grep("^c4", names(geneSetsCombined), invert=TRUE)]
 
 # geneInfo = readRDS("geneInfo.RDS")
-geneInfo = readRDS(getFileLocation(synGet( 'syn16816472' ))
+geneInfo = readRDS(getFileLocation(synGet( 'syn16816472' )))
 ```
 
 ```{r formTable}
