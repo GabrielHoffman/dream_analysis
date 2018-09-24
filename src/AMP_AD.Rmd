@@ -12,7 +12,7 @@ output:
 
 
 ```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
-nthreads = 1
+nthreads = 8
 # rm(cl)
 ```
 
@@ -155,6 +155,7 @@ vobj = voom( genes, design, plot=FALSE, block=metadata$individualIdentifier, cor
 ```
 
 ```{r define}
+synapseLogin()
 # load("enrich.RDATA")
 load(getFileLocation(synGet( 'syn16816471' )))
 
