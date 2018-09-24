@@ -334,6 +334,7 @@ table(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)
 ```
 
 # Variance fractions of expression plots for two example genes
+## TUBB2B: p-values are very different between the two methods
 ```{r plotStratify.TUB}
 vp2 = with( vp, data.frame(Batch = LIMS + Run, Brain_region = Region, Individual = individualIdentifier + Apo1 + Apo2 + `Sex (final)`, QC_metrics =  RIN + rRNA.rate + PMI + mappingRate, Age = Age, Braak_stage = `Region:bbscore`,  Residuals = Residuals)) 
 vp2 = sortCols( vp2 )
@@ -347,32 +348,10 @@ fig1 = plotStratify( Expression ~ Indiv, GE, colorBy = GE$bbscore, main= ensGene
 
 fig2 = plotPercentBars( vp2[ensGene,]) + theme(aspect.ratio=.1) 
 
-grid.arrange( fig1, fig2, ncol=1, layout_matrix = t(t(c(1, .1))) )
+fig1
+fig2
+# grid.arrange( fig1, fig2, ncol=1, layout_matrix = t(t(c(1, .1))) )
 ```
-
-
-```{}
-topTable(fitDupCor,number=Inf)[ensGene,]
-topTable(fitmm,number=Inf)[ensGene,]
-```
-
-```{r plotStratify1}
-ensGene = rownames(topTable(fitmm))[1]
- 
-GE = data.frame( Expression = vobj$E[ensGene,], Indiv = metadata$individualIdentifier,  bbscore = metadata$bbscore)
-     
-fig1 = plotStratify( Expression ~ Indiv, GE, colorBy = GE$bbscore, main= ensGene) + theme(aspect.ratio=1, legend.position="bottom")
-
-fig2 = plotPercentBars( vp2[ensGene,]) + theme(aspect.ratio=.1)  
-
-grid.arrange( fig1, fig2, ncol=1, layout_matrix = t(t(c(1, .1))) )
-```
-
-
-
-
-
-
 
 
 
