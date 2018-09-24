@@ -10,11 +10,6 @@ output:
   smart: false
 ---
 
-<!--- 
-# run analysis
-rmarkdown::render("src/iPSC_Timothy.Rmd", output_dir='./', intermediates_dir='./')
---->
-
 
 ```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
 nthreads = 4
