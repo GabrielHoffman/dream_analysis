@@ -24,7 +24,6 @@ if( ! exists("cl") ){
 	registerDoParallel(cl) 
 }
 
-
 suppressPackageStartupMessages(library(synapseClient))
 
 synapseLogin()
@@ -79,14 +78,9 @@ geneCounts = geneCounts_in[,colnames(geneCounts_in) %in% indivs]
 
 Meta data is available from https://www.synapse.org/#!Synapse:syn7392158
 ```{r metadata}
-# df_rna_covariates = fread('/hpc/users/hoffmg01/work/dev_dream/ampad/MSBB_RNAseq_covariates.csv')
 df_rna_covariates = fread(getFileLocation(synGet( 'syn6100548' ))
-# df_clinical = fread('/hpc/users/hoffmg01/work/dev_dream/ampad/MSBB_clinical.csv')
 df_clinical = fread(getFileLocation(synGet( 'syn6101474' ))
-# df_wes = fread('/hpc/users/hoffmg01/work/dev_dream/ampad/MSBB_WES_covariates.csv')
 df_wes = fread(getFileLocation(synGet( 'syn6101472' ))
-
-# sampleInfo = fread('/hpc/users/hoffmg01/work/dev_dream/ampad/MSBB_RNAseq.WES.WGS_sample_QC_info.csv')
 sampleInfo = fread(getFileLocation(synGet( 'syn12178047' ))
 
 
