@@ -64,6 +64,10 @@ geneCounts_in = foreach( file = files, .combine=cbind) %do% {
 } 
 colnames(geneCounts_in) = gsub("^(\\S+)\\.", "", colnames(geneCounts_in))
 
+# info = fread("/hpc/users/hoffmg01/work/dev_dream/ampad/msbb.good.samples.renamed.tsv")
+info = read.table(getFileLocation(synGet('syn16816486')), header=TRUE )
+info = data.table(info)
+
 indivs = intersect(info$Lib, colnames(geneCounts_in))
 info = info[info$Lib %in% indivs,]
 geneCounts = geneCounts_in[,colnames(geneCounts_in) %in% indivs]
