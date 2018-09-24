@@ -27,7 +27,7 @@ if( ! exists("cl") ){
 
 ```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
 suppressPackageStartupMessages(library(knitr))
-suppressPackageStartupMessages(library(recount))
+# suppressPackageStartupMessages(library(recount))
 suppressPackageStartupMessages(library(scales))
 suppressPackageStartupMessages(library(qvalue))
 suppressPackageStartupMessages(library(limma))
