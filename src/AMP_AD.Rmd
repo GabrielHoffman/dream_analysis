@@ -10,12 +10,6 @@ output:
   smart: false
 ---
 
-<!--- 
-# run analysis
-cd /Users/gabrielhoffman/workspace/scripts/dream
-rmarkdown::render("~/scripts/dream/ampad_v4.Rmd", output_dir='./', intermediates_dir='./')
---->
-
 
 ```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
 nthreads = 1
@@ -29,6 +23,11 @@ if( ! exists("cl") ){
 	cl <- makeCluster(nthreads)
 	registerDoParallel(cl) 
 }
+
+
+suppressPackageStartupMessages(library(synapseClient))
+
+synapseLogin()
 ```
 
 ```{r load.packages, echo=TRUE, message=FALSE, results='hide'}
