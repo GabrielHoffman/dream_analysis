@@ -38,6 +38,7 @@ suppressPackageStartupMessages(library(knitr))
 suppressPackageStartupMessages(library(gridExtra))
 suppressPackageStartupMessages(library(variancePartition))
 suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(synapseClient))
 
 options(xtable.type="html")
@@ -167,7 +168,7 @@ vobj = voom( genes, design, plot=FALSE, block=metadata$individualIdentifier, cor
 
 ```{r define}
 # load("enrich.RDATA")
-load(getFileLocation(synGet( 'syn16816471' ))
+load(getFileLocation(synGet( 'syn16816471' )))
 
 # exlucde some gensets: mSigDB C4
 geneSetsCombined = geneSetsCombined[grep("^c4", names(geneSetsCombined), invert=TRUE)]
