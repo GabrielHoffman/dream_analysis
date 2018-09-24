@@ -365,7 +365,7 @@ figList = foreach( ds = names(enrichList_dream_tstat) ) %do% {
 do.call("grid.arrange", c(figList, ncol=2))
 ```
 # Publication plot
-```{r publ.plot, fig.height=10, fig.width=20}
+```{r publ.plot, fig.height=20, fig.width=20}
 # neurons at rest
 gset = list()
 gset[[1]] = c('tissue_exp_brain', 'c2.MARTORIATI_MDM4_TARGETS_NEUROEPITHELIUM_DN', 'c2.LEIN_NEURON_MARKERS', 'c5.GO_PRESYNAPTIC_ACTIVE_ZONE', ' Cholesterol_biosynthesis', 'c5.GO_NEURON_RECOGNITION', 'c5.GO_PRESYNAPTIC_PROCESS_INVOLVED_IN_SYNAPTIC_TRANSMISSION')
