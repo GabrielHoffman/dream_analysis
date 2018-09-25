@@ -348,6 +348,7 @@ rownames(vp2) = rownames(vp)
 ensGene = rownames(topTable(fitDupCor))[1]
 
 GE = data.frame( Expression = vobj$E[ensGene,], Indiv = metadata$individualIdentifier,  bbscore = metadata$bbscore)
+rownames(GE) = ''
      
 fig1 = plotStratify( Expression ~ Indiv, GE, colorBy = GE$bbscore, main= ensGene) + theme(aspect.ratio=1, legend.position="right")
 
