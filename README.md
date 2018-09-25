@@ -1,6 +1,8 @@
 ## dream: Powerful differential expression analysis for repeated measures designs
 
-![img](https://raw.githubusercontent.com/GabrielHoffman/gabrielhoffman.github.io/master/img/dream_icon.png | width=100)
+<p align="left">
+<img src="https://raw.githubusercontent.com/GabrielHoffman/gabrielhoffman.github.io/master/img/dream_icon.png" width="400">
+</p>
 
 `dream` is available into the Bioconductor package [variancePartition](http://bioconductor.org/packages/release/bioc/html/variancePartition.html).  See [documentation](http://bioconductor.org/packages/devel/bioc/vignettes/variancePartition/inst/doc/dream.html)
 
