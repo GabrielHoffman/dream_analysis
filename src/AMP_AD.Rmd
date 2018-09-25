@@ -349,7 +349,7 @@ ensGene = rownames(topTable(fitDupCor))[1]
 
 GE = data.frame( Expression = vobj$E[ensGene,], Indiv = metadata$individualIdentifier,  bbscore = metadata$bbscore)
      
-fig1 = plotStratify( Expression ~ Indiv, GE, colorBy = GE$bbscore, main= ensGene) + theme(aspect.ratio=1, legend.position="right") + scale_color_continuous(name = "Braak stage")
+fig1 = plotStratify( Expression ~ Indiv, GE, colorBy = GE$bbscore, main= ensGene, legend=FALSE) + theme(aspect.ratio=1, legend.position="right") + scale_color_continuous(name = "Braak stage")
 
 fig2 = plotPercentBars( vp2[ensGene,]) + theme(aspect.ratio=.1) 
 
