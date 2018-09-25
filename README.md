@@ -8,7 +8,7 @@ See code in `sims/master_analysis.sh`
 
 ### Data analysis
 
-Data and annotation are stored on [Synapse](synapse.org).  In order to run these scripts, you will need the [Synapse client for R](https://docs.synapse.org/articles/getting_started.html) and a [Synapse account](https://www.synapse.org/#!RegisterAccount:0)
+Data and annotation are stored on [Synapse](https://www.synapse.org).  In order to run these scripts, you will need the [Synapse client for R](https://docs.synapse.org/articles/getting_started.html) and a [Synapse account](https://www.synapse.org/#!RegisterAccount:0)
 
 - ##### Timothy Syndrome | [paper](https://www.nature.com/articles/nm.2576), [data](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE25542), [results](https://cdn.rawgit.com/GabrielHoffman/dream_analysis/7f756df5/results/iPSC_Timothy.html)
 
