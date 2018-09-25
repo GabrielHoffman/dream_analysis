@@ -339,7 +339,7 @@ sum(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)
 
 
 # Variance fractions of expression plots for two example genes
-## TUBB2B: p-values are very different between the two methods
+### TUBB2B: p-values are very different between the two methods
 ```{r plotStratify.TUB}
 vp2 = with( vp, data.frame(Batch = LIMS + Run, Brain_region = Region, Individual = individualIdentifier + Apo1 + Apo2 + `Sex (final)`, QC_metrics =  RIN + rRNA.rate + PMI + mappingRate, Age = Age, Braak_stage = `Region:bbscore`,  Residuals = Residuals)) 
 vp2 = sortCols( vp2 )
@@ -349,7 +349,7 @@ ensGene = rownames(topTable(fitDupCor))[1]
 
 GE = data.frame( Expression = vobj$E[ensGene,], Indiv = metadata$individualIdentifier,  bbscore = metadata$bbscore)
      
-fig1 = plotStratify( Expression ~ Indiv, GE, colorBy = GE$bbscore, main= ensGene) + theme(aspect.ratio=1, legend.position="bottom")
+fig1 = plotStratify( Expression ~ Indiv, GE, colorBy = GE$bbscore, main= ensGene) + theme(aspect.ratio=1, legend.position="right")
 
 fig2 = plotPercentBars( vp2[ensGene,]) + theme(aspect.ratio=.1) 
 
