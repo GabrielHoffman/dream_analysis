@@ -1,5 +1,7 @@
 ## dream: Powerful differential expression analysis for repeated measures designs
 
+![img](https://raw.githubusercontent.com/GabrielHoffman/gabrielhoffman.github.io/master/img/dream_icon.png | width=100)
+
 `dream` is available into the Bioconductor package [variancePartition](http://bioconductor.org/packages/release/bioc/html/variancePartition.html).  See [documentation](http://bioconductor.org/packages/devel/bioc/vignettes/variancePartition/inst/doc/dream.html)
 
 
@@ -24,5 +26,6 @@ Data and annotation are stored on [Synapse](https://www.synapse.org).  In order 
 
 
 
+https://github.com/GabrielHoffman/gabrielhoffman.github.io/blob/master/img/dream_icon_wide.png
 
-
+https://raw.githubusercontent.com/GabrielHoffman/gabrielhoffman.github.io/blob/master/img/dream_icon_wide.png
