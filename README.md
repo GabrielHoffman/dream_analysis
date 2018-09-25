@@ -26,8 +26,3 @@ Data and annotation are stored on [Synapse](https://www.synapse.org).  In order 
 
 `rmarkdown::render("src/COS.Rmd", output_dir='./', intermediates_dir='./')`
 
-
-
-https://github.com/GabrielHoffman/gabrielhoffman.github.io/blob/master/img/dream_icon_wide.png
-
-https://raw.githubusercontent.com/GabrielHoffman/gabrielhoffman.github.io/blob/master/img/dream_icon_wide.png
