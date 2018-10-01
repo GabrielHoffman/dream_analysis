@@ -4,7 +4,9 @@
 <img src="https://raw.githubusercontent.com/GabrielHoffman/gabrielhoffman.github.io/master/img/dream_icon.png" width="400">
 </p>
 
-`dream` is available into the Bioconductor package [variancePartition](http://bioconductor.org/packages/release/bioc/html/variancePartition.html).  See [documentation](http://bioconductor.org/packages/devel/bioc/vignettes/variancePartition/inst/doc/dream.html)
+`dream` is available in the Bioconductor package [variancePartition](http://bioconductor.org/packages/release/bioc/html/variancePartition.html) ⩾ v1.10.1 for Bioconductor ⩾ v3.7.  You may need to install [R](https://www.r-project.org) ⩾ v3.5.
+
+See dream [documentation](http://bioconductor.org/packages/devel/bioc/vignettes/variancePartition/inst/doc/dream.html).
 
 
 ### Simulations
