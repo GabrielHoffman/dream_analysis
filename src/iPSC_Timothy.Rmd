@@ -365,6 +365,29 @@ figList = foreach( ds = names(enrichList_dream_tstat) ) %do% {
 do.call("grid.arrange", c(figList, ncol=2))
 ```
 
+
+```{r save_enrichments}
+foreach( ds = names(enrichList_dream_tstat) ) %do% {
+
+  # dupCor  
+  file = paste0("iPSC_Timothy", gsub(" ", "_", ds),"_DupCor.tsv")
+  tab = topTable( dupCorList[[ds]]$fitDupCor, coef="genotype control", number=Inf )
+  write.table(tab, file=file, sep="\t", quote=FALSE)
+
+  # dream
+  file = paste0("iPSC_Timothy", gsub(" ", "_", ds),"_dream.tsv")
+  write.table(topTable(dreamList[[ds]], number=Inf ), file=file, sep="\t", quote=FALSE)
+
+  # dupCor
+  file = paste0("iPSC_Timothy", gsub(" ", "_", ds),"_DupCor_enrichment.tsv")
+  write.table(enrichList_dp_tstat[[ds]], file=file, sep="\t", quote=FALSE)
+
+  # dream
+  file = paste0("iPSC_Timothy", gsub(" ", "_", ds),"_dream_enrichment.tsv")
+  write.table(enrichList_dream_tstat[[ds]], file=file, sep="\t", quote=FALSE)
+}
+```
+
 # Publication plot
 ```{r publ.plot, fig.height=20, fig.width=20}
 # neurons at rest
