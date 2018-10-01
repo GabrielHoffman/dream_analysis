@@ -307,12 +307,24 @@ col = c('#00b6eb', '#a58affff')
  
 maxValue = -log10(min(c(min(res1$FDR), min(res2$FDR)))) * 1.03
 
-# plot_compare_enrichment( res1, res2, rownames(res1)[1:20], col, maxValue)
-# plot_compare_enrichment( res1, res2, rownames(res2)[1:20], col, maxValue)  
-
 geneSetNames = unique(c(rownames(res1)[1:20], rownames(res2)[1:20]))
 plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)  
 ```
+
+```{r save_enrichments}
+file = "./AMP_AD_DupCor.tsv"
+write.table(topTable(fitDupCor, number=1e7), file=file, sep="\t", quote=FALSE)
+
+file = "./AMP_AD_dream.tsv"
+write.table(topTable(fitmm, number=1e7), file=file, sep="\t", quote=FALSE)
+
+file = "./AMP_AD_DupCor_enrichment.tsv"
+write.table(enrich_dupCor_camera, file=file, sep="\t", quote=FALSE)
+
+file = "./AMP_AD_DupCor_dream.tsv"
+write.table(enrich_dream_camera, file=file, sep="\t", quote=FALSE)
+```
+
 
 ## Plot for publication
 ```{r plot_enrichment_publish}
