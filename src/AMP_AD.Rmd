@@ -307,7 +307,7 @@ col = c('#00b6eb', '#a58affff')
  
 maxValue = -log10(min(c(min(res1$FDR), min(res2$FDR)))) * 1.03
 
-geneSetNames = unique(c(rownames(res1)[1:30], rownames(res2)[1:20]))
+geneSetNames = unique(c(rownames(res1)[1:30], rownames(res2)[1:30]))
 plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)  
 ```
 
