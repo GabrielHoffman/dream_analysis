@@ -289,7 +289,7 @@ plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
 ```
 
 
-# Top 20 categories from each analysis
+# Top categories from each analysis
 ```{r camera_enrich_braak}
 res = topTable(fitDupCor, number=1e7) 
 enrich_dupCor_camera = get_enrich_order( res ) 
@@ -307,7 +307,7 @@ col = c('#00b6eb', '#a58affff')
  
 maxValue = -log10(min(c(min(res1$FDR), min(res2$FDR)))) * 1.03
 
-geneSetNames = unique(c(rownames(res1)[1:20], rownames(res2)[1:20]))
+geneSetNames = unique(c(rownames(res1)[1:30], rownames(res2)[1:20]))
 plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)  
 ```
 

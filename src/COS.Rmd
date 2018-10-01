@@ -341,19 +341,46 @@ maxValue = -log10(min(combineRes$FDR)) * 1.03
 
 res1 = camera_dupCor_NPC   
 res2 = camera_dream_npc    
-plot_compare_enrichment( res1, res2, rownames(res1)[res1$FDR < 0.05][1:60], col, maxValue)
-plot_compare_enrichment( res1, res2, rownames(res2)[res2$FDR < 0.05][1:60], col, maxValue)   
-```
+# plot_compare_enrichment( res1, res2, rownames(res1)[res1$FDR < 0.05][1:60], col, maxValue)
+# plot_compare_enrichment( res1, res2, rownames(res2)[res2$FDR < 0.05][1:60], col, maxValue)   
 
+geneSetNames = unique(c(rownames(res1)[1:30], rownames(res2)[1:30]))
+plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue) 
+```
 
 # Compare neuron
 ```{r compare_neuron, fig.width=20, fig.height=10}
 res1 = camera_dupCor_neuron 
 res2 = camera_dream_neuron      
-plot_compare_enrichment( res1, res2, rownames(res1)[res1$FDR < 0.05], col, maxValue)
-plot_compare_enrichment( res1, res2, rownames(res2)[res2$FDR < 0.05], col, maxValue)  
+# plot_compare_enrichment( res1, res2, rownames(res1)[res1$FDR < 0.05], col, maxValue)
+# plot_compare_enrichment( res1, res2, rownames(res2)[res2$FDR < 0.05], col, maxValue)  
+
+geneSetNames = unique(c(rownames(res1)[1:30], rownames(res2)[1:30]))
+plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue) 
 ```
 
+```{r save_enrichments}
+file = "./COS_NPC_DupCor.tsv"
+write.table(topTable(fit2, coef="SZNPC", number=Inf), file=file, sep="\t", quote=FALSE)
+file = "./COS_neuron_DupCor.tsv"
+write.table(topTable(fit2, coef="SZNeuron", number=Inf), file=file, sep="\t", quote=FALSE)
+
+file = "./COS_NPC_dream.tsv"
+write.table(topTable(fitDream_npc_eb, number=Inf), file=file, sep="\t", quote=FALSE)
+file = "./COS_neuron_dream.tsv"
+write.table(topTable(fitDream_neuron_eb, number=Inf), file=file, sep="\t", quote=FALSE)
+
+
+file = "./COS_NPC_DupCor_enrichment.tsv"
+write.table(camera_dupCor_NPC, file=file, sep="\t", quote=FALSE)
+file = "./COS_NPC_dream_enrichment.tsv"
+write.table(camera_dream_npc, file=file, sep="\t", quote=FALSE)
+
+file = "./COS_neuron_DupCor_enrichment.tsv"
+write.table(camera_dupCor_neuron, file=file, sep="\t", quote=FALSE)
+file = "./COS_neuron_dream_enrichment.tsv"
+write.table(camera_dream_neuron, file=file, sep="\t", quote=FALSE)
+```
 
 
 
