@@ -307,8 +307,11 @@ col = c('#00b6eb', '#a58affff')
  
 maxValue = -log10(min(c(min(res1$FDR), min(res2$FDR)))) * 1.03
 
-plot_compare_enrichment( res1, res2, rownames(res1)[1:20], col, maxValue)
-plot_compare_enrichment( res1, res2, rownames(res2)[1:20], col, maxValue)  
+# plot_compare_enrichment( res1, res2, rownames(res1)[1:20], col, maxValue)
+# plot_compare_enrichment( res1, res2, rownames(res2)[1:20], col, maxValue)  
+
+geneSetNames = unique(c(rownames(res1)[1:20], rownames(res2)[1:20]))
+plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)  
 ```
 
 ## Plot for publication
@@ -327,12 +330,12 @@ fig = plot_compare_enrichment( res1, res2, gset, col, maxValue)
 fig + theme(aspect.ratio=length(gset)/3) 
 ```
 
-# Number of DE genes from DupCor 
+# Number of differentially expressed genes from DupCor 
 ```{r}
 sum(topTable(fitDupCor, number=Inf)$adj.P.Val < 0.05)
 ```
 
-# Number of DE genes from dream 
+# Number of differentially expressed genes from dream 
 ```{r}
 sum(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)
 ```
