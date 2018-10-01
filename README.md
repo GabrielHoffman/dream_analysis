@@ -10,11 +10,13 @@ See dream [documentation](http://bioconductor.org/packages/devel/bioc/vignettes/
 
 
 ### Simulations
-See code in `sims/master_analysis.sh`
+See code in [sims/master_analysis.sh](https://github.com/GabrielHoffman/dream_analysis/tree/master/sims/master_analysis.sh)
 
 ### Data analysis
 
-Data and annotation are stored on [Synapse](https://www.synapse.org).  In order to run these scripts, you will need the [Synapse client for R](https://docs.synapse.org/articles/getting_started.html) and a [Synapse account](https://www.synapse.org/#!RegisterAccount:0)
+Data and annotation are stored on [Synapse](https://www.synapse.org).  In order to run these scripts, you will need the [Synapse client for R](https://docs.synapse.org/articles/getting_started.html) and a [Synapse account](https://www.synapse.org/#!RegisterAccount:0).
+
+Links point to original publication, public data, html files from current analysis, and text files from differential expression analysis. `rmarkdown::render` code snippet will regenerate results and html files. 
 
 - ##### Timothy Syndrome | [paper](https://www.nature.com/articles/nm.2576), [data](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE25542), [html](https://cdn.rawgit.com/GabrielHoffman/dream_analysis/master/results/iPSC_Timothy.html), [results](https://github.com/GabrielHoffman/dream_analysis/tree/master/results/files/iPSC_Timothy)
 
