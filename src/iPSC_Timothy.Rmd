@@ -179,7 +179,7 @@ library(RcppRoll)
 
 dfr2 = fread(getFileLocation(synGet('syn17077709')))
 
-t = foreach( ds = names(dupCorList) ) %do% {
+figList = foreach( ds = names(dupCorList) ) %do% {
 
   # Compare p-values and make plot
   t1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotype control", number=Inf, sort.by="none")$P.Value
