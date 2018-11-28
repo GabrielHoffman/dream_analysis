@@ -290,154 +290,6 @@ plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
 
 # compare to eQTL
 ```{r eqtl}
-
-df_eqtl_blood = fread("./eqtl/eQTL_R2_GTEx_Whole_Blood.tsv")
-colnames(df_eqtl_blood) = paste0("gtex_blood_", colnames(df_eqtl_blood))
-
-df_eqtl = fread("./eqtl/eQTL_R2_CMC_DLPFC.tsv")
-
-df_vp = data.frame(vp)
-df_vp$gene = rownames(vp)
-df_vp$p_dupCor = p1
-df_vp$p_dream = p2
-
-eqtlCombine = merge(df_eqtl, df_vp, by='gene')
-eqtlCombine_blood = merge(eqtlCombine, df_eqtl_blood, by.x='gene', by.y='gtex_blood_gene_id')
-
-with(eqtlCombine_blood, cor(r2, gtex_blood_r2, method="spearman"))
- 
-with(eqtlCombine, cor(r2, individualIdentifier, method="spearman"))
-
-with(eqtlCombine_blood, cor(gtex_blood_r2, individualIdentifier, method="spearman"))
-
-
-
-eqtlCombine$delta = with(eqtlCombine, -log10(p_dupCor) - - log10(p_dream) )
-eqtlCombine_blood$delta = with(eqtlCombine_blood, -log10(p_dupCor) - - log10(p_dream) )
-
-fig1 = ggplot(eqtlCombine, aes(delta, r2)) + geom_point(size=.1) + ylim(0, .4)
-fig2 = ggplot(eqtlCombine_blood, aes(delta, gtex_blood_r2)) + geom_point(size=.1)
-grid.arrange(fig1, fig2, ncol=2)
-dev.off()
-
-
-
-df_sum = eqtlCombine[delta < 0, .SD[rev(order(delta)),]]
-prob1 = cumsum(df_sum$r2 > 0.01) / cumsum(df_sum$r2 > 0)
-plot( df_sum$delta, prob1)
-
-df_sum = eqtlCombine[delta > 0, .SD[order(delta),]]
-prob2 = cumsum(df_sum$r2 > 0.01) / cumsum(df_sum$r2 > 0)
-plot( df_sum$delta, prob2)
-dev.off()
-
-d_array = seq(0, 3, length=100)
-df_enrich = foreach(i = 2:length(d_array)  ) %do%{
-
-  df_sum = eqtlCombine[delta < 0, .SD[rev(order(delta)),]]
-  df_sum = df_sum[(abs(delta) >= d_array[i-1]) & (abs(delta) < d_array[i]),]
-  count_less = df_sum[,sum(r2>0.01)]
-  denom_less = nrow(df_sum) 
-
-  df_sum = eqtlCombine[delta > 0, .SD[rev(order(delta)),]]
-  df_sum = df_sum[(abs(delta) >= d_array[i-1]) & (abs(delta) < d_array[i]),]
-  count_more = df_sum[,sum(r2>0.01)] 
-  denom_more = nrow(df_sum)
-
-  M = matrix(c(count_less, denom_less, count_more, denom_more), 2,2)
-
-  fit = fisher.test(M)
-
-  data.frame( OR = fit$estimate, lower = fit$conf.int[1], upper=fit$conf.int[2])
-
-
-}
-
-
-library(RSQLite)
-
-
-# PreidXcan R2
-mydb <- dbConnect(RSQLite::SQLite(), "/sc/orga/projects/psychgen/resources/predixcan/CMC/CMC_DLPFC-PrediXcan_Models/DLPFC_newMetax.db")
-
-dfr2 = dbGetQuery(mydb, "SELECT gene, [pred.perf.R2] as r2 FROM extra")
-
-
-dfeqtl = data.table(merge(df_vp,dfr2, by="gene"))
-
-
-dfeqtl$delta = with(dfeqtl, -log10(p_dupCor) - - log10(p_dream) )
-
-with(dfeqtl, cor(delta, r2, method="spearman"))
-
-
-
-
-fig1 = ggplot(dfeqtl, aes(delta, r2)) + geom_point(size=.1)
-fig1
-dev.off()
-
-
-
-df_sum = dfeqtl[delta < 0, .SD[rev(order(delta)),]]
-prob1 = cumsum(df_sum$r2 > 0.1) / cumsum(df_sum$r2 > 0)
-plot( df_sum$delta, prob1)
-
-df_sum = dfeqtl[delta > 0, .SD[order(delta),]]
-prob2 = cumsum(df_sum$r2 > 0.1) / cumsum(df_sum$r2 > 0)
-plot( df_sum$delta, prob2)
-dev.off()
-
-d_array = seq(0, 3, length=100)
-df_enrich = foreach(i = 2:length(d_array), .combine=rbind) %do%{
-
-  df_sum = dfeqtl[delta < 0, .SD[rev(order(delta)),]]
-  df_sum = df_sum[(abs(delta) >= d_array[i-1]) & (abs(delta) < d_array[i]),]
-  count_less = df_sum[,sum(r2>0.1)]
-  denom_less = nrow(df_sum)
-  r2mu_less = df_sum[,mean(r2)]
-
-  df_sum = dfeqtl[delta > 0, .SD[rev(order(delta)),]]
-  df_sum = df_sum[(abs(delta) >= d_array[i-1]) & (abs(delta) < d_array[i]),]
-  count_more = df_sum[,sum(r2>0.1)] 
-  denom_more = nrow(df_sum)
-  r2mu_more = df_sum[,mean(r2)]
-
-  M = matrix(c(count_less, denom_less, count_more, denom_more), 2,2)
-
-  fit = fisher.test(M)
-
-  data.frame( i, OR = fit$estimate, lower = fit$conf.int[1], upper=fit$conf.int[2], p=fit$p.value, r2mu_less, r2mu_more)
-}
-
-
-
-df_sum = dfeqtl[, .SD[rev(order(delta)),]]
-
-d_array = unique(c(seq(-3, 0, length=100), seq(0, 3, length=100)))
-
-df_enrich = foreach(i = 2:length(d_array), .combine=rbind) %do%{
-
-  df_sum = df_sum[(abs(delta) >= d_array[i-1]) & (abs(delta) < d_array[i]),]
-  
-  df = NA
-  if( nrow(df_sum) > 0){
-    df = data.frame( i, df_sum)
-  }
-  df
-}
-
-
-
-d_array = unique(c(seq(-8, 0, length=50), seq(0, 8, length=50)))
-
-df_sum$interval = d_array[findInterval( df_sum$delta, d_array)]
-
-df_plot = df_sum[,median(r2), by="interval"]
-
-ggplot(df_plot, aes(interval, V1)) + geom_point()
-dev.off()
-
 library(RcppRoll)
 library(RSQLite)
 # PreidXcan R2
@@ -446,7 +298,6 @@ mydb <- dbConnect(RSQLite::SQLite(), "/sc/orga/projects/psychgen/resources/predi
 dfr2 = dbGetQuery(mydb, "SELECT gene, [pred.perf.R2] as r2 FROM extra")
 dfeqtl = data.table(merge(df_vp,dfr2, by="gene", all.x=TRUE))
 dfeqtl$r2[is.na(dfeqtl$r2)] = 0
-
 
 dfeqtl$delta = with(dfeqtl, -log10(p_dupCor) - - log10(p_dream) )
 
@@ -461,9 +312,6 @@ dfroll$i = 1:nrow(dfroll)
 
 ggplot(dfroll, aes(delta, r2mu)) +  geom_point() + theme_bw(12) + theme(aspect.ratio=1) + xlab("delta") + ylab("mean R2") + geom_smooth(method="loess", span=1) + ylim(0, max(dfroll$r2mu)) + xlim(-max(abs(dfroll$delta)), max(abs(dfroll$delta)))
 #geom_errorbar(aes(ymin=r2mu-r2sd, ymax=r2mu+r2sd), color="grey80") +
-dev.off()
-
-
 ```
 
 
