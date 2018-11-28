@@ -213,6 +213,51 @@ t2 = topTable(fitDream_neuron_eb, number=Inf, sort.by="none")$P.Value
 plotCompareP( t1, t2, vp$Donor, dupcor$consensus, fraction=.1) + ggtitle("Neuron")
 ```
 
+# compare to eQTL
+```{r eqtl}
+df_vp = data.frame(vp)
+df_vp$gene = rownames(vp)
+df_vp$p_dupCor = t1
+df_vp$p_dream = t2
+
+library(RcppRoll)
+library(RSQLite)
+# PreidXcan R2
+mydb <- dbConnect(RSQLite::SQLite(), "/sc/orga/projects/psychgen/resources/predixcan/CMC/CMC_DLPFC-PrediXcan_Models/DLPFC_newMetax.db")
+
+dfr2 = dbGetQuery(mydb, "SELECT gene, [pred.perf.R2] as r2 FROM extra")
+dfeqtl = data.table(merge(df_vp,dfr2, by="gene", all.x=TRUE))
+dfeqtl$r2[is.na(dfeqtl$r2)] = 0
+
+dfeqtl$delta = with(dfeqtl, -log10(p_dupCor) - - log10(p_dream) )
+
+df_sum = dfeqtl[, .SD[order(delta),]]
+
+window = 100
+by = 20
+dfroll = data.frame(delta = roll_mean(df_sum$delta, n=window, by=by), 
+        r2mu = roll_mean(df_sum$r2, n=window, by=by),
+        r2sd = roll_sd(df_sum$r2, n=window, by=by))
+dfroll$i = 1:nrow(dfroll)
+
+resCor = with(dfroll, cor.test(delta, r2mu, method="spearman") )
+
+xlim = c(-max(abs(dfroll$delta)), max(abs(dfroll$delta)))
+ylim = c(0, max(dfroll$r2mu))
+xlab = expression('['-log[10]~p[dupCor]~']'-'['-log[10]~p[dream]~']')
+ylab = expression('mean eQTL'~R^2)
+
+ggplot(dfroll, aes(delta, r2mu)) +  geom_point() + theme_bw(12) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.9, y = ylim[2]*.9, label = paste0('rho = ', format(resCor$estimate, digits=3), "\np < ",resCor$p.value))
+#geom_errorbar(aes(ymin=r2mu-r2sd, ymax=r2mu+r2sd), color="grey80") +
+```
+
+
+
+
+
+
+
+
 ```{r compare.npc}
 t1 = topTable(fit2, coef="SZNPC", number=Inf, sort.by="none")$P.Value
 t2 = topTable(fitDream_npc_eb, number=Inf, sort.by="none")$P.Value
