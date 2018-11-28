@@ -296,7 +296,8 @@ df_vp$p_dupCor = p1
 df_vp$p_dream = p2
 
 library(RcppRoll)
-dfr2 = fread("/sc/orga/work/hoffmg01/dev_dream/dream_analysis/eqtl/eqtl_CMC_r2.tsv")
+
+dfr2 = fread(getFileLocation(synGet('syn17077709')))
 dfeqtl = data.table(merge(df_vp,dfr2, by="gene", all.x=TRUE))
 dfeqtl$r2[is.na(dfeqtl$r2)] = 0
 
