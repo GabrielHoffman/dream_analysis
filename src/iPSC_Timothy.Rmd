@@ -211,7 +211,7 @@ figList = foreach( ds = names(dupCorList) ) %do% {
 
   xlim = c(-max(abs(dfroll$delta)), max(abs(dfroll$delta)))
   # ylim = c(0, max(dfroll$r2mu))
-  lim = c(0, 0.08)
+  ylim = c(0, 0.08)
   xlab = expression('['-log[10]~p[dupCor]~']'-'['-log[10]~p[dream]~']')
   ylab = expression('mean eQTL'~R^2)
 
