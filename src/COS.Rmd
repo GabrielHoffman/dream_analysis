@@ -221,7 +221,8 @@ df_vp$p_dupCor = t1
 df_vp$p_dream = t2
 
 library(RcppRoll)
-dfr2 = fread("/sc/orga/work/hoffmg01/dev_dream/dream_analysis/eqtl/eqtl_CMC_r2.tsv")
+
+dfr2 = fread(getFileLocation(synGet('syn17077709')))
 dfeqtl = data.table(merge(df_vp,dfr2, by="gene", all.x=TRUE))
 dfeqtl$r2[is.na(dfeqtl$r2)] = 0
 
@@ -252,8 +253,6 @@ ggplot(dfroll, aes(delta, r2mu)) +  geom_point() + theme_bw(12) + theme(aspect.r
 
 
 
-
-
 ```{r compare.npc}
 t1 = topTable(fit2, coef="SZNPC", number=Inf, sort.by="none")$P.Value
 t2 = topTable(fitDream_npc_eb, number=Inf, sort.by="none")$P.Value
@@ -268,10 +267,7 @@ df_vp$gene = rownames(vp)
 df_vp$p_dupCor = t1
 df_vp$p_dream = t2
 
-# PreidXcan R2
-mydb <- dbConnect(RSQLite::SQLite(), "/sc/orga/projects/psychgen/resources/predixcan/CMC/CMC_DLPFC-PrediXcan_Models/DLPFC_newMetax.db")
-
-dfr2 = dbGetQuery(mydb, "SELECT gene, [pred.perf.R2] as r2 FROM extra")
+dfr2 = fread(getFileLocation(synGet('syn17077709')))
 dfeqtl = data.table(merge(df_vp,dfr2, by="gene", all.x=TRUE))
 dfeqtl$r2[is.na(dfeqtl$r2)] = 0
 

@@ -173,7 +173,7 @@ geneInfoBiomart = getBM(getAtt,filters="illumina_humanref_8_v3",values=rownames(
 
 library(RcppRoll)
 
-dfr2 = fread("/sc/orga/work/hoffmg01/dev_dream/dream_analysis/eqtl/eqtl_CMC_r2.tsv")
+dfr2 = fread(getFileLocation(synGet('syn17077709')))
 
 t = foreach( ds = names(dupCorList) ) %do% {
 
