@@ -214,7 +214,7 @@ plotCompareP( t1, t2, vp$Donor, dupcor$consensus, fraction=.1) + ggtitle("Neuron
 ```
 
 # compare to eQTL
-```{r eqtl}
+```{r eqtl.Neuron}
 df_vp = data.frame(vp)
 df_vp$gene = rownames(vp)
 df_vp$p_dupCor = t1
@@ -266,7 +266,7 @@ plotCompareP( t1, t2, vp$Donor, dupcor$consensus, fraction=.1) + ggtitle("NPC")
 ```
 
 # compare to eQTL
-```{r eqtl}
+```{r eqtl.NPC}
 df_vp = data.frame(vp)
 df_vp$gene = rownames(vp)
 df_vp$p_dupCor = t1
