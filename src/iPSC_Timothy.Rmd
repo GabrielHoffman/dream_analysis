@@ -200,7 +200,7 @@ figList = foreach( ds = names(dupCorList) ) %do% {
 
   df_sum = dfeqtl[, .SD[order(delta),]]
 
-  window = 100
+  window = 100  
   by = 20
   dfroll = data.frame(delta = roll_mean(df_sum$delta, n=window, by=by), 
           r2mu = roll_mean(df_sum$r2, n=window, by=by),

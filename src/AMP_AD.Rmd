@@ -315,7 +315,8 @@ dfroll$i = 1:nrow(dfroll)
 resCor = with(dfroll, cor.test(delta, r2mu, method="spearman") )
 
 xlim = c(-max(abs(dfroll$delta)), max(abs(dfroll$delta)))
-ylim = c(0, max(dfroll$r2mu))
+# ylim = c(0, max(dfroll$r2mu))
+ylim = c(0, 0.125)
 xlab = expression('['-log[10]~p[dupCor]~']'-'['-log[10]~p[dream]~']')
 ylab = expression('mean eQTL'~R^2)
 
