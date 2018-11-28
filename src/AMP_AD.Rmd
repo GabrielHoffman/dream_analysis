@@ -322,7 +322,7 @@ ylim = c(0, max(dfroll$r2mu))
 xlab = expression('['-log[10]~p[dupCor]~']'-'['-log[10]~p[dream]~']')
 ylab = expression('mean eQTL'~R^2)
 
-ggplot(dfroll, aes(delta, r2mu)) +  geom_point() + theme_bw(12) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*1.1, y = ylim[2]*.9, label = paste0('rho = ', format(resCor$estimate, digits=3), "\np < ",resCor$p.value))
+ggplot(dfroll, aes(delta, r2mu)) +  geom_point() + theme_bw(12) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.9, y = ylim[2]*.9, label = paste0('rho = ', format(resCor$estimate, digits=3), "\np < ",resCor$p.value))
 #geom_errorbar(aes(ymin=r2mu-r2sd, ymax=r2mu+r2sd), color="grey80") +
 ```
 
