@@ -160,6 +160,14 @@ do.call("grid.arrange", c(figList, ncol=2))
 ```
 
 
+```{r biomart}
+library(biomaRt)
+ensembl = useMart(biomart="ENSEMBL_MART_ENSEMBL", host="grch37.ensembl.org", path="/biomart/martservice" ,dataset="hsapiens_gene_ensembl")
+getAtt = c("chromosome_name",'start_position','end_position',"illumina_humanref_8_v3","ensembl_gene_id","hgnc_symbol")
+geneInfoBiomart = getBM(getAtt,filters="illumina_humanref_8_v3",values=rownames(geneExpr),mart = ensembl)
+```
+
+
 ## DE versus eQTL
 ```{r DE.vs.eQTL, echo=TRUE, fig.height=12, fig.width=12}
 
@@ -181,7 +189,10 @@ figList = foreach( ds = names(dupCorList) ) %do% {
   df_vp$p_dupCor = t1
   df_vp$p_dream = t2
 
-  dfeqtl = data.table(merge(df_vp,dfr2, by="gene", all.x=TRUE))
+  df_vp2 = merge(df_vp, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
+  df_vp2 = df_vp2[!duplicated(df_vp2$Row.names),]
+
+  dfeqtl = data.table(merge(df_vp2,dfr2, by.x="ensembl_gene_id", by.y="gene", all.x=TRUE))
   dfeqtl$r2[is.na(dfeqtl$r2)] = 0
 
   dfeqtl$delta = with(dfeqtl, -log10(p_dupCor) - - log10(p_dream) )
@@ -224,13 +235,6 @@ deCount = data.frame(deCount, stringsAsFactors=FALSE)
 deCount$count = as.numeric(deCount$count)
 
 kable(deCount, row.names=FALSE)
-```
-
-```{r biomart}
-library(biomaRt)
-ensembl = useMart(biomart="ENSEMBL_MART_ENSEMBL", host="grch37.ensembl.org", path="/biomart/martservice" ,dataset="hsapiens_gene_ensembl")
-getAtt = c("chromosome_name",'start_position','end_position',"illumina_humanref_8_v3","ensembl_gene_id","hgnc_symbol")
-geneInfoBiomart = getBM(getAtt,filters="illumina_humanref_8_v3",values=rownames(geneExpr),mart = ensembl)
 ```
 
 
