@@ -290,6 +290,11 @@ plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
 
 # compare to eQTL
 ```{r eqtl}
+df_vp = data.frame(vp)
+df_vp$gene = rownames(vp)
+df_vp$p_dupCor = p1
+df_vp$p_dream = p2
+
 library(RcppRoll)
 library(RSQLite)
 # PreidXcan R2
