@@ -24,7 +24,6 @@ nthreads = 12
 
 ```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
 suppressPackageStartupMessages(library(doParallel))
-suppressPackageStartupMessages(library(synapseClient))
 
 cl <- makeCluster(nthreads)
 registerDoParallel(cl)

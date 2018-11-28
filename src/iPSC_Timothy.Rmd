@@ -37,6 +37,10 @@ suppressPackageStartupMessages(library(grid))
 suppressPackageStartupMessages(library(variancePartition))
 suppressPackageStartupMessages(library(ggplot2))
 
+suppressPackageStartupMessages(library(synapseClient))
+
+synapseLogin()
+
 options(xtable.type="html")
 
 knitr::opts_chunk$set(
