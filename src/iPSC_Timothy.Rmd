@@ -172,13 +172,10 @@ geneInfoBiomart = getBM(getAtt,filters="illumina_humanref_8_v3",values=rownames(
 ```{r DE.vs.eQTL, echo=TRUE, fig.height=12, fig.width=12}
 
 library(RcppRoll)
-library(RSQLite)
-# PreidXcan R2
-mydb <- dbConnect(RSQLite::SQLite(), "/sc/orga/projects/psychgen/resources/predixcan/CMC/CMC_DLPFC-PrediXcan_Models/DLPFC_newMetax.db")
 
-dfr2 = dbGetQuery(mydb, "SELECT gene, [pred.perf.R2] as r2 FROM extra")
+dfr2 = fread("eqtl/eqtl_CMC_r2.tsv")
 
-figList = foreach( ds = names(dupCorList) ) %do% {
+t = foreach( ds = names(dupCorList) ) %do% {
 
   # Compare p-values and make plot
   t1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotype control", number=Inf, sort.by="none")$P.Value

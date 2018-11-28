@@ -221,11 +221,7 @@ df_vp$p_dupCor = t1
 df_vp$p_dream = t2
 
 library(RcppRoll)
-library(RSQLite)
-# PreidXcan R2
-mydb <- dbConnect(RSQLite::SQLite(), "/sc/orga/projects/psychgen/resources/predixcan/CMC/CMC_DLPFC-PrediXcan_Models/DLPFC_newMetax.db")
-
-dfr2 = dbGetQuery(mydb, "SELECT gene, [pred.perf.R2] as r2 FROM extra")
+dfr2 = fread("eqtl/eqtl_CMC_r2.tsv")
 dfeqtl = data.table(merge(df_vp,dfr2, by="gene", all.x=TRUE))
 dfeqtl$r2[is.na(dfeqtl$r2)] = 0
 
