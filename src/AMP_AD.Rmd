@@ -313,9 +313,14 @@ by = 20
 dfroll = data.frame(delta = roll_mean(df_sum$delta, n=window, by=by), 
         r2mu = roll_mean(df_sum$r2, n=window, by=by),
         r2sd = roll_sd(df_sum$r2, n=window, by=by))
-dfroll$i = 1:nrow(dfroll) 
+dfroll$i = 1:nrow(dfroll)
 
-ggplot(dfroll, aes(delta, r2mu)) +  geom_point() + theme_bw(12) + theme(aspect.ratio=1) + xlab("delta") + ylab("mean R2") + geom_smooth(method="loess", span=1) + ylim(0, max(dfroll$r2mu)) + xlim(-max(abs(dfroll$delta)), max(abs(dfroll$delta)))
+resCor = with(dfroll, cor.test(delta, r2mu, method="spearman") )
+
+xlim = c(-max(abs(dfroll$delta)), max(abs(dfroll$delta)))
+ylim = c(0, max(dfroll$r2mu))
+
+ggplot(dfroll, aes(delta, r2mu)) +  geom_point() + theme_bw(12) + theme(aspect.ratio=1) + xlab("delta") + ylab("mean R2") + geom_smooth(method="loess", span=1) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1], y = ylim[2]*.9, label = paste0('rho = ', format(resCor$estimate, digits=3), "\np < ",resCor$p.value))
 #geom_errorbar(aes(ymin=r2mu-r2sd, ymax=r2mu+r2sd), color="grey80") +
 ```
 
