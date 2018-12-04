@@ -176,8 +176,9 @@ geneInfoBiomart = getBM(getAtt,filters="illumina_humanref_8_v3",values=rownames(
 ```{r DE.vs.eQTL, echo=FALSE, fig.height=12, fig.width=12}
 
 library(RcppRoll)
+library(data.table)
 
-dfr2 = fread(getFileLocation(synGet('syn17077709')))
+dfr2 = fread(getFileLocation(synGet('syn17083748')))
 
 figList = foreach( ds = names(dupCorList) ) %do% {
 
@@ -193,21 +194,31 @@ figList = foreach( ds = names(dupCorList) ) %do% {
   df_vp2 = merge(df_vp, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
   df_vp2 = df_vp2[!duplicated(df_vp2$Row.names),]
 
-  dfeqtl = data.table(merge(df_vp2,dfr2, by.x="ensembl_gene_id", by.y="gene", all.x=TRUE))
-  dfeqtl$r2[is.na(dfeqtl$r2)] = 0
+  dfeqtl = data.table(merge(df_vp2,dfr2, by="ensembl_gene_id", all.x=TRUE))
+  dfeqtl$DGN_R2[is.na(dfeqtl$DGN_R2)] = 0
+  dfeqtl$CMC_R2[is.na(dfeqtl$CMC_R2)] = 0
+  dfeqtl = dfeqtl[!duplicated(gene),]
 
   dfeqtl$delta = with(dfeqtl, -log10(p_dupCor) - - log10(p_dream) )
 
   df_sum = dfeqtl[, .SD[order(delta),]]
 
-  window = 100  
+  window = 100
   by = 20
   dfroll = data.frame(delta = roll_mean(df_sum$delta, n=window, by=by), 
-          r2mu = roll_mean(df_sum$r2, n=window, by=by),
-          r2sd = roll_sd(df_sum$r2, n=window, by=by))
+        CMC_R2_mu = roll_mean(df_sum$CMC_R2, n=window, by=by),
+        CMC_R2_sd = roll_sd(df_sum$CMC_R2, n=window, by=by), 
+        DGN_R2_mu = roll_mean(df_sum$DGN_R2, n=window, by=by),
+        DGN_R2_sd = roll_sd(df_sum$DGN_R2, n=window, by=by))
   dfroll$i = 1:nrow(dfroll)
 
-  resCor = with(dfroll, cor.test(delta, r2mu, method="spearman") )
+  resCor_CMC = with(dfroll, cor.test(delta, CMC_R2_mu, method="spearman") )
+  resCor_DGN = with(dfroll, cor.test(delta, DGN_R2_mu, method="spearman") )
+
+  df_cor = with(resCor_CMC, c(dataset='iPSC_Timothy', eQTL = 'CMC', estimate, p=p.value))
+  df_cor = rbind(df_cor, 
+  with(resCor_DGN, c(dataset='iPSC_Timothy', eQTL = 'DGN', estimate, p=p.value)))
+  write.table(df_cor, file="df_cor.tsv", sep="\t", quote=FALSE, row.names=FALSE, append=TRUE)
 
   xlim = c(-max(abs(dfroll$delta)), max(abs(dfroll$delta)))
   # ylim = c(0, max(dfroll$r2mu))
@@ -215,7 +226,9 @@ figList = foreach( ds = names(dupCorList) ) %do% {
   xlab = expression('['-log[10]~p[dupCor]~']'-'['-log[10]~p[dream]~']')
   ylab = expression('mean eQTL'~R^2)
 
-  ggplot(dfroll, aes(delta, r2mu)) + geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.9, y = ylim[2]*.9, label = paste0('rho = ', format(resCor$estimate, digits=3), "\np < ",format(resCor$p.value, digits=3))) + ggtitle(ds)
+  ggplot(dfroll, aes(delta, CMC_R2_mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.9, y = ylim[2]*.9, label = paste0('rho = ', format(resCor_CMC$estimate, digits=3), "\np < ",resCor_CMC$p.value)) + ggtitle(paste("CMC", ds))
+
+  ggplot(dfroll, aes(delta, DGN_R2_mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.9, y = ylim[2]*.9, label = paste0('rho = ', format(resCor_DGN$estimate, digits=3), "\np < ",resCor_DGN$p.value)) + ggtitle(paste("DGN", ds))
 }
 do.call("grid.arrange", c(figList, ncol=2))
 ```
