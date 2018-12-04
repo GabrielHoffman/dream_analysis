@@ -204,6 +204,7 @@ fitDream_neuron = dream( vobj, form, metadata2, L_neuron)
 fitDream_neuron_eb = eBayes( fitDream_neuron )
 ```
 
+# Analysis of neuron
 # Compare p-values from dream and duplicateCorrelation
 ```{r compare.neuron}
 t1 = topTable(fit2, coef="SZNeuron", number=Inf, sort.by="none")$P.Value
@@ -260,7 +261,7 @@ ggplot(dfroll, aes(delta, DGN_R2_mu)) +  geom_point() + theme_bw(19) + theme(asp
 
 
 
-
+# Analysis of NPC
 ```{r compare.npc}
 t1 = topTable(fit2, coef="SZNPC", number=Inf, sort.by="none")$P.Value
 t2 = topTable(fitDream_npc_eb, number=Inf, sort.by="none")$P.Value
