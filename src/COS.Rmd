@@ -244,6 +244,11 @@ dfroll$i = 1:nrow(dfroll)
 resCor_CMC = with(dfroll, cor.test(delta, CMC_R2_mu, method="spearman") )
 resCor_DGN = with(dfroll, cor.test(delta, DGN_R2_mu, method="spearman") )
 
+df_cor = with(resCor_CMC, c(dataset='COS', type='neuron', eQTL = 'CMC', estimate, p=p.value))
+df_cor = rbind(df_cor, 
+  with(resCor_DGN, c(dataset='COS', type='neuron', eQTL = 'DGN', estimate, p=p.value)))
+write.table(df_cor, file="df_cor.tsv", sep="\t", quote=FALSE, row.names=FALSE, append=TRUE)
+
 xlim = c(-max(abs(dfroll$delta)), max(abs(dfroll$delta)))
 # ylim = c(0, max(dfroll$r2mu))
 ylim = c(0, 0.125) 
@@ -297,6 +302,11 @@ dfroll$i = 1:nrow(dfroll)
 
 resCor_CMC = with(dfroll, cor.test(delta, CMC_R2_mu, method="spearman") )
 resCor_DGN = with(dfroll, cor.test(delta, DGN_R2_mu, method="spearman") )
+
+df_cor = with(resCor_CMC, c(dataset='COS', type='NPC', eQTL = 'CMC', estimate, p=p.value))
+df_cor = rbind(df_cor, 
+  with(resCor_DGN, c(dataset='COS', type='NPC', eQTL = 'DGN', estimate, p=p.value)))
+write.table(df_cor, file="df_cor.tsv", sep="\t", quote=FALSE, row.names=FALSE, append=TRUE)
 
 xlim = c(-max(abs(dfroll$delta)), max(abs(dfroll$delta)))
 # ylim = c(0, max(dfroll$r2mu))
