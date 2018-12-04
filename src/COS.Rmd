@@ -221,9 +221,11 @@ df_vp$p_dream = t2
 
 library(RcppRoll)
 
-dfr2 = fread(getFileLocation(synGet('syn17077709')))
-dfeqtl = data.table(merge(df_vp,dfr2, by="gene", all.x=TRUE))
-dfeqtl$r2[is.na(dfeqtl$r2)] = 0
+dfr2 = fread(getFileLocation(synGet('syn17083748')))
+dfeqtl = data.table(merge(df_vp,dfr2, by.x="gene", by.y="ensembl_gene_id", all.x=TRUE))
+dfeqtl$DGN_R2[is.na(dfeqtl$DGN_R2)] = 0
+dfeqtl$CMC_R2[is.na(dfeqtl$CMC_R2)] = 0
+dfeqtl = dfeqtl[!duplicated(gene),]
 
 dfeqtl$delta = with(dfeqtl, -log10(p_dupCor) - - log10(p_dream) )
 
@@ -232,11 +234,14 @@ df_sum = dfeqtl[, .SD[order(delta),]]
 window = 100
 by = 20
 dfroll = data.frame(delta = roll_mean(df_sum$delta, n=window, by=by), 
-        r2mu = roll_mean(df_sum$r2, n=window, by=by),
-        r2sd = roll_sd(df_sum$r2, n=window, by=by))
+        CMC_R2_mu = roll_mean(df_sum$CMC_R2, n=window, by=by),
+        CMC_R2_sd = roll_sd(df_sum$CMC_R2, n=window, by=by), 
+        DGN_R2_mu = roll_mean(df_sum$DGN_R2, n=window, by=by),
+        DGN_R2_sd = roll_sd(df_sum$DGN_R2, n=window, by=by))
 dfroll$i = 1:nrow(dfroll)
 
-resCor = with(dfroll, cor.test(delta, r2mu, method="spearman") )
+resCor_CMC = with(dfroll, cor.test(delta, CMC_R2_mu, method="spearman") )
+resCor_DGN = with(dfroll, cor.test(delta, DGN_R2_mu, method="spearman") )
 
 xlim = c(-max(abs(dfroll$delta)), max(abs(dfroll$delta)))
 # ylim = c(0, max(dfroll$r2mu))
@@ -244,8 +249,11 @@ ylim = c(0, 0.125)
 xlab = expression('['-log[10]~p[dupCor]~']'-'['-log[10]~p[dream]~']')
 ylab = expression('mean eQTL'~R^2)
 
-ggplot(dfroll, aes(delta, r2mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.9, y = ylim[2]*.9, label = paste0('rho = ', format(resCor$estimate, digits=3), "\np < ",format(resCor$p.value, digits=3)))
-#geom_errorbar(aes(ymin=r2mu-r2sd, ymax=r2mu+r2sd), color="grey80") +
+
+ggplot(dfroll, aes(delta, CMC_R2_mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.9, y = ylim[2]*.9, label = paste0('rho = ', format(resCor_CMC$estimate, digits=3), "\np < ",resCor_CMC$p.value)) + ggtitle("CMC")
+
+ylim = c(0, max(dfroll$DGN_R2_mu))
+ggplot(dfroll, aes(delta, DGN_R2_mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.9, y = ylim[2]*.9, label = paste0('rho = ', format(resCor_DGN$estimate, digits=3), "\np < ",resCor_DGN$p.value)) + ggtitle("DGN")
 ```
 
 
@@ -267,9 +275,11 @@ df_vp$gene = rownames(vp)
 df_vp$p_dupCor = t1
 df_vp$p_dream = t2
 
-dfr2 = fread(getFileLocation(synGet('syn17077709')))
-dfeqtl = data.table(merge(df_vp,dfr2, by="gene", all.x=TRUE))
-dfeqtl$r2[is.na(dfeqtl$r2)] = 0
+dfr2 = fread(getFileLocation(synGet('syn17083748')))
+dfeqtl = data.table(merge(df_vp,dfr2, by.x="gene", by.y="ensembl_gene_id", all.x=TRUE))
+dfeqtl$DGN_R2[is.na(dfeqtl$DGN_R2)] = 0
+dfeqtl$CMC_R2[is.na(dfeqtl$CMC_R2)] = 0
+dfeqtl = dfeqtl[!duplicated(gene),]
 
 dfeqtl$delta = with(dfeqtl, -log10(p_dupCor) - - log10(p_dream) )
 
@@ -278,20 +288,26 @@ df_sum = dfeqtl[, .SD[order(delta),]]
 window = 100
 by = 20
 dfroll = data.frame(delta = roll_mean(df_sum$delta, n=window, by=by), 
-        r2mu = roll_mean(df_sum$r2, n=window, by=by),
-        r2sd = roll_sd(df_sum$r2, n=window, by=by))
+        CMC_R2_mu = roll_mean(df_sum$CMC_R2, n=window, by=by),
+        CMC_R2_sd = roll_sd(df_sum$CMC_R2, n=window, by=by), 
+        DGN_R2_mu = roll_mean(df_sum$DGN_R2, n=window, by=by),
+        DGN_R2_sd = roll_sd(df_sum$DGN_R2, n=window, by=by))
 dfroll$i = 1:nrow(dfroll)
 
-resCor = with(dfroll, cor.test(delta, r2mu, method="spearman") )
- 
+resCor_CMC = with(dfroll, cor.test(delta, CMC_R2_mu, method="spearman") )
+resCor_DGN = with(dfroll, cor.test(delta, DGN_R2_mu, method="spearman") )
+
 xlim = c(-max(abs(dfroll$delta)), max(abs(dfroll$delta)))
 # ylim = c(0, max(dfroll$r2mu))
-ylim = c(0, 0.125)
+ylim = c(0, 0.125) 
 xlab = expression('['-log[10]~p[dupCor]~']'-'['-log[10]~p[dream]~']')
 ylab = expression('mean eQTL'~R^2)
 
-ggplot(dfroll, aes(delta, r2mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.9, y = ylim[2]*.9, label = paste0('rho = ', format(resCor$estimate, digits=3), "\np < ",resCor$p.value))
-#geom_errorbar(aes(ymin=r2mu-r2sd, ymax=r2mu+r2sd), color="grey80") +
+
+ggplot(dfroll, aes(delta, CMC_R2_mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.9, y = ylim[2]*.9, label = paste0('rho = ', format(resCor_CMC$estimate, digits=3), "\np < ",resCor_CMC$p.value)) + ggtitle("CMC")
+
+ylim = c(0, max(dfroll$DGN_R2_mu))
+ggplot(dfroll, aes(delta, DGN_R2_mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.9, y = ylim[2]*.9, label = paste0('rho = ', format(resCor_DGN$estimate, digits=3), "\np < ",resCor_DGN$p.value)) + ggtitle("DGN")
 ```
 
 # Enrichments

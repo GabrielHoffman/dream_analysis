@@ -314,7 +314,6 @@ dfroll = data.frame(delta = roll_mean(df_sum$delta, n=window, by=by),
         CMC_R2_sd = roll_sd(df_sum$CMC_R2, n=window, by=by), 
         DGN_R2_mu = roll_mean(df_sum$DGN_R2, n=window, by=by),
         DGN_R2_sd = roll_sd(df_sum$DGN_R2, n=window, by=by))
-
 dfroll$i = 1:nrow(dfroll)
 
 resCor_CMC = with(dfroll, cor.test(delta, CMC_R2_mu, method="spearman") )
