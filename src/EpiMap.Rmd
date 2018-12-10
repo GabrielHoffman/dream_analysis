@@ -35,6 +35,8 @@ suppressPackageStartupMessages(library(foreach))
 suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(variancePartition)) 
 suppressPackageStartupMessages(library(GenomicRanges)) 
+suppressPackageStartupMessages(library(gridExtra)) 
+suppressPackageStartupMessages(library(ggplot2)) 
 
 options(xtable.type="html")
 
@@ -169,19 +171,23 @@ fitDupCor <- eBayes( fitDupCor )
 
 # Compare -log10 p from dream and duplicateCorrelation
 ```{r compare}
-p1 = topTable(fitDupCor, number=Inf, sort.by="none")$P.Value
-p2 = topTable(fit, number=Inf, sort.by="none")$P.Value
-       
-plotCompareP( p1, p2, vp$Individual_ID, dupcor$consensus)
+figList = foreach( i = 1:4) %do% {
+  id = colnames(coef(fit))[i]
+  p1 = topTable(fitDupCor, coef=id,number=Inf, sort.by="none")$P.Value
+  p2 = topTable(fit, coef=id, number=Inf, sort.by="none")$P.Value
+         
+  plotCompareP( p1, p2, vp$Individual_ID, dupcor$consensus)
+}
+do.call("grid.arrange", c(figList, ncol=2))
 ```
 
 
 # show DE results
 ```{r de}
-df = topTable(fit, number=Inf)
+# df = topTable(fit, number=Inf)
  
-hist( df$t ) 
-hist( df$logFC )
+# hist( df$t ) 
+# hist( df$logFC )
  
-ggplot(df, aes(logFC, -log10(P.Value)) ) + geom_point() + theme_bw(12)
+# ggplot(df, aes(logFC, -log10(P.Value)) ) + geom_point() + theme_bw(12)
 ```
