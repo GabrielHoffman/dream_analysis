@@ -126,10 +126,12 @@ plotVarPart( sortCols( vp ) )
 form = ~ 0 + CellType:BrainRegion + (1|Individual_ID)
 
 # Compare NeuN in DLPFC
-L = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionDLPFC'))
+# L = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionDLPFC'))
+L = getContrast( vobj, form, metadata, c('CellTypeNeuN+:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionACC'))
+
 ```
 ```{r dream2}
-fit = dream( vobj[1:1000,], form, metadata, L)
+fit = dream( vobj[1:10000,], form, metadata, L)
 fit = eBayes(fit)   
 ```
 
@@ -142,7 +144,7 @@ design = model.matrix( ~ 0 + CellType:BrainRegion, metadata)
 dupcor <- duplicateCorrelation(vobj[1:1000,],design,block=metadata$Individual_ID)
 
 # But this step uses only the genome-wide average for the random effect
-fitDupCor <- lmFit(vobj[1:1000,], design, block=metadata$Individual_ID, correlation=dupcor$consensus)
+fitDupCor <- lmFit(vobj[1:10000,], design, block=metadata$Individual_ID, correlation=dupcor$consensus)
 
 fitDupCor = contrasts.fit( fitDupCor, L)
  
@@ -155,7 +157,7 @@ fitDupCor <- eBayes( fitDupCor )
 ```{r compare}
 p1 = topTable(fitDupCor, number=Inf, sort.by="none")$P.Value
 p2 = topTable(fit, number=Inf, sort.by="none")$P.Value
-      
+       
 plotCompareP( p1, p2, vp$Individual_ID, dupcor$consensus)
 ```
 
@@ -163,9 +165,9 @@ plotCompareP( p1, p2, vp$Individual_ID, dupcor$consensus)
 # show DE results
 ```{r de}
 df = topTable(fit, number=Inf)
-
+ 
 hist( df$t ) 
 hist( df$logFC )
-
+ 
 ggplot(df, aes(logFC, -log10(P.Value)) ) + geom_point() + theme_bw(12)
 ```
