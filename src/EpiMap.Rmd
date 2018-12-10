@@ -80,7 +80,7 @@ rownames(metadata) = metadata$name
 metadata_clinical = fread( synGet('syn5691350')$path )
 
 metadata = merge(metadata, metadata_clinical, by="Individual_ID")
-rownames(metadata) = metadata$Sample_ID
+rownames(metadata) = gsub("HBCC_", "", metadata$Sample_ID)
 
 # chip-Seq counts
 chipCounts = read.table( synGet('syn8078978')$path, header=TRUE, stringsAsFactors=FALSE, sep=',', row.names=1)
@@ -159,7 +159,7 @@ plotVarPart( sortCols( vp2 ) )
 
 ```
 ```{r dream2}
-form = ~ 0 + BrainRegion + (1|Individual_ID)
+form = ~ 0 + BrainRegion + (1|Individual_ID) + (1|Sex)
 L = getContrast( vobj, form, metadata, c('BrainRegionDLPFC', 'BrainRegionACC'))
 idx = which(metadata$CellType == 'NeuN+')
 fit = dream( vobj[,idx], form, metadata[idx,], L)
@@ -168,7 +168,7 @@ fit = eBayes(fit)
 
 
 ```{r dupCor, echo=FALSE, message=FALSE}
-design = model.matrix( ~ 0 + BrainRegion, metadata[idx,])
+design = model.matrix( ~ 0 + BrainRegion + Sex, metadata[idx,])
  
 # Estimate linear mixed model with a single variance component
 # Fit the model for each gene, 
