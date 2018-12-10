@@ -103,7 +103,7 @@ identical(colnames(chipCounts), metadata$name)
 ```
 
 ```{r process.counts}
-isexpr = rowSums(cpm(chipCounts)>1) >= 0.2*ncol(chipCounts)
+isexpr = rowSums(cpm(chipCounts)>1) >= 0.1*ncol(chipCounts)
 peakLocs2 = peakLocs[which(isexpr)]
 
 # Standard usage of limma/voom
@@ -118,7 +118,7 @@ identical(peakLocs2$names, rownames(vobj))
 
 ```{r vp}
 form = ~ (1|CellType) + (1|BrainRegion) + (1|Sex) + (1|Individual_ID)
-vp = fitExtractVarPartModel( vobj[1:10000,], form, metadata)
+vp = fitExtractVarPartModel( vobj, form, metadata)
 ```
 
 ```{r vp.plot}
@@ -135,7 +135,7 @@ L = getContrast( vobj, form, metadata, c('CellTypeNeuN+:BrainRegionDLPFC', 'Cell
 
 ```
 ```{r dream2}
-fit = dream( vobj[1:10000,], form, metadata, L)
+fit = dream( vobj, form, metadata, L)
 fit = eBayes(fit)   
 ```
 
@@ -145,10 +145,10 @@ design = model.matrix( ~ 0 + CellType:BrainRegion, metadata)
  
 # Estimate linear mixed model with a single variance component
 # Fit the model for each gene, 
-dupcor <- duplicateCorrelation(vobj[1:1000,],design,block=metadata$Individual_ID)
+dupcor <- duplicateCorrelation(vobj,design,block=metadata$Individual_ID)
 
 # But this step uses only the genome-wide average for the random effect
-fitDupCor <- lmFit(vobj[1:10000,], design, block=metadata$Individual_ID, correlation=dupcor$consensus)
+fitDupCor <- lmFit(vobj, design, block=metadata$Individual_ID, correlation=dupcor$consensus)
 
 fitDupCor = contrasts.fit( fitDupCor, L)
  
