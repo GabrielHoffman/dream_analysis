@@ -159,10 +159,10 @@ plotVarPart( sortCols( vp2 ) )
 
 ```
 ```{r dream2}
-form = ~ 0 + BrainRegion + (1|Individual_ID) + (1|Sex)
+form = ~ 0 + BrainRegion + Sex + (1|Individual_ID)
 L = getContrast( vobj, form, metadata, c('BrainRegionDLPFC', 'BrainRegionACC'))
 idx = which(metadata$CellType == 'NeuN+')
-fit = dream( vobj[,idx], form, metadata[idx,], L)
+fit = dream( vobj[,idx], form, metadata[idx,], L)  
 fit = eBayes(fit)   
 ```
 
@@ -173,11 +173,11 @@ design = model.matrix( ~ 0 + BrainRegion + Sex, metadata[idx,])
 # Estimate linear mixed model with a single variance component
 # Fit the model for each gene, 
 dupcor <- duplicateCorrelation(vobj[,idx],design,block=metadata$Individual_ID[idx])
-
+  
 # But this step uses only the genome-wide average for the random effect
 fitDupCor <- lmFit(vobj[,idx], design, block=metadata$Individual_ID[idx], correlation=dupcor$consensus)
 
-fitDupCor = contrasts.fit( fitDupCor, L)
+fitDupCor = contrasts.fit( fitDupCor, t(L))
  
 # Fit Empirical Bayes for moderated t-statistics
 fitDupCor <- eBayes( fitDupCor )
@@ -188,7 +188,7 @@ fitDupCor <- eBayes( fitDupCor )
 ```{r compare}
 p1 = topTable(fitDupCor,number=Inf, sort.by="none")$P.Value
 p2 = topTable(fit, number=Inf, sort.by="none")$P.Value
-       
+          
 plotCompareP( p1, p2, with(vp2, Individual_ID+Sex), dupcor$consensus)
 ```
 
