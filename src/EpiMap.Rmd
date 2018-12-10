@@ -130,7 +130,7 @@ vpList = foreach( ct = ctArray ) %do% {
 names(vpList) = ctArray
 ```
 
-```{r vp2.plot}
+```{r vp2.plot, fig.width=15}
 figList = foreach( ct = ctArray ) %do% {
   plotVarPart( sortCols( vpList[[ct]] ), main=ct ) 
 }
@@ -142,8 +142,9 @@ fitDream = foreach( ct = ctArray ) %do% {
   form = ~ 0 + BrainRegion + Sex + (1|Individual_ID)
   L = getContrast( vobj[,idx], form, metadata[idx,], c('BrainRegionDLPFC', 'BrainRegionACC'))
   idx = which(metadata$CellType == ct)
-  fit = dream( vobj[,idx], form, metadata[idx,], L)  
-  eBayes(fit)   
+  fit = dream( vobj[1:100,idx], form, metadata[idx,], L)  
+  fit = eBayes(fit)   
+  fit
 }
 ```
 
@@ -158,20 +159,21 @@ fitDupCorList = foreach( ct = ctArray ) %do% {
    
   # Estimate linear mixed model with a single variance component
   # Fit the model for each gene, 
-  dupcor <- duplicateCorrelation(vobj[,idx],design,block=metadata$Individual_ID[idx])
+  dupcor <- duplicateCorrelation(vobj[1:100,idx],design,block=metadata$Individual_ID[idx])
     
   # But this step uses only the genome-wide average for the random effect
-  fitDupCor <- lmFit(vobj[,idx], design, block=metadata$Individual_ID[idx], correlation=dupcor$consensus)
+  fitDupCor <- lmFit(vobj[1:100,idx], design, block=metadata$Individual_ID[idx], correlation=dupcor$consensus)
 
   fitDupCor = contrasts.fit( fitDupCor, L)
    
   # Fit Empirical Bayes for moderated t-statistics
-  eBayes( fitDupCor )
+  fitDupCor = eBayes( fitDupCor )
+  fitDupCor
 }
 ```
 
 # Compare -log10 p from dream and duplicateCorrelation
-```{r compare}
+```{r compare, fig.width=15}
 figCompare = foreach( ct = ctArray ) %do% {
 
   p1 = topTable(fitDupCorList[[ct]],number=Inf, sort.by="none")$P.Value
@@ -181,6 +183,12 @@ figCompare = foreach( ct = ctArray ) %do% {
 }
 do.call("grid.arrange", c(figList, ncol=2))     
 ```
+
+
+
+
+486339
+
 
 
 
