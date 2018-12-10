@@ -24,12 +24,7 @@ rmarkdown::render("src/EpiMap.Rmd", output_dir='./', intermediates_dir='./')
 
 
 ```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
-
-if( system("echo $HOSTNAME", intern=TRUE) == "typhon.home" ){
-  nthreads = 3
-}else{
-  nthreads = 12
-}
+nthreads = 12
 ```
 
 
@@ -139,10 +134,7 @@ fit = eBayes(fit)
 ```
 
 
-
-
-# Compare expression with Braak stage
-```{r limma_braak, echo=FALSE, message=FALSE}
+```{r dupCor, echo=FALSE, message=FALSE}
 design = model.matrix( ~ 0 + CellType:BrainRegion, metadata)
  
 # Estimate linear mixed model with a single variance component
@@ -160,7 +152,7 @@ fitDupCor <- eBayes( fitDupCor )
 
 
 # Compare -log10 p from dream and duplicateCorrelation
-```{r compare_braak}
+```{r compare}
 p1 = topTable(fitDupCor, number=Inf, sort.by="none")$P.Value
 p2 = topTable(fit, number=Inf, sort.by="none")$P.Value
       
@@ -170,7 +162,7 @@ plotCompareP( p1, p2, vp$Individual_ID, dupcor$consensus)
 
 # show DE results
 ```{r de}
-df = topTable(fit, coef='L1', number=Inf)
+df = topTable(fit, number=Inf)
 
 hist( df$t ) 
 hist( df$logFC )
