@@ -24,7 +24,7 @@ rmarkdown::render("src/EpiMap.Rmd", output_dir='./', intermediates_dir='./')
 
 
 ```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
-nthreads = 12
+nthreads = 40
 ```
 
 
@@ -122,7 +122,7 @@ vp = fitExtractVarPartModel( vobj[1:10000,], form, metadata)
 ```
 
 ```{r vp.plot}
-plotVarPart( sortCols( vp ) )      
+plotVarPart( sortCols( vp ) )        
 ```
 
 
