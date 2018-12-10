@@ -120,96 +120,70 @@ identical(peakLocs2$names, rownames(vobj))
 ```
 
 
-```{r vp}
-form = ~ (1|CellType) + (1|BrainRegion) + (1|Sex) + (1|Individual_ID)
-vp = fitExtractVarPartModel( vobj, form, metadata)
-```
-
-```{r vp.plot}
-plotVarPart( sortCols( vp ) )           
-```
-
-
 ```{r vp2}
-idx = which(metadata$CellType == 'NeuN+')
-form = ~ (1|BrainRegion) + (1|Sex) + (1|Individual_ID)
-vp2 = fitExtractVarPartModel( vobj[,idx], form, metadata[idx,])
+ctArray = c('NeuN-', 'NeuN+')
+vpList = foreach( ct = ctArray ) %do% {
+  idx = which(metadata$CellType == ct)
+  form = ~ (1|BrainRegion) + (1|Sex) + (1|Individual_ID)
+  fitExtractVarPartModel( vobj[,idx], form, metadata[idx,])
+}
+names(vpList) = ctArray
 ```
 
 ```{r vp2.plot}
-plotVarPart( sortCols( vp2 ) )           
+figList = foreach( ct = ctArray ) %do% {
+  plotVarPart( sortCols( vpList[[ct]] ), main=ct ) 
+}
+do.call("grid.arrange", c(figList, 2))           
 ```
 
-```{r dream}
-# form = ~ 0 + CellType:BrainRegion + (1|Individual_ID)
-
-# # Compare NeuN in DLPFC
-# L1 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionDLPFC'))
-
-# # Compare NeuN in DLPFC
-# L2 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionACC', 'CellTypeNeuN+:BrainRegionACC'))
-
-# # Compare brain region in NeuN+
-# L3 = getContrast( vobj, form, metadata, c('CellTypeNeuN+:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionACC'))
-
-# # Compare brain region in NeuN-
-# L4 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN-:BrainRegionACC'))
-  
-# L = cbind(L1, L2, L3, L4)
-
-```
 ```{r dream2}
-form = ~ 0 + BrainRegion + Sex + (1|Individual_ID)
-L = getContrast( vobj, form, metadata, c('BrainRegionDLPFC', 'BrainRegionACC'))
-idx = which(metadata$CellType == 'NeuN+')
-fit = dream( vobj[,idx], form, metadata[idx,], L)  
-fit = eBayes(fit)   
+fitDream = foreach( ct = ctArray ) %do% {
+  form = ~ 0 + BrainRegion + Sex + (1|Individual_ID)
+  L = getContrast( vobj, form, metadata, c('BrainRegionDLPFC', 'BrainRegionACC'))
+  idx = which(metadata$CellType == ct)
+  fit = dream( vobj[,idx], form, metadata[idx,], L)  
+  eBayes(fit)   
+}
 ```
 
 
 ```{r dupCor, echo=FALSE, message=FALSE}
-design = model.matrix( ~ 0 + BrainRegion + Sex, metadata[idx,])
- 
-# Estimate linear mixed model with a single variance component
-# Fit the model for each gene, 
-dupcor <- duplicateCorrelation(vobj[,idx],design,block=metadata$Individual_ID[idx])
-  
-# But this step uses only the genome-wide average for the random effect
-fitDupCor <- lmFit(vobj[,idx], design, block=metadata$Individual_ID[idx], correlation=dupcor$consensus)
+fitDupCorList = foreach( ct = ctArray ) %do% {
 
-fitDupCor = contrasts.fit( fitDupCor, L)
- 
-# Fit Empirical Bayes for moderated t-statistics
-fitDupCor <- eBayes( fitDupCor )
+  L = getContrast( vobj, form, metadata, c('BrainRegionDLPFC', 'BrainRegionACC'))
+  idx = which(metadata$CellType == ct)
+
+  design = model.matrix( ~ 0 + BrainRegion + Sex, metadata[idx,])
+   
+  # Estimate linear mixed model with a single variance component
+  # Fit the model for each gene, 
+  dupcor <- duplicateCorrelation(vobj[,idx],design,block=metadata$Individual_ID[idx])
+    
+  # But this step uses only the genome-wide average for the random effect
+  fitDupCor <- lmFit(vobj[,idx], design, block=metadata$Individual_ID[idx], correlation=dupcor$consensus)
+
+  fitDupCor = contrasts.fit( fitDupCor, L)
+   
+  # Fit Empirical Bayes for moderated t-statistics
+  eBayes( fitDupCor )
+}
 ```
-
 
 # Compare -log10 p from dream and duplicateCorrelation
 ```{r compare}
-p1 = topTable(fitDupCor,number=Inf, sort.by="none")$P.Value
-p2 = topTable(fit, number=Inf, sort.by="none")$P.Value
-          
-plotCompareP( p1, p2, with(vp2, Individual_ID+Sex), dupcor$consensus)
+figCompare = foreach( ct = ctArray ) %do% {
+
+  p1 = topTable(fitDupCorList[[ct]],number=Inf, sort.by="none")$P.Value
+  p2 = topTable(fitDream[[ct]], number=Inf, sort.by="none")$P.Value
+            
+  plotCompareP( p1, p2, with(vpList[[ct]] , Individual_ID+Sex), dupcor$consensus) + ggtitle(ct)
+}
+do.call("grid.arrange", c(figList, 2))     
 ```
 
-# ```{r compare}
-# figList = foreach( i = 1:4) %do% {
-#   id = colnames(coef(fit))[i] 
-#   p1 = topTable(fitDupCor, coef=id,number=Inf, sort.by="none")$P.Value
-#   p2 = topTable(fit, coef=id, number=Inf, sort.by="none")$P.Value
-         
-#   plotCompareP( p1, p2, with(vp2, Individual_ID+Sex), dupcor$consensus)
-# }
-# do.call("grid.arrange", c(figList, ncol=2))
-# ```
 
 
-# show DE results
-```{r de}
-# df = topTable(fit, number=Inf)
- 
-# hist( df$t ) 
-# hist( df$logFC )
- 
-# ggplot(df, aes(logFC, -log10(P.Value)) ) + geom_point() + theme_bw(12)
-```
+
+
+
