@@ -1,0 +1,141 @@
+
+---
+title: "Analysis of EpiMap"
+subtitle: 'Data from Kirdhar, Hoffman, et al. Nature Neuroscience, 2018'
+author: "Developed by [Gabriel Hoffman](http://gabrielhoffman.github.io/)"
+date: "Run on `r Sys.Date()`"
+documentclass: article
+output: 
+  html_document:
+  toc: true
+  smart: false
+vignette: >
+  %\VignetteIndexEntry{Apply dream to ChIP-seq}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\usepackage[utf8]{inputenc}
+---
+
+<!--- 
+# run analysis
+# cd /hpc/users/hoffmg01/work/dev_dream/dream_analysis
+rmarkdown::render("prism.Rmd", output_dir='./', intermediates_dir='./')
+--->
+
+
+```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
+
+if( system("echo $HOSTNAME", intern=TRUE) == "typhon.home" ){
+  nthreads = 3
+}else{
+  nthreads = 12
+}
+```
+
+
+```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
+suppressPackageStartupMessages(library(prism))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(edgeR))
+suppressPackageStartupMessages(library(foreach))
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(variancePartition)) 
+suppressPackageStartupMessages(library(genomation)) 
+suppressPackageStartupMessages(library(GenomicRanges)) 
+suppressPackageStartupMessages(library(Matrix)) 
+
+options(xtable.type="html")
+
+knitr::opts_chunk$set(
+  echo=FALSE,
+  warning=FALSE,
+  message=TRUE,
+  error = FALSE,
+  tidy = FALSE,
+  cache = TRUE,
+  cache.lazy = FALSE,
+  dev = c("png", "pdf"), 
+  fig.width=7, fig.height=7)
+
+options(markdown.HTML.stylesheet = 'css/custom.css')
+```
+
+```{r load.always, cache=FALSE, echo=FALSE, message=FALSE}
+suppressPackageStartupMessages(library(doParallel))
+if( ! exists("cl") ){
+  cl <- makeCluster(nthreads)
+  registerDoParallel(cl)
+}
+suppressPackageStartupMessages(library(synapser))
+# login once and then save info
+# synLogin("user.name", "password", rememberMe=TRUE)
+synLogin() 
+```
+
+```{r download}
+# metadata
+metadata = fread( synGet('syn5691351')$path )
+
+metadata$CellType = factor( metadata$CellType, c('NeuN-', 'NeuN+'))
+metadata = metadata[HistoneMark=='H3K27ac',]
+metadata$name = gsub("^HBCC_", '', metadata$Sample_ID)
+metadata = data.frame(metadata)
+rownames(metadata) = metadata$name 
+
+# chip-Seq counts
+chipCounts = read.table( synGet('syn8078978')$path, header=TRUE, stringsAsFactors=FALSE, sep=',', row.names=1)
+
+# peak locations
+peakLocs = readBed( synGet('syn8080422')$path )
+peakLocs$names = paste0("peak_", 1:length(peakLocs))
+
+# get overlapping peaks
+isect = intersect( rownames(chipCounts), peakLocs$names)
+chipCounts = chipCounts[rownames(chipCounts) %in% isect,]
+peakLocs = peakLocs[peakLocs$names %in% isect ]
+identical(rownames(chipCounts), peakLocs$names)
+
+# get overlapping samples
+isect = intersect(colnames(chipCounts), metadata$name)
+chipCounts = chipCounts[,colnames(chipCounts) %in% isect]
+metadata = metadata[metadata$name %in% isect,]
+
+# match order
+idx = match(colnames(chipCounts), metadata$name)
+metadata = metadata[idx,]
+identical(colnames(chipCounts), metadata$name)
+```
+
+```{r process.counts}
+isexpr = rowSums(cpm(chipCounts)>1) >= 0.2*ncol(chipCounts)
+peakLocs2 = peakLocs[which(isexpr)]
+
+# Standard usage of limma/voom
+countObj = DGEList( chipCounts[isexpr,] )
+countObj = calcNormFactors( countObj )
+design = model.matrix( ~ CellType + BrainRegion, metadata)
+vobj = voom( countObj, design, plot=TRUE)
+
+identical(peakLocs2$names, rownames(vobj))
+```
+
+```{r dream}
+form = ~ 0 + CellType:BrainRegion + (1|Individual_ID)
+
+# Compare NeuN in DLPFC
+L = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionDLPFC'))
+```
+```{r dream2}
+fit = dream( vobj, form, metadata, L)
+fit = eBayes(fit)   
+```
+
+# show DE results
+```{r de}
+df = topTable(fit, coef='L1', number=Inf)
+
+hist( df$t ) 
+hist( df$logFC )
+
+ggplot(df, aes(logFC, -log10(P.Value)) ) + geom_point() + theme_bw(12)
+```
