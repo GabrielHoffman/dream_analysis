@@ -125,9 +125,19 @@ vp = fitExtractVarPartModel( vobj, form, metadata)
 ```
 
 ```{r vp.plot}
-plotVarPart( sortCols( vp ) )        
+plotVarPart( sortCols( vp ) )           
 ```
 
+
+```{r vp2}
+idx = which(metadata$CellType == 'NeuN+')
+form = ~ (1|CellType) + (1|BrainRegion) + (1|Sex) + (1|Individual_ID)
+vp2 = fitExtractVarPartModel( vobj[,idx], form, metadata[idx,])
+```
+
+```{r vp2.plot}
+plotVarPart( sortCols( vp2 ) )           
+```
 
 ```{r dream}
 form = ~ 0 + CellType:BrainRegion + (1|Individual_ID)
@@ -177,7 +187,7 @@ figList = foreach( i = 1:4) %do% {
   p1 = topTable(fitDupCor, coef=id,number=Inf, sort.by="none")$P.Value
   p2 = topTable(fit, coef=id, number=Inf, sort.by="none")$P.Value
          
-  plotCompareP( p1, p2, vp$Individual_ID, dupcor$consensus)
+  plotCompareP( p1, p2, vp2$Individual_ID, dupcor$consensus)
 }
 do.call("grid.arrange", c(figList, ncol=2))
 ```
