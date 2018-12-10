@@ -19,7 +19,7 @@ vignette: >
 <!--- 
 # run analysis
 # cd /hpc/users/hoffmg01/work/dev_dream/dream_analysis
-rmarkdown::render("prism.Rmd", output_dir='./', intermediates_dir='./')
+rmarkdown::render("src/EpiMap.Rmd", output_dir='./', intermediates_dir='./')
 --->
 
 
@@ -119,6 +119,17 @@ vobj = voom( countObj, design, plot=TRUE)
 identical(peakLocs2$names, rownames(vobj))
 ```
 
+
+```{r vp}
+form = ~ 0 + (1|CellType) + (1|BrainRegion) + (1|Individual_ID)
+vp = fitExtractVarPartModel( vobj[1:1000,], form, metadata)
+```
+
+```{r vp.plot}
+plotVarPart( sortCols( vp ) )      
+```
+
+
 ```{r dream}
 form = ~ 0 + CellType:BrainRegion + (1|Individual_ID)
 
@@ -126,9 +137,39 @@ form = ~ 0 + CellType:BrainRegion + (1|Individual_ID)
 L = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionDLPFC'))
 ```
 ```{r dream2}
-fit = dream( vobj, form, metadata, L)
+fit = dream( vobj[1:1000,], form, metadata, L)
 fit = eBayes(fit)   
 ```
+
+
+
+
+# Compare expression with Braak stage
+```{r limma_braak, echo=FALSE, message=FALSE}
+design = model.matrix( ~ 0 + CellType:BrainRegion, metadata)
+ 
+# Estimate linear mixed model with a single variance component
+# Fit the model for each gene, 
+dupcor <- duplicateCorrelation(vobj[1:1000,],design,block=metadata$Individual_ID)
+
+# But this step uses only the genome-wide average for the random effect
+fitDupCor <- lmFit(vobj[1:1000,], design, block=metadata$Individual_ID, correlation=dupcor$consensus)
+
+fitDupCor = contrasts.fit( fitDupCor, L)
+ 
+# Fit Empirical Bayes for moderated t-statistics
+fitDupCor <- eBayes( fitDupCor )
+```
+
+
+# Compare -log10 p from dream and duplicateCorrelation
+```{r compare_braak}
+p1 = topTable(fitDupCor, number=Inf, sort.by="none")$P.Value
+p2 = topTable(fit, number=Inf, sort.by="none")$P.Value
+      
+plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
+```
+
 
 # show DE results
 ```{r de}
