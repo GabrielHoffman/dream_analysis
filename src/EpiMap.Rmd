@@ -164,7 +164,7 @@ fitDupCor <- eBayes( fitDupCor )
 p1 = topTable(fitDupCor, number=Inf, sort.by="none")$P.Value
 p2 = topTable(fit, number=Inf, sort.by="none")$P.Value
       
-plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
+plotCompareP( p1, p2, vp$Individual_ID, dupcor$consensus)
 ```
 
 
