@@ -186,15 +186,22 @@ fitDupCor <- eBayes( fitDupCor )
 
 # Compare -log10 p from dream and duplicateCorrelation
 ```{r compare}
-figList = foreach( i = 1:4) %do% {
-  id = colnames(coef(fit))[i] 
-  p1 = topTable(fitDupCor, coef=id,number=Inf, sort.by="none")$P.Value
-  p2 = topTable(fit, coef=id, number=Inf, sort.by="none")$P.Value
-         
-  plotCompareP( p1, p2, with(vp2, Individual_ID+Sex), dupcor$consensus)
-}
-do.call("grid.arrange", c(figList, ncol=2))
+p1 = topTable(fitDupCor,number=Inf, sort.by="none")$P.Value
+p2 = topTable(fit, number=Inf, sort.by="none")$P.Value
+       
+plotCompareP( p1, p2, with(vp2, Individual_ID+Sex), dupcor$consensus)
 ```
+
+# ```{r compare}
+# figList = foreach( i = 1:4) %do% {
+#   id = colnames(coef(fit))[i] 
+#   p1 = topTable(fitDupCor, coef=id,number=Inf, sort.by="none")$P.Value
+#   p2 = topTable(fit, coef=id, number=Inf, sort.by="none")$P.Value
+         
+#   plotCompareP( p1, p2, with(vp2, Individual_ID+Sex), dupcor$consensus)
+# }
+# do.call("grid.arrange", c(figList, ncol=2))
+# ```
 
 
 # show DE results
