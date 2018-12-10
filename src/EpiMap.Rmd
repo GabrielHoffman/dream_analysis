@@ -181,13 +181,9 @@ figCompare = foreach( ct = ctArray ) %do% {
             
   plotCompareP( p1, p2, with(vpList[[ct]] , Individual_ID+Sex), dupcor$consensus) + ggtitle(ct)
 }
-do.call("grid.arrange", c(figList, ncol=2))     
+do.call("grid.arrange", c(figCompare, ncol=2))     
 ```
 
-
-
-
-486339
 
 
 
