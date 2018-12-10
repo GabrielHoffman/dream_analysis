@@ -143,9 +143,9 @@ fitDream = foreach( ct = ctArray ) %do% {
   L = getContrast( vobj[,idx], form, metadata[idx,], c('BrainRegionDLPFC', 'BrainRegionACC'))
   idx = which(metadata$CellType == ct)
   fit = dream( vobj[1:100,idx], form, metadata[idx,], L)  
-  fit = eBayes(fit)   
-  fit
+ eBayes(fit)   
 }
+names(fitDream) = ctArray
 ```
 
 
@@ -167,9 +167,9 @@ fitDupCorList = foreach( ct = ctArray ) %do% {
   fitDupCor = contrasts.fit( fitDupCor, L)
    
   # Fit Empirical Bayes for moderated t-statistics
-  fitDupCor = eBayes( fitDupCor )
-  fitDupCor
+  eBayes( fitDupCor )
 }
+names(fitDupCor) = ctArray
 ```
 
 # Compare -log10 p from dream and duplicateCorrelation
