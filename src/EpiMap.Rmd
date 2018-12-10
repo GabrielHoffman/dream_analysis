@@ -169,7 +169,7 @@ fitDupCorList = foreach( ct = ctArray ) %do% {
   # Fit Empirical Bayes for moderated t-statistics
   eBayes( fitDupCor )
 }
-names(fitDupCor) = ctArray
+names(fitDupCorList) = ctArray
 ```
 
 # Compare -log10 p from dream and duplicateCorrelation
