@@ -58,7 +58,7 @@ options(markdown.HTML.stylesheet = 'css/custom.css')
 ```{r load.always, cache=FALSE, echo=FALSE, message=FALSE}
 suppressPackageStartupMessages(library(doParallel))
 if( ! exists("cl") ){
-  cl <- parallel::makeForkCluster(nthreads)
+  cl <- parallel::makeForkCluster(nthreads, outfile='')
   registerDoParallel(cl)
 }
 suppressPackageStartupMessages(library(synapser))
