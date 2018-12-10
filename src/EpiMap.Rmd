@@ -177,7 +177,7 @@ dupcor <- duplicateCorrelation(vobj[,idx],design,block=metadata$Individual_ID[id
 # But this step uses only the genome-wide average for the random effect
 fitDupCor <- lmFit(vobj[,idx], design, block=metadata$Individual_ID[idx], correlation=dupcor$consensus)
 
-fitDupCor = contrasts.fit( fitDupCor, t(L))
+fitDupCor = contrasts.fit( fitDupCor, L)
  
 # Fit Empirical Bayes for moderated t-statistics
 fitDupCor <- eBayes( fitDupCor )
