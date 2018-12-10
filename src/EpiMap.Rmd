@@ -118,7 +118,7 @@ identical(peakLocs2$names, rownames(vobj))
 
 ```{r vp}
 form = ~ (1|CellType) + (1|BrainRegion) + (1|Sex) + (1|Individual_ID)
-vp = fitExtractVarPartModel( vobj, form, metadata)
+vp = fitExtractVarPartModel( vobj[1:1000,], form, metadata)
 ```
 
 ```{r vp.plot}
@@ -130,12 +130,22 @@ plotVarPart( sortCols( vp ) )
 form = ~ 0 + CellType:BrainRegion + (1|Individual_ID)
 
 # Compare NeuN in DLPFC
-# L = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionDLPFC'))
-L = getContrast( vobj, form, metadata, c('CellTypeNeuN+:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionACC'))
+L1 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionDLPFC'))
+
+# Compare NeuN in DLPFC
+L2 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionACC', 'CellTypeNeuN+:BrainRegionACC'))
+
+# Compare brain region in NeuN+
+L3 = getContrast( vobj, form, metadata, c('CellTypeNeuN+:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionACC'))
+
+# Compare brain region in NeuN-
+L4 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN-:BrainRegionACC'))
+  
+L = cbind(L1, L2, L3, L4)
 
 ```
 ```{r dream2}
-fit = dream( vobj, form, metadata, L)
+fit = dream( vobj[1:1000,], form, metadata, L)
 fit = eBayes(fit)   
 ```
 
@@ -145,10 +155,10 @@ design = model.matrix( ~ 0 + CellType:BrainRegion, metadata)
  
 # Estimate linear mixed model with a single variance component
 # Fit the model for each gene, 
-dupcor <- duplicateCorrelation(vobj,design,block=metadata$Individual_ID)
+dupcor <- duplicateCorrelation(vobj[1:1000,],design,block=metadata$Individual_ID)
 
 # But this step uses only the genome-wide average for the random effect
-fitDupCor <- lmFit(vobj, design, block=metadata$Individual_ID, correlation=dupcor$consensus)
+fitDupCor <- lmFit(vobj[1:1000,], design, block=metadata$Individual_ID, correlation=dupcor$consensus)
 
 fitDupCor = contrasts.fit( fitDupCor, L)
  
