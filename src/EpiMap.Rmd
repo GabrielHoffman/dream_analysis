@@ -80,6 +80,7 @@ rownames(metadata) = metadata$name
 metadata_clinical = fread( synGet('syn5691350')$path )
 
 metadata = merge(metadata, metadata_clinical, by="Individual_ID")
+rownames(Individual_ID) = metadata$Individual_ID
 
 # chip-Seq counts
 chipCounts = read.table( synGet('syn8078978')$path, header=TRUE, stringsAsFactors=FALSE, sep=',', row.names=1)
@@ -140,38 +141,41 @@ plotVarPart( sortCols( vp2 ) )
 ```
 
 ```{r dream}
-form = ~ 0 + CellType:BrainRegion + (1|Individual_ID)
+# form = ~ 0 + CellType:BrainRegion + (1|Individual_ID)
 
-# Compare NeuN in DLPFC
-L1 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionDLPFC'))
+# # Compare NeuN in DLPFC
+# L1 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionDLPFC'))
 
-# Compare NeuN in DLPFC
-L2 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionACC', 'CellTypeNeuN+:BrainRegionACC'))
+# # Compare NeuN in DLPFC
+# L2 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionACC', 'CellTypeNeuN+:BrainRegionACC'))
 
-# Compare brain region in NeuN+
-L3 = getContrast( vobj, form, metadata, c('CellTypeNeuN+:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionACC'))
+# # Compare brain region in NeuN+
+# L3 = getContrast( vobj, form, metadata, c('CellTypeNeuN+:BrainRegionDLPFC', 'CellTypeNeuN+:BrainRegionACC'))
 
-# Compare brain region in NeuN-
-L4 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN-:BrainRegionACC'))
+# # Compare brain region in NeuN-
+# L4 = getContrast( vobj, form, metadata, c('CellTypeNeuN-:BrainRegionDLPFC', 'CellTypeNeuN-:BrainRegionACC'))
   
-L = cbind(L1, L2, L3, L4)
+# L = cbind(L1, L2, L3, L4)
 
 ```
 ```{r dream2}
-fit = dream( vobj, form, metadata, L)
+form = ~ 0 + BrainRegion + (1|Individual_ID)
+L = getContrast( vobj, form, metadata, c('BrainRegionDLPFC', 'BrainRegionACC'))
+idx = which(metadata$CellType == 'NeuN+')
+fit = dream( vobj[,idx], form, metadata[idx,], L)
 fit = eBayes(fit)   
 ```
 
 
 ```{r dupCor, echo=FALSE, message=FALSE}
-design = model.matrix( ~ 0 + CellType:BrainRegion, metadata)
+design = model.matrix( ~ 0 + BrainRegion, metadata[idx,])
  
 # Estimate linear mixed model with a single variance component
 # Fit the model for each gene, 
-dupcor <- duplicateCorrelation(vobj,design,block=metadata$Individual_ID)
+dupcor <- duplicateCorrelation(vobj[,idx],design,block=metadata$Individual_ID[idx])
 
 # But this step uses only the genome-wide average for the random effect
-fitDupCor <- lmFit(vobj, design, block=metadata$Individual_ID, correlation=dupcor$consensus)
+fitDupCor <- lmFit(vobj[,idx], design, block=metadata$Individual_ID[idx], correlation=dupcor$consensus)
 
 fitDupCor = contrasts.fit( fitDupCor, L)
  
