@@ -80,7 +80,7 @@ rownames(metadata) = metadata$name
 metadata_clinical = fread( synGet('syn5691350')$path )
 
 metadata = merge(metadata, metadata_clinical, by="Individual_ID")
-rownames(metadata) = metadata$Individual_ID
+rownames(metadata) = metadata$Sample_ID
 
 # chip-Seq counts
 chipCounts = read.table( synGet('syn8078978')$path, header=TRUE, stringsAsFactors=FALSE, sep=',', row.names=1)
