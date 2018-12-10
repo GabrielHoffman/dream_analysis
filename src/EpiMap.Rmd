@@ -142,7 +142,7 @@ fitDream = foreach( ct = ctArray ) %do% {
   form = ~ 0 + BrainRegion + Sex + (1|Individual_ID)
   L = getContrast( vobj[,idx], form, metadata[idx,], c('BrainRegionDLPFC', 'BrainRegionACC'))
   idx = which(metadata$CellType == ct)
-  fit = dream( vobj[1:100,idx], form, metadata[idx,], L)  
+  fit = dream( vobj[,idx], form, metadata[idx,], L)  
  eBayes(fit)   
 }
 names(fitDream) = ctArray
@@ -159,10 +159,10 @@ fitDupCorList = foreach( ct = ctArray ) %do% {
    
   # Estimate linear mixed model with a single variance component
   # Fit the model for each gene, 
-  dupcor <- duplicateCorrelation(vobj[1:100,idx],design,block=metadata$Individual_ID[idx])
+  dupcor <- duplicateCorrelation(vobj[,idx],design,block=metadata$Individual_ID[idx])
     
   # But this step uses only the genome-wide average for the random effect
-  fitDupCor <- lmFit(vobj[1:100,idx], design, block=metadata$Individual_ID[idx], correlation=dupcor$consensus)
+  fitDupCor <- lmFit(vobj[,idx], design, block=metadata$Individual_ID[idx], correlation=dupcor$consensus)
 
   fitDupCor = contrasts.fit( fitDupCor, L)
    
