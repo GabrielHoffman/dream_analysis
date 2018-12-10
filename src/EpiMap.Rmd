@@ -187,7 +187,7 @@ figList = foreach( i = 1:4) %do% {
   p1 = topTable(fitDupCor, coef=id,number=Inf, sort.by="none")$P.Value
   p2 = topTable(fit, coef=id, number=Inf, sort.by="none")$P.Value
          
-  plotCompareP( p1, p2, vp2$Individual_ID, dupcor$consensus)
+  plotCompareP( p1, p2, with(vp2, Individual_ID+Sex), dupcor$consensus)
 }
 do.call("grid.arrange", c(figList, ncol=2))
 ```
