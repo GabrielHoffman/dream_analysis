@@ -185,7 +185,8 @@ figCompare = foreach( ct = ctArray ) %do% {
 do.call("grid.arrange", c(figCompare, ncol=2))     
 ```
 
-
-
+```{r}
+system("cat EpiMap.html | grep -v 'Found more than one class' | grep -v PythonEmbedInR > EpiMap2.html ")
+```
 
 
