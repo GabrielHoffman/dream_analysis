@@ -30,3 +30,8 @@ Links point to original publication, public data, html files from current analys
 
 `rmarkdown::render("src/COS.Rmd", output_dir='./', intermediates_dir='./')`
 
+
+- ##### Epigenetic map of the human brain | [paper](https://www.nature.com/articles/s41593-018-0187-0), [data](https://www.synapse.org/#!Synapse:syn4566010), [html](https://cdn.rawgit.com/GabrielHoffman/dream_analysis/master/results/EpiMap.html), [results](https://github.com/GabrielHoffman/dream_analysis/tree/master/results/files/EpiMap)
+
+`rmarkdown::render("src/EpiMap.Rmd", output_dir='./', intermediates_dir='./')`
+

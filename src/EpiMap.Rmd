@@ -179,14 +179,14 @@ figCompare = foreach( ct = ctArray ) %do% {
 
   p1 = topTable(fitDupCorList[[ct]],number=Inf, sort.by="none")$P.Value
   p2 = topTable(fitDream[[ct]], number=Inf, sort.by="none")$P.Value
-            
+                    
   plotCompareP( p1, p2, with(vpList[[ct]] , Individual_ID+Sex), dupcor$consensus) + ggtitle(ct) + theme_bw(20)
 }
 do.call("grid.arrange", c(figCompare, ncol=2))     
 ```
 
 ```{r}
-system("cat EpiMap.html | grep -v 'Found more than one class' | grep -v PythonEmbedInR > EpiMap2.html ")
+# system("cat EpiMap.html | grep -v 'Found more than one class' | grep -v PythonEmbedInR > EpiMap2.html ")
 ```
 
 
