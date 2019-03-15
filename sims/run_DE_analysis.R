@@ -117,7 +117,7 @@ design = model.matrix( ~ Disease, info)
 dupcor <- duplicateCorrelation(vobj,design,block=info$Individual)
 fitDupCor <- lmFit(vobj,design,block=info$Individual,correlation=dupcor$consensus)
 fitDupCor <- eBayes(fitDupCor)
-)}
+})
 
 cl = makeCluster(5)
 registerDoParallel( cl )
