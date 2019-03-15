@@ -21,7 +21,10 @@ suppressPackageStartupMessages(library(doParallel))
 suppressPackageStartupMessages(library(PRROC))
 suppressPackageStartupMessages(library(DESeq2))
 suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(lmms))
+suppressPackageStartupMessages(library(MACAU2))
 
+# read data from simulations
 countMatrix = readRDS(paste0(opt$folder, '/data/countMatrix_',opt$prefix,'.RDS'))
 info = readRDS(paste0(opt$folder, '/data/info_',opt$prefix,'.RDS'))
 rownames(info) = info$Experiment
@@ -39,7 +42,7 @@ fit_lmFit = lmFit(vobj, design)
 fit_lmFit = eBayes(fit_lmFit)
 
 
-# DESeq2
+# DESeq2 one sample
 dds_single <- DESeqDataSetFromMatrix(countData = countMatrix[,idx],
                               colData = info[idx,],
                               design= ~ Disease )
@@ -58,7 +61,7 @@ vobj = voom( genes, design, plot=FALSE,block=info$Individual,correlation=dupcor$
 fit_lmFit2 = lmFit(vobj, design)
 fit_lmFit2 = eBayes(fit_lmFit2)
 
-# DESeq2
+# DESeq2 all samples
 dds <- DESeqDataSetFromMatrix(countData = countMatrix,
                               colData = info,
                               design= ~ Disease )
@@ -66,6 +69,32 @@ dds <- DESeq(dds)
 
 # head(results(dds))
 # table(results(dds)$padj < 0.05)
+
+# Sum reads from replicates
+###########################
+
+# DESeq2 
+# Sum reads by sample
+countMatrix_sum = lapply( unique(info$Individual), function(ID){
+	rowSums(countMatrix[,info$Experiment[info$Individual == ID],drop=FALSE])
+	} )
+countMatrix_sum2 = do.call("cbind", countMatrix_sum)
+colnames(countMatrix_sum2) = info$Experiment[idx]
+
+
+dds_sum <- DESeqDataSetFromMatrix(countData = countMatrix_sum2,
+                              colData = info[idx,],
+                              design= ~ Disease )
+dds_sum = DESeq(dds_sum)
+
+# limma
+genes_sum = DGEList( countMatrix_sum2 )
+genes_sum = calcNormFactors( genes_sum )
+design_sum = model.matrix( ~ Disease, info[idx,])
+vobj_tmp_sum = voom( genes_sum, design_sum, plot=FALSE)
+fit_lmFit_sum = lmFit(vobj_tmp_sum, design_sum)
+fit_lmFit_sum = eBayes(fit_lmFit_sum)
+
 
 
 # dupCor
@@ -93,6 +122,34 @@ L = getContrast( vobj, form, info, "Disease1")
 fitSat = dream( vobj, form, info, L, ddf='Satterthwaite')
 fitSatEB = eBayes( fitSat )
 
+# MACAU2
+########
+
+# create block diagonal relatedness matrix
+K = matrix(0, nrow(info), nrow(info))
+diag(K) = 1
+rownames(K) = info$Experiment
+colnames(K) = info$Experiment
+
+for( ID in unique(info$Individual) ){
+	expr = info$Experiment[info$Individual==ID]
+	i = which(rownames(K) %in% expr)
+	K[i,i] = 1
+}
+
+# K[1:5, 1:5]
+
+macau_fit = macau2(countMatrix, info$Disease, RelatednessMatrix=K, fit.model="PMM",numCore=1)#), fit.maxiter=20)
+
+# lmms
+######
+
+# fit_lmmsDE = lmmsDE( data = t(countMatrix[1:10,]),
+# 						time = rep(0, nrow(info)),
+# 						sampleID = info$Individual,
+# 						group = info$Disease, knots=0 )
+
+
 
 
 ###################
@@ -104,8 +161,11 @@ de_res = data.frame( true = rep(0,nrow(countMatrix)))
 de_res$true[1:500] = 1
 de_res$lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
 de_res$DESeq2_single = results(dds_single)$padj
+de_res$lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
+de_res$DESeq2_sum = results(dds_sum)$padj
 de_res$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
 de_res$DESeq2 = results(dds)$padj
+de_res$macau2 = p.adjust(macau_fit$pvalue, 'fdr')
 de_res$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
 de_res$lmm_Sat = p.adjust(fitSat$pValue, "fdr") 
 de_res$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$adj.P.Val
@@ -122,8 +182,11 @@ de_res_p = data.frame( true = rep(0,nrow(countMatrix)))
 de_res_p$true[1:500] = 1
 de_res_p$lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$P.Value
 de_res_p$DESeq2_single = results(dds_single)$pvalue
+de_res_p$lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", number=Inf)$P.Value
+de_res_p$DESeq2_sum = results(dds_sum)$pvalue
 de_res_p$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$P.Value
 de_res_p$DESeq2 = results(dds)$pvalue
+de_res$macau2 = macau_fit$pvalue
 de_res_p$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$P.Value
 de_res_p$lmm_Sat = fitSat$pValue
 de_res_p$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$P.Value
