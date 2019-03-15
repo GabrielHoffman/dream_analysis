@@ -10,7 +10,7 @@ a = matrix(c(
 
 opt = getopt( t(a));
 
-source("helper_functions.R")
+# source("helper_functions.R")
 
 suppressPackageStartupMessages(library(lme4))
 suppressPackageStartupMessages(library(variancePartition))
@@ -29,7 +29,8 @@ countMatrix = readRDS(paste0(opt$folder, '/data/countMatrix_',opt$prefix,'.RDS')
 info = readRDS(paste0(opt$folder, '/data/info_',opt$prefix,'.RDS'))
 rownames(info) = info$Experiment
 
-isexpr = rowSums(cpm(countMatrix)>0.1) >= 300
+# retain all genes for this analysis
+isexpr = rowSums(cpm(countMatrix)>0.1) >= 0
 
 # voom single replicate
 idx = seq(1, nrow(info), by=table(info$Individual)[1])
