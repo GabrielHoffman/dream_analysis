@@ -145,7 +145,7 @@ fitSatEB = eBayes( fitSat )
 # MACAU2
 ########
 
-if( opt$macau ){
+if( ! is.null(opt$macau2) && opt$macau2 ){
 	macau_time = system.time({
 	# create block diagonal relatedness matrix
 	K = matrix(0, nrow(info), nrow(info))
@@ -203,10 +203,6 @@ de_res$lmm_KR = p.adjust(fit2KR$pValue, "fdr")
 de_res$lmm_KR_eBayes = topTable(fit2eKR, sort.by="none", number=Inf)$adj.P.Val
 
 
-# Write results
-file = paste0(opt$folder, '/results/', opt$prefix, "_p.adj.RDS")
-saveRDS(de_res, file)
-
 # pValue
 de_res_p = data.frame( true = rep(0,nrow(countMatrix)))
 de_res_p$true[1:500] = 1
@@ -225,6 +221,10 @@ de_res_p$lmm_KR_eBayes = topTable(fit2eKR, sort.by="none", number=Inf)$P.Value
 
 # save results to file
 #######################
+
+file = paste0(opt$folder, '/results/', opt$prefix, "_p.adj.RDS")
+saveRDS(de_res, file)
+
 file = paste0(opt$folder, '/results/', opt$prefix, "_p.RDS")
 saveRDS(de_res_p, file)
 
@@ -234,7 +234,9 @@ saveRDS(vp, file)
 file = paste0(opt$folder, '/results/', opt$prefix, "_timeMethods.RDS")
 saveRDS(timeMethods, file)
 
+
 # Compare p-values and make plot
+################################
 t1 = topTable(fitDupCor, coef="Disease1", number=Inf, sort.by="none")$P.Value
 t2 = topTable(fitSatEB, number=Inf, sort.by="none")$P.Value
 # t2 = fitSat@pValue
