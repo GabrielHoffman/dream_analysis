@@ -5,6 +5,7 @@ suppressPackageStartupMessages(library(getopt))
 a = matrix(c(
 	'prefix', 	'p', 1, "character",
 	'folder', 	'o', 1, "character",
+	'macau2', 	'm', 0, "logical",
 	'kr', 		'k', 0, "logical"
 ),nrow=4)
 
@@ -32,25 +33,31 @@ rownames(info) = info$Experiment
 # retain all genes for this analysis
 isexpr = rowSums(cpm(countMatrix)>0.1) >= 0
 
+timeMethods = list()
+
 # voom single replicate
 idx = seq(1, nrow(info), by=table(info$Individual)[1])
 genes = DGEList( countMatrix[,idx] )
 genes = calcNormFactors( genes )
 design = model.matrix( ~ Disease, info[idx,])
+
+timeMethods$fit_lmFit = system.time({
 vobj = voom( genes, design, plot=FALSE)
 design = model.matrix( ~ Disease, info[idx,])
 fit_lmFit = lmFit(vobj, design)
 fit_lmFit = eBayes(fit_lmFit)
-
+})
 
 # DESeq2 one sample
+timeMethods$dds_single = system.time({
 dds_single <- DESeqDataSetFromMatrix(countData = countMatrix[,idx],
                               colData = info[idx,],
                               design= ~ Disease )
 dds_single = DESeq(dds_single)
-
+})
 
 # Create VOBJ
+timeMethods$fit_lmFit2 = system.time({
 genes = DGEList( countMatrix )
 genes = calcNormFactors( genes )
 design = model.matrix( ~ Disease, info)
@@ -61,12 +68,15 @@ vobj = voom( genes, design, plot=FALSE,block=info$Individual,correlation=dupcor$
 # include both replicates, don't account
 fit_lmFit2 = lmFit(vobj, design)
 fit_lmFit2 = eBayes(fit_lmFit2)
+)}
 
 # DESeq2 all samples
+timeMethods$DESeq2 = system.time({
 dds <- DESeqDataSetFromMatrix(countData = countMatrix,
                               colData = info,
                               design= ~ Disease )
 dds <- DESeq(dds)
+)}
 
 # head(results(dds))
 # table(results(dds)$padj < 0.05)
@@ -76,6 +86,7 @@ dds <- DESeq(dds)
 
 # DESeq2 
 # Sum reads by sample
+timeMethods$DESeq2_sum = system.time({
 countMatrix_sum = lapply( unique(info$Individual), function(ID){
 	rowSums(countMatrix[,info$Experiment[info$Individual == ID],drop=FALSE])
 	} )
@@ -87,60 +98,78 @@ dds_sum <- DESeqDataSetFromMatrix(countData = countMatrix_sum2,
                               colData = info[idx,],
                               design= ~ Disease )
 dds_sum = DESeq(dds_sum)
+})
 
 # limma
+timeMethods$limma_sum = system.time({
 genes_sum = DGEList( countMatrix_sum2 )
 genes_sum = calcNormFactors( genes_sum )
 design_sum = model.matrix( ~ Disease, info[idx,])
 vobj_tmp_sum = voom( genes_sum, design_sum, plot=FALSE)
 fit_lmFit_sum = lmFit(vobj_tmp_sum, design_sum)
 fit_lmFit_sum = eBayes(fit_lmFit_sum)
-
+})
 
 
 # dupCor
+timeMethods$lmFit_dupCor = system.time({
 design = model.matrix( ~ Disease, info)
 dupcor <- duplicateCorrelation(vobj,design,block=info$Individual)
 fitDupCor <- lmFit(vobj,design,block=info$Individual,correlation=dupcor$consensus)
 fitDupCor <- eBayes(fitDupCor)
+)}
 
 cl = makeCluster(5)
 registerDoParallel( cl )
 
 # dream: Kenward-Roger approximation
+timeMethods$lmm_KR = system.time({
 form <- ~ Disease + (1|Individual) 
 L = getContrast( vobj, form, info, "Disease1")
 fit2KR = dream( vobj, form, info, L, ddf='Kenward-Roger')
 fit2eKR = eBayes( fit2KR )
+})
 
 # variancePartition
 form <- ~ (1|Disease) + (1|Individual) 
 vp = fitExtractVarPartModel(vobj, form, info)
 
 # dream: Satterthwaite approximation
+timeMethods$lmm_Sat = system.time({
 form <- ~ Disease + (1|Individual) 
 L = getContrast( vobj, form, info, "Disease1")
 fitSat = dream( vobj, form, info, L, ddf='Satterthwaite')
 fitSatEB = eBayes( fitSat )
+})
 
 # MACAU2
 ########
 
-# create block diagonal relatedness matrix
-K = matrix(0, nrow(info), nrow(info))
-diag(K) = 1
-rownames(K) = info$Experiment
-colnames(K) = info$Experiment
+if( opt$macau ){
+	macau_time = system.time({
+	# create block diagonal relatedness matrix
+	K = matrix(0, nrow(info), nrow(info))
+	diag(K) = 1
+	rownames(K) = info$Experiment
+	colnames(K) = info$Experiment
 
-for( ID in unique(info$Individual) ){
-	expr = info$Experiment[info$Individual==ID]
-	i = which(rownames(K) %in% expr)
-	K[i,i] = 1
+	for( ID in unique(info$Individual) ){
+		expr = info$Experiment[info$Individual==ID]
+		i = which(rownames(K) %in% expr)
+		K[i,i] = 1
+	}
+
+	# K[1:5, 1:5]
+	macau_fit = macau2(countMatrix, info$Disease, RelatednessMatrix=K, fit.model="PMM",numCore=1)
+	})#), fit.maxiter=20)
+
+	macau_padj = p.adjust(macau_fit$pvalue, 'fdr')
+	macau_pvalue = macau_fit$pvalue
+}else{
+	macau_padj = macau_pvalue = rep(NA, nrow(countMatrix))
 }
 
-# K[1:5, 1:5]
 
-macau_fit = macau2(countMatrix, info$Disease, RelatednessMatrix=K, fit.model="PMM",numCore=1)#), fit.maxiter=20)
 
 # lmms
 ######
@@ -166,7 +195,7 @@ de_res$lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", numb
 de_res$DESeq2_sum = results(dds_sum)$padj
 de_res$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
 de_res$DESeq2 = results(dds)$padj
-de_res$macau2 = p.adjust(macau_fit$pvalue, 'fdr')
+de_res$macau2 = macau_padj
 de_res$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
 de_res$lmm_Sat = p.adjust(fitSat$pValue, "fdr") 
 de_res$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$adj.P.Val
@@ -187,20 +216,23 @@ de_res_p$lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", nu
 de_res_p$DESeq2_sum = results(dds_sum)$pvalue
 de_res_p$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$P.Value
 de_res_p$DESeq2 = results(dds)$pvalue
-de_res$macau2 = macau_fit$pvalue
+de_res$macau2 = macau_pvalue
 de_res_p$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$P.Value
 de_res_p$lmm_Sat = fitSat$pValue
 de_res_p$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$P.Value
 de_res_p$lmm_KR = fit2KR$pValue
 de_res_p$lmm_KR_eBayes = topTable(fit2eKR, sort.by="none", number=Inf)$P.Value
 
-
+# save results to file
+#######################
 file = paste0(opt$folder, '/results/', opt$prefix, "_p.RDS")
 saveRDS(de_res_p, file)
 
 file = paste0(opt$folder, '/results/', opt$prefix, "_vp.RDS")
 saveRDS(vp, file)
 
+file = paste0(opt$folder, '/results/', opt$prefix, "_timeMethods.RDS")
+saveRDS(timeMethods, file)
 
 # Compare p-values and make plot
 t1 = topTable(fitDupCor, coef="Disease1", number=Inf, sort.by="none")$P.Value
