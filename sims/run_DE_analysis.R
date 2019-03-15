@@ -68,7 +68,7 @@ vobj = voom( genes, design, plot=FALSE,block=info$Individual,correlation=dupcor$
 # include both replicates, don't account
 fit_lmFit2 = lmFit(vobj, design)
 fit_lmFit2 = eBayes(fit_lmFit2)
-)}
+})
 
 # DESeq2 all samples
 timeMethods$DESeq2 = system.time({
@@ -76,7 +76,7 @@ dds <- DESeqDataSetFromMatrix(countData = countMatrix,
                               colData = info,
                               design= ~ Disease )
 dds <- DESeq(dds)
-)}
+})
 
 # head(results(dds))
 # table(results(dds)$padj < 0.05)
