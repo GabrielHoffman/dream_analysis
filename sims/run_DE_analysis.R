@@ -31,7 +31,8 @@ info = readRDS(paste0(opt$folder, '/data/info_',opt$prefix,'.RDS'))
 rownames(info) = info$Experiment
 
 # retain all genes for this analysis
-isexpr = rowSums(cpm(countMatrix)>0.1) >= 0
+isexpr = rowSums(cpm(countMatrix)>1) >= 3
+countMatrix = countMatrix[isexpr,]
 
 timeMethods = list()
 
