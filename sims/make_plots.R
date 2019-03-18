@@ -43,7 +43,6 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	# for DESeq2, set NA to 1
 	de_res[is.na(de_res)] = 1
 
-	de_res$macau2 = runif(nrow(de_res))
 	colnames(de_res)[colnames(de_res) == 'lmFit' ] = "Single replicate (limma/voom)"
 	colnames(de_res)[colnames(de_res) == 'DESeq2_single' ] = "Single replicate (DESeq2)"
 	colnames(de_res)[colnames(de_res) == 'lmFit_sum' ] = "Sum reads (limma/voom)"
