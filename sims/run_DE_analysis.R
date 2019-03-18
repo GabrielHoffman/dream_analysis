@@ -146,7 +146,7 @@ fitSatEB = eBayes( fitSat )
 ########
 
 if( ! is.null(opt$macau2) && opt$macau2 ){
-	macau_time = system.time({
+	timeMethods$macau = system.time({
 	# create block diagonal relatedness matrix
 	K = matrix(0, nrow(info), nrow(info))
 	diag(K) = 1
@@ -167,6 +167,7 @@ if( ! is.null(opt$macau2) && opt$macau2 ){
 	macau_pvalue = macau_fit$pvalue
 }else{
 	macau_padj = macau_pvalue = rep(NA, nrow(countMatrix))
+	timeMethods$macau = NA
 }
 
 
