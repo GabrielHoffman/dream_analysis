@@ -43,8 +43,11 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	# for DESeq2, set NA to 1
 	de_res[is.na(de_res)] = 1
 
+	de_res$macau2 = runif(nrow(de_res))
 	colnames(de_res)[colnames(de_res) == 'lmFit' ] = "Single replicate (limma/voom)"
 	colnames(de_res)[colnames(de_res) == 'DESeq2_single' ] = "Single replicate (DESeq2)"
+	colnames(de_res)[colnames(de_res) == 'lmFit_sum' ] = "Sum reads (limma/voom)"
+	colnames(de_res)[colnames(de_res) == 'DESeq2_sum' ] = "Sum reads (DESeq2)"
 	colnames(de_res)[colnames(de_res) == 'lmFit2' ] = "Full data, ignore corr (limma/voom)"
 	colnames(de_res)[colnames(de_res) == 'DESeq2' ] = "Full data, ignore corr (DESeq2)"
 	colnames(de_res)[colnames(de_res) == 'lmFit_dupCor' ] = "duplicateCorrelation with limma/voom"
@@ -174,6 +177,8 @@ resList = foreach( prefix = prefixes ) %dopar% {
 
 	colnames(de_res)[colnames(de_res) == 'lmFit' ] = "Single replicate (limma/voom)"
 	colnames(de_res)[colnames(de_res) == 'DESeq2_single' ] = "Single replicate (DESeq2)"
+	colnames(de_res)[colnames(de_res) == 'lmFit_sum' ] = "Sum reads (limma/voom)"
+	colnames(de_res)[colnames(de_res) == 'DESeq2_sum' ] = "Sum reads (DESeq2)"
 	colnames(de_res)[colnames(de_res) == 'lmFit2' ] = "Full data, ignore corr (limma/voom)"
 	colnames(de_res)[colnames(de_res) == 'DESeq2' ] = "Full data, ignore corr (DESeq2)"
 	colnames(de_res)[colnames(de_res) == 'lmFit_dupCor' ] = "duplicateCorrelation with limma/voom"
@@ -458,7 +463,7 @@ df = data.table(df)
 # saveRDS(df, file=paste0(opt$folder,'/df.RDS'))
 # df = readRDS(paste0(opt$folder,'/df.RDS'))
 
-col = ggColorHue(7)
+col = ggColorHue(length(table(df$key)))
 
 file = paste0(folder,'/../figures/','combine_choose', ".pdf")
 pdf( file, width=7, height=20)
@@ -476,7 +481,7 @@ dfpr = data.table(dfpr)
 # saveRDS(dfpr, file=paste0(opt$folder,'/dfpr.RDS'))
 # dfpr = readRDS(paste0(opt$folder,'/dfpr.RDS'))
 
-col = ggColorHue(7)
+col = ggColorHue(length(table(df$key)))
 randCurve = dfpr[,unique(rnd.value)]
 
 file = paste0(folder,'/../figures/','combine_pr2', ".pdf")
@@ -495,7 +500,7 @@ df_fpr = data.table(df_fpr)
 # saveRDS(df_fpr, file=paste0(opt$folder,'/df_fpr.RDS'))
 # df_fpr = readRDS(paste0(opt$folder,'/df_fpr.RDS'))
 
-col = ggColorHue(7)
+col = ggColorHue(length(table(df$key)))
 
 file = paste0(folder,'/../figures/','combine_fpr', ".pdf")
 pdf( file, width=15, height=20)
@@ -515,7 +520,7 @@ df_aupr = data.table(df_aupr)
 # saveRDS(df_aupr, file=paste0(opt$folder,'/df_aupr.RDS'))
 # df_aupr = readRDS(paste0(opt$folder,'/df_aupr.RDS'))
 
-col = ggColorHue(7)
+col = ggColorHue(length(table(df$key)))
 
 file = paste0(folder,'/../figures/','combine_aupr', ".pdf")
 pdf( file, width=15, height=20)
