@@ -212,7 +212,7 @@ de_res_p$lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", nu
 de_res_p$DESeq2_sum = results(dds_sum)$pvalue
 de_res_p$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$P.Value
 de_res_p$DESeq2 = results(dds)$pvalue
-de_res$macau2 = macau_pvalue
+de_res_p$macau2 = macau_pvalue
 de_res_p$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$P.Value
 de_res_p$lmm_Sat = fitSat$pValue
 de_res_p$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$P.Value
