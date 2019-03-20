@@ -118,11 +118,19 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	# Compute PR
 	#===========
 	prList = foreach( method = colnames(de_res)[-1] ) %do% {
-		pr.curve(	scores.class0 = -log10(de_res[de_res$true==1,method]), 
-					scores.class1 = -log10(de_res[de_res$true==0,method]), 
-					curve=TRUE, rand.compute = TRUE)
+		if( length(unique(de_res[[method]])) == 1 ){
+			value = NA
+		}else{
+			value = pr.curve(scores.class0 = -log10(de_res[de_res$true==1,method]), 
+						scores.class1 = -log10(de_res[de_res$true==0,method]), 
+						curve=TRUE, rand.compute = TRUE)
+		}
+		value
 	}
 	names(prList) = colnames(de_res)[-1] 
+
+	# remove empty entry
+	prList[sapply(prList, function(x) all(is.na(x)))] = c()
 
 	aupr = data.frame(method = names(prList) )
 	aupr$value = foreach( method = names(prList), .combine=c ) %do% {
@@ -157,7 +165,7 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	
 	# Power	at 5% FDR
 	#===========
-	power_fdr_5 = data.frame(method = colnames(de_res)[-1])
+	power_fdr_5 = data.frame(method = names(prList))
 	power_fdr_5$value = foreach( method = names(prList), .combine=c ) %do% {
 		pr = as.data.frame(prList[[method]]$curve)
 		colnames(pr) = c( "recall", "precision", "score")
@@ -201,7 +209,7 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	colnames(de_res)[colnames(de_res) == 'lmFit_dupCor' ] = "duplicateCorrelation with limma/voom"
 	colnames(de_res)[colnames(de_res) == 'lmm_Sat_eBayes' ] = "dream"
 	colnames(de_res)[colnames(de_res) == 'lmm_KR_eBayes' ] = "dream (KR)"
-	
+
 	# de_res = de_res[,!(colnames(de_res) %in% c("lmm_Sat", "lmm_KR", "lmm_KR_eBayes" ))]
 
 	fd = apply(de_res[de_res$true ==0,], 2, function(x) sum(x< 0.05))
