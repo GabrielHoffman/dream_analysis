@@ -82,18 +82,24 @@ comm -23 <(sort all.lst) <(cat running.lst complete.lst | sort) | parallel -P1 l
 # Run differential expression #
 ###############################
 
+cd /hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims
+git pull
+
+ # \rm -f figures/* jobs/* logs/* results/*
+
 N_DE=500
 FC=3
 HSQ=0.4
 
-FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v1/
+FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
 cd $FOLDER
 LOG=$FOLDER/logs
-for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+# for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+for N_SAMPLES in $(echo $(seq 4 2 10));
 do
 for N_REPS in $(seq 2 4);
 do
-for SEED in $(seq 1 50);
+for SEED in $(seq 1 5);
 do
 PFX=${N_SAMPLES}_${N_REPS}_${N_DE}_${FC}_${HSQ}_${SEED}
 echo '#!/bin/bash' > jobs/scripts_${PFX}.lsf
@@ -102,18 +108,26 @@ echo "#BSUB -J ${PFX}
 #BSUB -q premium
 #BSUB -n 5
 #BSUB -R span[hosts=1]
-#BSUB -W 8:00
+#BSUB -W 24:00
 #BSUB -o $LOG/scripts_${PFX}_%J.stdout
 #BSUB -eo $LOG/scripts_${PFX}_%J.stderr
 #BSUB -L /bin/bash
 
 module purge
-module load R/3.4.3
+module load R/3.5.1
 
-/hpc/users/hoffmg01/scripts/varPartSims/run_DE_analysis.R --prefix ${PFX} --folder $FOLDER" >> jobs/scripts_${PFX}.lsf
+EXTRA=''
+if [[ ${N_SAMPLES} -lt 16 ]] && [[ ${N_SAMPLES} -gt 2  ]];
+then
+	EXTRA='--macau2'
+fi
+echo $EXTRA
+
+/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/run_DE_analysis.R --prefix ${PFX} --folder $FOLDER $EXTRA " >> jobs/scripts_${PFX}.lsf
 done
 done
 done
+#/hpc/users/hoffmg01/scripts/varPartSims/run_DE_analysis.R --prefix ${PFX} --folder $FOLDER
 
 ls jobs/scripts_*lsf | parallel -P1 "bsub < {}; sleep .2"
 	
@@ -135,16 +149,16 @@ comm -23 <(sort all.lst) <(cat running.lst complete.lst | sort) | parallel -P1 l
 # Make plots
 ###############
 
-FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v1/
+FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
 cd $FOLDER
 
-/hpc/users/hoffmg01/scripts/varPartSims/make_plots.R --folder $FOLDER/results --nthreads 36
+/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/make_plots.R --folder $FOLDER/results --nthreads 1
+
 
 
 # Time methods
 ##############
-
-FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v1
+qFOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v1
 SCRIPT=/hpc/users/hoffmg01/scripts/varPartSims/time_methods.R
 LOG=$FOLDER/logs
 for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);

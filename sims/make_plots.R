@@ -52,11 +52,29 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	colnames(de_res)[colnames(de_res) == 'lmFit_dupCor' ] = "duplicateCorrelation with limma/voom"
 	colnames(de_res)[colnames(de_res) == 'lmm_Sat_eBayes' ] = "dream"
 	colnames(de_res)[colnames(de_res) == 'lmm_KR_eBayes' ] = "dream (KR)"
-	de_res = de_res[,!(colnames(de_res) %in% c("lmm_Sat", "lmm_KR", "lmm_KR_eBayes" ))]
+	# de_res = de_res[,!(colnames(de_res) %in% c("lmm_Sat", "lmm_KR", "lmm_KR_eBayes" ))]
 
-	# specify colors
-	method_order = colnames(de_res)[-1]
-	col = ggColorHue(length(method_order))
+	# raw p-values on right
+	keepRaw = TRUE
+	if( keepRaw ){
+		de_res_right = de_res[,colnames(de_res) %in% c("lmm_Sat", "lmm_KR")]
+		de_res = de_res[,!(colnames(de_res) %in% c("lmm_Sat", "lmm_KR"))]
+		de_res = cbind(de_res, de_res_right)
+
+		# specify colors
+		method_order = colnames(de_res)[-c(1, 12,13)]
+		col = ggColorHue(length(method_order))
+		names(col) = method_order
+		col['lmm_Sat'] = alpha(col['dream'], .5)
+		col['lmm_KR'] = alpha(col['dream (KR)'], .5)
+		method_order = c(method_order, c("lmm_Sat", "lmm_KR"))
+	}else{
+		de_res = de_res[,!(colnames(de_res) %in% c("lmm_Sat", "lmm_KR"))]
+		
+		method_order = colnames(de_res)[-1]
+		col = ggColorHue(length(method_order))
+		names(col) = method_order
+	}
 
 	# counts at each cutoff
 	#======================
@@ -183,7 +201,8 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	colnames(de_res)[colnames(de_res) == 'lmFit_dupCor' ] = "duplicateCorrelation with limma/voom"
 	colnames(de_res)[colnames(de_res) == 'lmm_Sat_eBayes' ] = "dream"
 	colnames(de_res)[colnames(de_res) == 'lmm_KR_eBayes' ] = "dream (KR)"
-	de_res = de_res[,!(colnames(de_res) %in% c("lmm_Sat", "lmm_KR", "lmm_KR_eBayes" ))]
+	
+	# de_res = de_res[,!(colnames(de_res) %in% c("lmm_Sat", "lmm_KR", "lmm_KR_eBayes" ))]
 
 	fd = apply(de_res[de_res$true ==0,], 2, function(x) sum(x< 0.05))
 	false_discoveries = data.frame(method=names(fd)[-1])

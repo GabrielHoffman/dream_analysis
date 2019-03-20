@@ -30,9 +30,11 @@ countMatrix = readRDS(paste0(opt$folder, '/data/countMatrix_',opt$prefix,'.RDS')
 info = readRDS(paste0(opt$folder, '/data/info_',opt$prefix,'.RDS'))
 rownames(info) = info$Experiment
 
-# retain all genes for this analysis
+# filter out genes based on read count
 isexpr = rowSums(cpm(countMatrix)>1) >= 3
 countMatrix = countMatrix[isexpr,]
+rownames(countMatrix) = sapply(strsplit(rownames(countMatrix), '\\|'), function(x) x[2])
+
 
 timeMethods = list()
 
@@ -164,8 +166,12 @@ if( ! is.null(opt$macau2) && opt$macau2 ){
 	macau_fit = macau2(countMatrix, info$Disease, RelatednessMatrix=K, fit.model="PMM",numCore=1)
 	})#), fit.maxiter=20)
 
-	macau_padj = p.adjust(macau_fit$pvalue, 'fdr')
-	macau_pvalue = macau_fit$pvalue
+	# macau2 can omit some genes, so fill in empty entries with NA
+	macau_fit_all = data.frame(gene = rownames(countMatrix), stringsAsFactors=FALSE)
+	macau_fit_all = merge( macau_fit_all, macau_fit, by.x="gene", by.y="row.names", all.x=TRUE, sort=FALSE)
+
+	macau_padj = p.adjust(macau_fit_all$pvalue, 'fdr')
+	macau_pvalue = macau_fit_all$pvalue
 }else{
 	macau_padj = macau_pvalue = rep(NA, nrow(countMatrix))
 	timeMethods$macau = NA

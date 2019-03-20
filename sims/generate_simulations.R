@@ -27,7 +27,7 @@ suppressPackageStartupMessages(library(doParallel))
 suppressPackageStartupMessages(library(edgeR))
 suppressPackageStartupMessages(library(limma))
 
-source("helper_functions.R")
+source("/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/helper_functions.R")
 
 # cl = makeCluster(opt$nthreads)
 # registerDoParallel( cl )
@@ -81,20 +81,20 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 
 	y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
 
-	fit = lmer( y ~ (1|Individual) + (1|Disease), info, REML=FALSE)
-	v = calcVarPart( fit ) 
-	v
+	# fit <- lmer( y ~ (1|Individual) + (1|Disease), info, REML=FALSE))
+	# v = calcVarPart( fit )
+	# list( FC = t(y) - min(y) + 1, modelStats = v[order(names(v))] )
 
-	list( FC = t(y) - min(y) + 1, modelStats = v[order(names(v))] )
+	list( FC = t(y) - min(y) + 1 )
 }
 
 FC = matrix(NA, nrow=length(fastaTranscripts), ncol=n_samples*n_reps)
-modelStats = matrix(NA, nrow(FC), ncol=3)
-colnames(modelStats) = names(simParams[[1]]$modelStats)
+# modelStats = matrix(NA, nrow(FC), ncol=3)
+# colnames(modelStats) = names(simParams[[1]]$modelStats)
 
 for(j in 1:nrow(FC)){
 	FC[j,] = simParams[[j]]$FC
-	modelStats[j,] = simParams[[j]]$modelStats
+	# modelStats[j,] = simParams[[j]]$modelStats
 }
 
 deGeneList = names(fastaTranscripts)[1:n_de_genes]
@@ -105,7 +105,7 @@ lib_sizes = runif(nrow(info), .5, 1.5)
 #  rm -f bam/* simulated_reads/*
 saveRDS(info, paste(opt$out, "/info_", opt$prefix, ".RDS", sep=''))
 saveRDS(deGeneList, paste(opt$out, "/deGeneList_", opt$prefix, ".RDS", sep=''))
-saveRDS(modelStats, paste(opt$out, "/modelStats_", opt$prefix, ".RDS", sep=''))
+# saveRDS(modelStats, paste(opt$out, "/modelStats_", opt$prefix, ".RDS", sep=''))
 save(list=ls(), file=paste(opt$out, "/infoAll_", opt$prefix, ".RData", sep=''))
 
 # simulation call:
