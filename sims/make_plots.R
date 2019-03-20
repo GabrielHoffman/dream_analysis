@@ -43,10 +43,10 @@ colarray = c("Single replicate (limma/voom)", "#A6CEE3",
 "Full data, ignore corr (DESeq2)", "#E31A1C",
 "macau2", "gold",
 "duplicateCorrelation with limma/voom", "#B15928",
-"dream", "#FDBF6F",
-"dream (KR)",  "#FF7F00",
-"dream [std p]", "#CAB2D6",
-"dream (KR) [std p]",  "#6A3D9A")
+"dream (KR)", "#FDBF6F",
+"dream",  "#FF7F00",
+"dream (KR) [std p]", "#CAB2D6",
+"dream [std p]",  "#6A3D9A")
 df_plots = data.frame(matrix( colarray, ncol=2, byrow=TRUE), stringsAsFactors=FALSE)
 df_plots$X1 = factor(df_plots$X1, df_plots$X1)
 colnames(df_plots) = c("method", "color")
@@ -547,7 +547,7 @@ dfpr = data.table(dfpr)
 # dfpr = readRDS(paste0(opt$folder,'/dfpr.RDS'))
 
 # col = ggColorHue(length(table(df$key)))
-col = df_plots$color[df_plots$method %in% levels(df$key)]
+col = df_plots$color[df_plots$method %in% levels(dfpr$method)]
 randCurve = dfpr[,unique(rnd.value)]
 
 file = paste0(folder,'/../figures/','combine_pr2', ".pdf")
@@ -566,14 +566,26 @@ df_fpr = data.table(df_fpr)
 # saveRDS(df_fpr, file=paste0(opt$folder,'/df_fpr.RDS'))
 # df_fpr = readRDS(paste0(opt$folder,'/df_fpr.RDS'))
 
-# col = ggColorHue(length(table(df$key)))
-col = df_plots$color[df_plots$method %in% levels(df$key)]
 
 file = paste0(folder,'/../figures/','combine_fpr', ".pdf")
 pdf( file, width=15, height=20)
 maxValue = max(df_fpr$value)
-fig1 = ggplot(df_fpr[(n_donor <= 14),], aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("False positive rate at p<0.05") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
-fig2 = ggplot(df_fpr[(n_donor > 14),], aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("False positive rate at p<0.05") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
+
+df_a = df_fpr[(n_donor <= 14),]
+df_a$method = droplevels(df_a$method)
+col = df_plots$color[df_plots$method %in% levels(df_a$method)]
+
+fig1 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("False positive rate at p<0.05") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
+
+df_a = df_fpr[(n_donor > 14),]
+# drop macau2 if all empty
+if( df_a[method=="macau2",unique(value)] == 0 ){
+	df_a = df_a[method!="macau2",]
+}
+df_a$method = droplevels(df_a$method)
+col = df_plots$color[df_plots$method %in% levels(df_a$method)]
+
+fig2 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("False positive rate at p<0.05") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
 grid.arrange(fig1, fig2, ncol=2)
 dev.off()
 
@@ -588,13 +600,20 @@ df_aupr = data.table(df_aupr)
 # df_aupr = readRDS(paste0(opt$folder,'/df_aupr.RDS'))
 
 # col = ggColorHue(length(table(df$key)))
-col = df_plots$color[df_plots$method %in% levels(df$key)]
 
 file = paste0(folder,'/../figures/','combine_aupr', ".pdf")
 pdf( file, width=15, height=20)
 maxValue = max(df_aupr[(n_donor <= 14),value])
-fig1 = ggplot(df_aupr[(n_donor <= 14),], aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
-fig2 = ggplot(df_aupr[(n_donor > 14),], aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, 1)
+
+df_a = df_aupr[(n_donor <= 14),]
+df_a$method = droplevels(df_a$method)
+col = df_plots$color[df_plots$method %in% levels(df_a$method)]
+fig1 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
+
+df_a = df_aupr[(n_donor > 14),]
+df_a$method = droplevels(df_a$method)
+col = df_plots$color[df_plots$method %in% levels(df_a$method)]
+fig2 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, 1)
 grid.arrange(fig1, fig2, ncol=2)
 dev.off()
 
