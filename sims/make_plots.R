@@ -55,7 +55,54 @@ colnames(df_plots) = c("method", "color")
 # df_plots$value = 1
 # ggplot(df_plots, aes(method, value, fill=method)) + geom_bar(stat="identity") + coord_flip() + scale_fill_manual(values=df_plots$color)
 
+#################
+# Plot run time #
+#################
 
+resTime = foreach( prefix = prefixes, .combine=rbind ) %dopar% {
+
+	n_donor = as.numeric(gsub("^(\\d+)_(\\d+).*", "\\1", prefix))
+	n_reps = as.numeric(gsub("^(\\d+)_(\\d+).*", "\\2", prefix))
+
+	# read results
+	files = dir(folder, paste0('^',prefix, '.*_timeMethods.RDS'), full.names=TRUE)
+
+	df_time = foreach( file = files, .combine=rbind) %do% {
+		res = data.frame(do.call("rbind", readRDS( file )))
+
+		data.frame(name=rownames(res), time=res$elapsed, 
+			n_donor=n_donor, n_reps=n_reps, stringsAsFactors=FALSE)
+	}
+
+	df_time$name[df_time$name == 'fit_lmFit']  = "Single replicate (limma/voom)"
+	df_time$name[df_time$name == 'dds_single'] = "Single replicate (DESeq2)"
+	df_time$name[df_time$name == 'limma_sum'] = "Sum reads (limma/voom)"
+	df_time$name[df_time$name == 'DESeq2_sum'] = "Sum reads (DESeq2)"
+	df_time$name[df_time$name == 'fit_lmFit2'] = "Full data, ignore corr (limma/voom)"
+	df_time$name[df_time$name == 'DESeq2']  = "Full data, ignore corr (DESeq2)"
+	df_time$name[df_time$name == 'lmFit_dupCor']  = "duplicateCorrelation with limma/voom"
+	df_time$name[df_time$name == 'lmm_Sat'] = "dream"
+	df_time$name[df_time$name == 'lmm_KR'] = "dream (KR)"
+	df_time$name[df_time$name == 'macau'] = "macau2"
+	colnames(df_time)[1] = "method"
+
+	df_time
+}
+
+resTime = data.table(resTime)
+
+summTime = resTime[,data.frame(mean=mean(time), sd=sd(time)),by=c("method", "n_donor", "n_reps")]
+
+summTime$method = factor(summTime$method, df_plots$method)
+col = df_plots$color[df_plots$method %in% levels(summTime$method)]
+
+ggplot(summTime, aes(n_donor,mean/60, color=method)) + geom_line() + geom_errorbar(aes(ymin = (mean-sd)/60, ymax = (mean+sd)/60)) + scale_y_log10() + theme_bw() + theme(aspect.ratio=1, legend.position="bottom")  + scale_color_manual(values=col) + facet_wrap(~n_reps) + xlab("# Donors") + ylab("Run time (minutes)")
+dev.off()
+
+
+################
+# Plot results #
+################
 
 resList = foreach( prefix = prefixes ) %dopar% {
 

@@ -94,12 +94,18 @@ HSQ=0.4
 FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
 cd $FOLDER
 LOG=$FOLDER/logs
-# for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
-for N_SAMPLES in $(echo $(seq 4 2 10));
+for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+# for N_SAMPLES in $(echo $(seq 4 2 10));
 do
+# EXTRA=''
+# if [[ ${N_SAMPLES} -lt 16 ]] && [[ ${N_SAMPLES} -gt 2  ]];
+# then
+# 	EXTRA='--macau2'
+# fi
+EXTRA='--macau2'
 for N_REPS in $(seq 2 4);
 do
-for SEED in $(seq 1 5);
+for SEED in $(seq 1 50);
 do
 PFX=${N_SAMPLES}_${N_REPS}_${N_DE}_${FC}_${HSQ}_${SEED}
 echo '#!/bin/bash' > jobs/scripts_${PFX}.lsf
@@ -116,13 +122,6 @@ echo "#BSUB -J ${PFX}
 module purge
 module load R/3.5.1
 
-EXTRA=''
-if [[ ${N_SAMPLES} -lt 16 ]] && [[ ${N_SAMPLES} -gt 2  ]];
-then
-	EXTRA='--macau2'
-fi
-echo $EXTRA
-
 /hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/run_DE_analysis.R --prefix ${PFX} --folder $FOLDER $EXTRA " >> jobs/scripts_${PFX}.lsf
 done
 done
@@ -131,6 +130,11 @@ done
 
 ls jobs/scripts_*lsf | parallel -P1 "bsub < {}; sleep .2"
 	
+# only sims 1-10
+seq 1 10 | parallel -P1 ls jobs/scripts_*_{}.lsf | parallel -P1 "bsub < {}; sleep .2"
+
+
+
 
 # resubmit crashed jobs
 # completed
@@ -152,7 +156,7 @@ comm -23 <(sort all.lst) <(cat running.lst complete.lst | sort) | parallel -P1 l
 FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
 cd $FOLDER
 
-/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/make_plots.R --folder $FOLDER/results --nthreads 1
+/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/make_plots.R --folder $FOLDER/results --nthreads 32
 
 
 
