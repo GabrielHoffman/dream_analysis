@@ -283,9 +283,9 @@ donor_array = sort(unique(sapply(strsplit( prefixes, "_"), function(x) as.numeri
 
 # Write to PDF
 #=============
-# file = paste0(folder,'/../figures/','combine', ".pdf")
-# pdf( file, width=7, height=25 )
-# # choose
+file = paste0(folder,'/../figures/','combine', ".pdf")
+pdf( file, width=7, height=25 )
+# choose
 # fig_choose = foreach(n_donor = donor_array, .combine=c) %do% {
 # 	foreach(n_reps = 2:4, .combine=c) %do% {
 # 		foreach( idx = grep(paste0('^',n_donor, '_',n_reps, '_', ".*"), names(resList)) ) %do% {
@@ -293,9 +293,9 @@ donor_array = sort(unique(sapply(strsplit( prefixes, "_"), function(x) as.numeri
 # 		}
 # 	}	
 # }
-# # do.call("grid.arrange", c(fig_choose, ncol=3))
+# do.call("grid.arrange", c(fig_choose, ncol=3))
 
-# # choose
+# choose
 # fig_choose = foreach(n_donor = donor_array, .combine=c) %do% {
 # 	foreach(n_reps = 2:4, .combine=c) %do% {
 # 		foreach( idx = grep(paste0('^',n_donor, '_',n_reps, '_', ".*"), names(resList)) ) %do% {
@@ -435,68 +435,80 @@ donor_array = sort(unique(sapply(strsplit( prefixes, "_"), function(x) as.numeri
 # # Plot combing across datasets
 # #=============================
 # file = paste0(folder,'/../figures/combine_across_datasets.pdf')
-# pdf( file, width=7, height=16 )
-# # AUPR
-# aupr = foreach(n_donor = donor_array, .combine=rbind) %do% {
-# 	foreach(n_reps = 2:4, .combine=rbind) %do% {
-# 		foreach( idx = grep(paste0('^',n_donor, '_',n_reps, '_', ".*"), names(resList)), .combine=rbind ) %do% {
-# 			resList[[idx]]$aupr 
-# 		}
-# 	}	
-# }
-# fig = foreach(n_reps = 2:4) %do%{
-# ggplot(aupr[aupr$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_line() + scale_fill_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, 1) + ylab("AUPR")
-# }
-# fig_aupr = do.call("grid.arrange", c(fig, ncol=3))
+# pdf( file, width=18, height=16 )
+# AUPR
+aupr = foreach(n_donor = donor_array, .combine=rbind) %do% {
+	foreach(n_reps = 2:4, .combine=rbind) %do% {
+		foreach( idx = grep(paste0('^',n_donor, '_',n_reps, '_', ".*"), names(resList)), .combine=rbind ) %do% {
+			resList[[idx]]$aupr 
+		}
+	}	
+}
+aupr$method = factor(aupr$method, df_plots$method)
 
-# # power_fdr_5
-# power_fdr_5 = foreach(n_donor = donor_array, .combine=rbind) %do% {
-# 	foreach(n_reps = 2:4, .combine=rbind) %do% {
-# 		foreach( idx = grep(paste0('^',n_donor, '_',n_reps, '_', ".*"), names(resList)), .combine=rbind ) %do% {
-# 			resList[[idx]]$power_fdr_5
-# 		}
-# 	}	
-# }
-# fig = foreach(n_reps = 2:4) %do%{
-# ggplot(power_fdr_5[power_fdr_5$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_line() + scale_fill_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, 1) + ylab("Power at FDR 5%")
-# }
-# fig_power_fdr_5 = do.call("grid.arrange", c(fig, ncol=3))
+col = df_plots$color[df_plots$method %in% levels(aupr$method)]
 
-# df_fpr = foreach(n_donor = donor_array, .combine=rbind) %do% {
-# 	foreach(n_reps = 2:4, .combine=rbind) %do% {
-# 		foreach( idx = grep(paste0('^',n_donor, '_',n_reps, '_', ".*"), names(resList)), .combine=rbind ) %do% {
-# 			resList[[idx]]$df_fpr	
-# 		}
-# 	}	
-# }
-# fig = foreach(n_reps = 2:4) %do%{
-# ggplot(df_fpr[df_fpr$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_hline(yintercept=0.05, linetype=2) + geom_line() + scale_fill_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, .2) + ylab("False positive rate") 
-# }
-# fig_fpr = do.call("grid.arrange", c(fig, ncol=3))
+fig = foreach(n_reps = 2:4) %do%{
+ggplot(aupr[aupr$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_line() + scale_color_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, 1) + ylab("AUPR")
+}
+fig_aupr = do.call("grid.arrange", c(fig, ncol=3))
 
-# # False discoveries
-# df_fd = foreach(n_donor = donor_array, .combine=rbind) %do% {
-# 	foreach(n_reps = 2:4, .combine=rbind) %do% {
-# 		foreach( idx = grep(paste0('^',n_donor, '_',n_reps, '_', ".*"), names(resList)), .combine=rbind ) %do% {
-# 			resList[[idx]]$false_discoveries	
-# 		}
-# 	}	
-# }
-# fig = foreach(n_reps = 2:4) %do%{
-# ggplot(df_fd[df_fd$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_line() + scale_fill_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, max(df_fd$value)) + ylab("False discoveries at FDR < 5%") 
-# }
-# fig_fd = do.call("grid.arrange", c(fig, ncol=3))
+# power_fdr_5
+power_fdr_5 = foreach(n_donor = donor_array, .combine=rbind) %do% {
+	foreach(n_reps = 2:4, .combine=rbind) %do% {
+		foreach( idx = grep(paste0('^',n_donor, '_',n_reps, '_', ".*"), names(resList)), .combine=rbind ) %do% {
+			resList[[idx]]$power_fdr_5
+		}
+	}	
+}
+power_fdr_5$method = factor(power_fdr_5$method, df_plots$method)
+fig = foreach(n_reps = 2:4) %do%{
+ggplot(power_fdr_5[power_fdr_5$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_line() + scale_color_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, 1) + ylab("Power at FDR 5%")
+}
+fig_power_fdr_5 = do.call("grid.arrange", c(fig, ncol=3))
 
-# fig = foreach(n_reps = 2:4) %do%{
-# 	mvalue = max(df_fd[df_fd$n_reps==n_reps,]$value)
-# ggplot(df_fd[df_fd$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_line() + scale_fill_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, mvalue) + ylab("False discoveries at FDR < 5%") 
-# }
-# fig_fd2 = do.call("grid.arrange", c(fig, ncol=3))
+df_fpr = foreach(n_donor = donor_array, .combine=rbind) %do% {
+	foreach(n_reps = 2:4, .combine=rbind) %do% {
+		foreach( idx = grep(paste0('^',n_donor, '_',n_reps, '_', ".*"), names(resList)), .combine=rbind ) %do% {
+			resList[[idx]]$df_fpr	
+		}
+	}	
+}
+df_fpr$method = factor(df_fpr$method, df_plots$method)
+df_fpr = df_fpr[!((df_fpr$method == "macau2")&&(df_fpr$n_donor >14)&&(df_fpr$value == 0)),]
+
+fig = foreach(n_reps = 2:4) %do%{
+ggplot(df_fpr[df_fpr$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_hline(yintercept=0.05, linetype=2) + geom_line() + scale_color_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, .2) + ylab("False positive rate") 
+}
+fig_fpr = do.call("grid.arrange", c(fig, ncol=3))
+
+# False discoveries
+df_fd = foreach(n_donor = donor_array, .combine=rbind) %do% {
+	foreach(n_reps = 2:4, .combine=rbind) %do% {
+		foreach( idx = grep(paste0('^',n_donor, '_',n_reps, '_', ".*"), names(resList)), .combine=rbind ) %do% {
+			resList[[idx]]$false_discoveries	
+		}
+	}	
+}
+df_fd$method = factor(df_fd$method, df_plots$method)
+df_fd = df_fd[!((df_fd$method == "macau2")&&(df_fd$n_donor >14)&&(df_fd$value == 0)),]
+
+fig = foreach(n_reps = 2:4) %do%{
+ggplot(df_fd[df_fd$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_line() + scale_color_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, max(df_fd$value)) + ylab("False discoveries at FDR < 5%") 
+}
+fig_fd = do.call("grid.arrange", c(fig, ncol=3))
+
+fig = foreach(n_reps = 2:4) %do%{
+	mvalue = max(df_fd[df_fd$n_reps==n_reps,]$value)
+ggplot(df_fd[df_fd$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_line() + scale_color_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, mvalue) + ylab("False discoveries at FDR < 5%") 
+}
+fig_fd2 = do.call("grid.arrange", c(fig, ncol=3))
 # dev.off()
 
-# pdf( file, width=8, height=12 )
-# grid.arrange(fig_aupr, fig_power_fdr_5, fig_fpr, fig_fd, fig_fd2,ncol=1)
-# dev.off()
+file = paste0(folder,'/../figures/combine_across_datasets.pdf')
+pdf( file, width=8, height=12 )
+grid.arrange(fig_aupr, fig_power_fdr_5, fig_fpr, fig_fd, fig_fd2,ncol=1)
+dev.off()
 
 # Plot PR curves separately due to size
 #######################################
