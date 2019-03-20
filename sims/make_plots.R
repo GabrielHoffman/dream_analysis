@@ -521,15 +521,14 @@ donor_array = sort(unique(sapply(strsplit( prefixes, "_"), function(x) as.numeri
 # False Discoveries
 ###################
 
-browser()
-
 df = do.call("rbind", lapply(resList, function(x) x$df))
 df = data.table(df)
 
 # saveRDS(df, file=paste0(opt$folder,'/df.RDS'))
 # df = readRDS(paste0(opt$folder,'/df.RDS'))
 
-col = ggColorHue(length(table(df$key)))
+# col = ggColorHue(length(table(df$key)))
+col = df_plots$color[df_plots$method %in% levels(df$key)]
 
 file = paste0(folder,'/../figures/','combine_choose', ".pdf")
 pdf( file, width=7, height=20)
@@ -547,7 +546,8 @@ dfpr = data.table(dfpr)
 # saveRDS(dfpr, file=paste0(opt$folder,'/dfpr.RDS'))
 # dfpr = readRDS(paste0(opt$folder,'/dfpr.RDS'))
 
-col = ggColorHue(length(table(df$key)))
+# col = ggColorHue(length(table(df$key)))
+col = df_plots$color[df_plots$method %in% levels(df$key)]
 randCurve = dfpr[,unique(rnd.value)]
 
 file = paste0(folder,'/../figures/','combine_pr2', ".pdf")
@@ -566,7 +566,8 @@ df_fpr = data.table(df_fpr)
 # saveRDS(df_fpr, file=paste0(opt$folder,'/df_fpr.RDS'))
 # df_fpr = readRDS(paste0(opt$folder,'/df_fpr.RDS'))
 
-col = ggColorHue(length(table(df$key)))
+# col = ggColorHue(length(table(df$key)))
+col = df_plots$color[df_plots$method %in% levels(df$key)]
 
 file = paste0(folder,'/../figures/','combine_fpr', ".pdf")
 pdf( file, width=15, height=20)
@@ -586,7 +587,8 @@ df_aupr = data.table(df_aupr)
 # saveRDS(df_aupr, file=paste0(opt$folder,'/df_aupr.RDS'))
 # df_aupr = readRDS(paste0(opt$folder,'/df_aupr.RDS'))
 
-col = ggColorHue(length(table(df$key)))
+# col = ggColorHue(length(table(df$key)))
+col = df_plots$color[df_plots$method %in% levels(df$key)]
 
 file = paste0(folder,'/../figures/','combine_aupr', ".pdf")
 pdf( file, width=15, height=20)
