@@ -31,8 +31,9 @@ registerDoParallel( opt$nthreads )
 
 
 # define colors
-library(RColorBrewer)
-brewer.pal(n = 12, name = "Paired")
+################
+# library(RColorBrewer)
+# brewer.pal(n = 12, name = "Paired")
 
 colarray = c("Single replicate (limma/voom)", "#A6CEE3",
 "Single replicate (DESeq2)", "#1F78B4",
@@ -50,9 +51,9 @@ df_plots = data.frame(matrix( colarray, ncol=2, byrow=TRUE), stringsAsFactors=FA
 df_plots$X1 = factor(df_plots$X1, df_plots$X1)
 colnames(df_plots) = c("method", "color")
 
-library(ggplot2)
-df_plots$value = 1
-ggplot(df_plots, aes(X1, value, fill=X1)) + geom_bar(stat="identity") + coord_flip() + scale_fill_manual(values=df_col$X2)
+# library(ggplot2)
+# df_plots$value = 1
+# ggplot(df_plots, aes(method, value, fill=method)) + geom_bar(stat="identity") + coord_flip() + scale_fill_manual(values=df_plots$color)
 
 
 
