@@ -29,6 +29,33 @@ cat("# prefix: ", length(prefixes), "\n")
 
 registerDoParallel( opt$nthreads )
 
+
+# define colors
+library(RColorBrewer)
+brewer.pal(n = 12, name = "Paired")
+
+colarray = c("Single replicate (limma/voom)", "#A6CEE3",
+"Single replicate (DESeq2)", "#1F78B4",
+"Sum reads (limma/voom)", "#B2DF8A",
+"Sum reads (DESeq2)", "#33A02C",
+"Full data, ignore corr (limma/voom)",  "#FB9A99",
+"Full data, ignore corr (DESeq2)", "#E31A1C",
+"macau2", "gold",
+"duplicateCorrelation with limma/voom", "#B15928",
+"dream", "#FDBF6F",
+"dream (KR)",  "#FF7F00",
+"dream [std p]", "#CAB2D6",
+"dream (KR) [std p]",  "#6A3D9A")
+df_plots = data.frame(matrix( colarray, ncol=2, byrow=TRUE), stringsAsFactors=FALSE)
+df_plots$X1 = factor(df_plots$X1, df_plots$X1)
+colnames(df_plots) = c("method", "color")
+
+library(ggplot2)
+df_plots$value = 1
+ggplot(df_plots, aes(X1, value, fill=X1)) + geom_bar(stat="identity") + coord_flip() + scale_fill_manual(values=df_col$X2)
+
+
+
 resList = foreach( prefix = prefixes ) %dopar% {
 
 	n_donor = as.numeric(gsub("^(\\d+)_(\\d+).*", "\\1", prefix))
@@ -52,7 +79,8 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	colnames(de_res)[colnames(de_res) == 'lmFit_dupCor' ] = "duplicateCorrelation with limma/voom"
 	colnames(de_res)[colnames(de_res) == 'lmm_Sat_eBayes' ] = "dream"
 	colnames(de_res)[colnames(de_res) == 'lmm_KR_eBayes' ] = "dream (KR)"
-	# de_res = de_res[,!(colnames(de_res) %in% c("lmm_Sat", "lmm_KR", "lmm_KR_eBayes" ))]
+	colnames(de_res)[colnames(de_res) == 'lmm_Sat' ] = "dream [std p]"
+	colnames(de_res)[colnames(de_res) == 'lmm_KR' ] = "dream (KR) [std p]"
 
 	# raw p-values on right
 	keepRaw = TRUE
@@ -62,12 +90,12 @@ resList = foreach( prefix = prefixes ) %dopar% {
 		de_res = cbind(de_res, de_res_right)
 
 		# specify colors
-		method_order = colnames(de_res)[-c(1, 12,13)]
-		col = ggColorHue(length(method_order))
-		names(col) = method_order
-		col['lmm_Sat'] = alpha(col['dream'], .5)
-		col['lmm_KR'] = alpha(col['dream (KR)'], .5)
-		method_order = c(method_order, c("lmm_Sat", "lmm_KR"))
+		# method_order = colnames(de_res)[-c(1, 12,13)]
+		# col = ggColorHue(length(method_order))
+		# names(col) = method_order
+		# col['lmm_Sat'] = alpha(col['dream'], .5)
+		# col['lmm_KR'] = alpha(col['dream (KR)'], .5)
+		# method_order = c(method_order, c("lmm_Sat", "lmm_KR"))
 	}else{
 		de_res = de_res[,!(colnames(de_res) %in% c("lmm_Sat", "lmm_KR"))]
 		
@@ -108,9 +136,11 @@ resList = foreach( prefix = prefixes ) %dopar% {
 
 		data.frame(n_donor, n_reps, key, p_cutoff, n_chosen, n_false, stringsAsFactors=FALSE)
 	}
-	df$key = factor(df$key, method_order)
+	df$key = factor(df$key, df_plots$method)
 	df$n_chosen = df$n_chosen / length(files)
 	df$n_false = df$n_false / length(files)
+
+	col = df_plots$color[df_plots$method %in% levels(df$key)]
 
 	# plot false positive versus positives
 	fig_choose = ggplot(df, aes(n_chosen, n_false, color=key)) + geom_line() + xlim(0, 375) + ylim(0, 50) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_color_manual(values=col) + xlab("# genes selected") + ylab("# false positives")
@@ -136,10 +166,11 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	aupr$value = foreach( method = names(prList), .combine=c ) %do% {
 		prList[[method]]$auc.integral
 	}
-	aupr$method = factor(aupr$method, method_order)
+	aupr$method = factor(aupr$method, df_plots$method)
 	aupr$n_donor = n_donor
 	aupr$n_reps = n_reps
-	aupr.rand.score = prList[[method]]$rand$auc.integral
+	aupr.rand.score = prList[[method]]$rand$auc.integral	
+	col = df_plots$color[df_plots$method %in% levels(aupr$method)]
 
 	fig_aupr = ggplot(aupr, aes(method, value, fill=method)) + geom_bar(stat="identity") + coord_flip() + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("AUPR") + geom_hline(yintercept=aupr.rand.score, linetype=2)
 
@@ -154,17 +185,18 @@ resList = foreach( prefix = prefixes ) %dopar% {
 		res = data.frame(unique(pr), method)
 		res[order(res$precision, decreasing=TRUE),]
 	}
-	dfpr$method = factor(dfpr$method, method_order)
+	dfpr$method = factor(dfpr$method, df_plots$method)
+	col = df_plots$color[df_plots$method %in% levels(dfpr$method)]
 
 	rnd.value = prList[[1]]$rand$curve[1,2]
 	dfpr$rnd.value = rnd.value 
 	dfpr$n_donor = n_donor
 	dfpr$n_reps = n_reps
 
-	fig_pr = ggplot(dfpr, aes(recall, precision, color=method)) + geom_line() + theme_bw(12) + xlab("Recall") + ylab("Precision") + xlim(0,1) + ylim(0,1) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + geom_hline(yintercept=rnd.value, color="grey50", linetype=2) + geom_hline(yintercept=aupr.rand.score, linetype=2)
+	fig_pr = ggplot(dfpr, aes(recall, precision, color=method)) + geom_line() + theme_bw(12) + xlab("Recall") + ylab("Precision") + xlim(0,1) + ylim(0,1) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + geom_hline(yintercept=rnd.value, color="grey50", linetype=2) + geom_hline(yintercept=aupr.rand.score, linetype=2) + scale_color_manual(values=col)
 	
 	# Power	at 5% FDR
-	#===========
+	#==================
 	power_fdr_5 = data.frame(method = names(prList))
 	power_fdr_5$value = foreach( method = names(prList), .combine=c ) %do% {
 		pr = as.data.frame(prList[[method]]$curve)
@@ -174,9 +206,10 @@ resList = foreach( prefix = prefixes ) %dopar% {
 		i = which.min(abs(pr$precision - 0.95))
 		pr$recall[i]
 	}
-	power_fdr_5$method = factor(power_fdr_5$method, method_order)
+	power_fdr_5$method = factor(power_fdr_5$method, df_plots$method)
 	power_fdr_5$n_donor = n_donor
 	power_fdr_5$n_reps = n_reps
+	col = df_plots$color[df_plots$method %in% levels(power_fdr_5$method)]
 
 	fig_power_fdr_5 = ggplot(power_fdr_5, aes(method, value, fill=method)) + geom_bar(stat="identity") + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("Power at FDR 5%") + coord_flip()
 
@@ -185,9 +218,10 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	fpr = apply(de_res[de_res$true ==0,], 2, function(x) sum(x< 0.05)/length(x))
 	df_fpr = data.frame(method=names(fpr)[-1])
 	df_fpr$value = fpr[-1]
-	df_fpr$method = factor(df_fpr$method, method_order)
+	df_fpr$method = factor(df_fpr$method, df_plots$method)
 	df_fpr$n_donor = n_donor
 	df_fpr$n_reps = n_reps
+	col = df_plots$color[df_plots$method %in% levels(df_fpr$method)]
 
 	fig_fpr = ggplot(df_fpr, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("False positive rate at p<0.05") + coord_flip()
 
@@ -209,6 +243,8 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	colnames(de_res)[colnames(de_res) == 'lmFit_dupCor' ] = "duplicateCorrelation with limma/voom"
 	colnames(de_res)[colnames(de_res) == 'lmm_Sat_eBayes' ] = "dream"
 	colnames(de_res)[colnames(de_res) == 'lmm_KR_eBayes' ] = "dream (KR)"
+	colnames(de_res)[colnames(de_res) == 'lmm_Sat' ] = "dream [std p]"
+	colnames(de_res)[colnames(de_res) == 'lmm_KR' ] = "dream (KR) [std p]"
 
 	# de_res = de_res[,!(colnames(de_res) %in% c("lmm_Sat", "lmm_KR", "lmm_KR_eBayes" ))]
 
@@ -216,9 +252,10 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	false_discoveries = data.frame(method=names(fd)[-1])
 	# divide false discoveries by number of analyses
 	false_discoveries$value = as.numeric(fd[-1] / length(files))
-	false_discoveries$method = factor(false_discoveries$method, method_order)
+	false_discoveries$method = factor(false_discoveries$method, df_plots$method)
 	false_discoveries$n_donor = n_donor
 	false_discoveries$n_reps = n_reps
+	col = df_plots$color[df_plots$method %in% levels(false_discoveries$method)]
 
 	fig_fd = ggplot(false_discoveries, aes(method, value, fill=method)) + geom_bar(stat="identity") + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("False discoveries at FDR <0.05") + coord_flip()
 
@@ -482,6 +519,8 @@ donor_array = sort(unique(sapply(strsplit( prefixes, "_"), function(x) as.numeri
 
 # False Discoveries
 ###################
+
+browser()
 
 df = do.call("rbind", lapply(resList, function(x) x$df))
 df = data.table(df)
