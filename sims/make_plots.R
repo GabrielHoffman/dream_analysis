@@ -330,8 +330,8 @@ donor_array = sort(unique(sapply(strsplit( prefixes, "_"), function(x) as.numeri
 
 # Write to PDF
 #=============
-file = paste0(folder,'/../figures/','combine', ".pdf")
-pdf( file, width=7, height=25 )
+# file = paste0(folder,'/../figures/','combine', ".pdf")
+# pdf( file, width=7, height=25 )
 # choose
 # fig_choose = foreach(n_donor = donor_array, .combine=c) %do% {
 # 	foreach(n_reps = 2:4, .combine=c) %do% {
