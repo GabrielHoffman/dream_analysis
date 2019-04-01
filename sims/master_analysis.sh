@@ -25,7 +25,7 @@ faSomeRecords $FASTALL headers.lst $FASTA
 # Simulate read counts
 #######################
 
-FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v1/
+FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
 cd $FOLDER
 mkdir data figures jobs logs results
 FASTA=/hpc/users/hoffmg01/work/RNA_seq_sim/transcriptome/gencode.v19.genes.fa
@@ -36,11 +36,17 @@ FC=3
 HSQ=0.4
 
 LOG=$FOLDER/logs/
-for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+# for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
 do
-for N_REPS in $(seq 2 4);
+# for N_REPS in $(seq 2 4);
 do
-for SEED in $(seq 1 50);
+# for SEED in $(seq 1 50);
+
+for N_SAMPLES in $(seq 4 2 20);
+do
+for N_REPS in $(seq 2 3);
+do
+for SEED in $(seq 1 5);
 do
 PFX=${N_SAMPLES}_${N_REPS}_${N_DE}_${FC}_${HSQ}_${SEED}
 echo '#!/bin/bash' > jobs/sims_${PFX}.lsf
@@ -94,18 +100,12 @@ HSQ=0.4
 FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
 cd $FOLDER
 LOG=$FOLDER/logs
-for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
-# for N_SAMPLES in $(echo $(seq 4 2 10));
-do
-# EXTRA=''
-# if [[ ${N_SAMPLES} -lt 16 ]] && [[ ${N_SAMPLES} -gt 2  ]];
-# then
-# 	EXTRA='--macau2'
-# fi
 EXTRA='--macau2'
-for N_REPS in $(seq 2 4);
+for N_SAMPLES in $(seq 4 2 20);
 do
-for SEED in $(seq 1 50);
+for N_REPS in $(seq 2 3);
+do
+for SEED in $(seq 1 5);
 do
 PFX=${N_SAMPLES}_${N_REPS}_${N_DE}_${FC}_${HSQ}_${SEED}
 echo '#!/bin/bash' > jobs/scripts_${PFX}.lsf
@@ -134,6 +134,8 @@ ls jobs/scripts_*lsf | parallel -P1 "bsub < {}; sleep .2"
 seq 1 10 | parallel -P1 ls jobs/scripts_*_{}.lsf | parallel -P1 "bsub < {}; sleep .2"
 
 
+1) show eBayes vs raw in the supplement
+2) time course
 
 
 # resubmit crashed jobs

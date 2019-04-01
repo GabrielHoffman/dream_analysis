@@ -26,6 +26,7 @@ suppressPackageStartupMessages(library(foreach))
 suppressPackageStartupMessages(library(doParallel))
 suppressPackageStartupMessages(library(edgeR))
 suppressPackageStartupMessages(library(limma))
+suppressPackageStartupMessages(library(mvtnorm))
 
 source("/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/helper_functions.R")
 
@@ -58,35 +59,58 @@ info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=
 	Disease = as.character(sort(rep(0:1, n_samples*n_reps / 2))), 
 	Experiment = paste("sample_", gsub(" ", "0", format(1:(n_samples*n_reps), digits=2)), sep=''), stringsAsFactors=FALSE)
 
-design = model.matrix( ~ Individual + Disease+0,info)
+# design = model.matrix( ~ Individual + Disease+0,info)
 
+# simulate from variance components
+###################################
 
 simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "variancePartition") ) %do% {
 	cat("\r", j, "        ")
 
-	# indiv_variance = rnorm(1, .5, 2)
-	indiv_variance = 1
-	beta = rnorm(n_samples, 0, max(indiv_variance, .1))
+	# set parameters
+	v_indiv = rbeta(1, 2, 10)
+	v_random = 1
+	v_disease = rbeta(1, 5, 50)
+
+	# differentially expressed genes
+	# if ! DE, set to zero
+	v_disease = ifelse(j <= n_de_genes,  v_disease, 0)
+
+	# Individual
+	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
+	dsgn_indiv[dsgn_indiv==1] = sqrt(v_indiv)
+	Sigma_id = tcrossprod(dsgn_indiv)
+	diag(Sigma_id) = 0 
+
+	# Disease
+	dsgn_disease = model.matrix( ~ 0 + Disease ,info)
+	dsgn_disease[dsgn_disease==1] = sqrt(v_disease)
+	Sigma_disease = tcrossprod(dsgn_disease)
+	diag(Sigma_disease) = 0
+
+	# random noise
+	Sigma_random = diag(v_random, nrow(info))
+
+	# sample gene expression
+	K = Sigma_id + Sigma_disease + Sigma_random
+	K = cov2cor(K)
+	y = t(rmvnorm(1, rep(0, nrow(info)), K))
+
+	# fit <- lmer( y ~ (1|Individual) + (1|Disease), info, REML=FALSE)
+	# v = calcVarPart( fit )
+	# v
 
 	if( j <= n_de_genes){
-		# beta[] = 0
-		eta = design %*% c(beta, disease_fc)
-		error_var = (1-h_sq)/h_sq  * var(eta)
-	}else{		
-		eta = design %*% c(beta, 0)
+		beta = coef(summary(lm(y ~ Disease, info)))[2,1]
 
-		h_sq_other = rbeta(1, 1, 1.6)
-		error_var = (1-h_sq_other)/h_sq_other  * var(eta)
-	}	
-
-	y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
-
-	# fit <- lmer( y ~ (1|Individual) + (1|Disease), info, REML=FALSE))
-	# v = calcVarPart( fit )
-	# list( FC = t(y) - min(y) + 1, modelStats = v[order(names(v))] )
+		# scale  to produce a fold change of 3
+		y = y * 3/beta
+	}
 
 	list( FC = t(y) - min(y) + 1 )
 }
+
+
 
 FC = matrix(NA, nrow=length(fastaTranscripts), ncol=n_samples*n_reps)
 # modelStats = matrix(NA, nrow(FC), ncol=3)
@@ -114,7 +138,7 @@ save(list=ls(), file=paste(opt$out, "/infoAll_", opt$prefix, ".RData", sep=''))
     # num_reps = rep(1, n_samples*n_reps), fold_changes=FC, lib_sizes=lib_sizes,outdir='~/work/RNA_seq_sim/simulated_reads', gzip=TRUE, reportCoverage=TRUE) 
 
 countMatrix = simulate_experiment_justCounts(transcripts=fastaTranscripts, reads_per_transcript=readspertx, 
-    num_reps = rep(1, n_samples*n_reps), fold_changes=FC, lib_sizes=lib_sizes,outdir=opt$out, gzip=TRUE, reportCoverage=TRUE, simReads=FALSE) #, meanmodel=FALSE
+    num_reps = rep(1, n_samples*n_reps), fold_changes=FC, lib_sizes=lib_sizes,outdir=opt$out, gzip=TRUE, reportCoverage=TRUE, simReads=FALSE) #), meanmodel=TRUE )
 
 
 rownames(countMatrix) = names(fastaTranscripts)
