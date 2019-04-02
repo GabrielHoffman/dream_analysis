@@ -220,7 +220,7 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	aupr.rand.score = prList[[method]]$rand$auc.integral	
 	col = df_plots$color[df_plots$method %in% levels(aupr$method)]
 
-	fig_aupr = ggplot(aupr, aes(method, value, fill=method)) + geom_bar(stat="identity") + coord_flip() + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("AUPR") + geom_hline(yintercept=aupr.rand.score, linetype=2)
+	fig_aupr = ggplot(aupr, aes(method, value, fill=method)) + geom_bar(stat="identity") + coord_flip() + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("AUPR") + geom_hline(yintercept=aupr.rand.score, linetype=2) + ylim(0,1)
 
 	# Plot PR
 	#========

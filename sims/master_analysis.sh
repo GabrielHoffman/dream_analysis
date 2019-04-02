@@ -61,9 +61,10 @@ echo "#BSUB -J ${PFX}
 #BSUB -L /bin/bash
 
 module purge
-module load R/3.4.3
+module load R/3.5.1
 
-/hpc/users/hoffmg01/scripts/varPartSims/generate_simulations.R --fasta $FASTA --n_samples ${N_SAMPLES} --n_reps ${N_REPS} --n_de_genes ${N_DE} --disease_fc ${FC} --hsq ${HSQ} --nthreads 20 --seed ${SEED} --out $FOLDER/data --prefix $PFX " >> jobs/sims_${PFX}.lsf
+
+/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/generate_simulations.R --fasta $FASTA --n_samples ${N_SAMPLES} --n_reps ${N_REPS} --n_de_genes ${N_DE} --disease_fc ${FC} --hsq ${HSQ} --nthreads 20 --seed ${SEED} --out $FOLDER/data --prefix $PFX " >> jobs/sims_${PFX}.lsf
 done
 done
 done
