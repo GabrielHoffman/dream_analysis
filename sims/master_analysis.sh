@@ -42,9 +42,9 @@ do
 do
 # for SEED in $(seq 1 50);
 
-for N_SAMPLES in $(seq 4 2 20);
+for N_SAMPLES in $(seq 4 2 16);
 do
-for N_REPS in $(seq 2 3);
+for N_REPS in $(seq 2 2);
 do
 for SEED in $(seq 1 5);
 do
@@ -62,7 +62,6 @@ echo "#BSUB -J ${PFX}
 
 module purge
 module load R/3.5.1
-
 
 /hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/generate_simulations.R --fasta $FASTA --n_samples ${N_SAMPLES} --n_reps ${N_REPS} --n_de_genes ${N_DE} --disease_fc ${FC} --hsq ${HSQ} --nthreads 20 --seed ${SEED} --out $FOLDER/data --prefix $PFX " >> jobs/sims_${PFX}.lsf
 done
@@ -89,8 +88,8 @@ comm -23 <(sort all.lst) <(cat running.lst complete.lst | sort) | parallel -P1 l
 # Run differential expression #
 ###############################
 
-cd /hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims
-git pull
+# cd /hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims
+# git pull
 
  # \rm -f figures/* jobs/* logs/* results/*
 
@@ -101,10 +100,9 @@ HSQ=0.4
 FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
 cd $FOLDER
 LOG=$FOLDER/logs
-EXTRA='--macau2'
-for N_SAMPLES in $(seq 4 2 20);
+for N_SAMPLES in $(seq 4 2 16);
 do
-for N_REPS in $(seq 2 3);
+for N_REPS in $(seq 2 2);
 do
 for SEED in $(seq 1 5);
 do
@@ -127,7 +125,6 @@ module load R/3.5.1
 done
 done
 done
-#/hpc/users/hoffmg01/scripts/varPartSims/run_DE_analysis.R --prefix ${PFX} --folder $FOLDER
 
 ls jobs/scripts_*lsf | parallel -P1 "bsub < {}; sleep .2"
 	

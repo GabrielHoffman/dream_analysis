@@ -64,52 +64,41 @@ info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=
 # simulate from variance components
 ###################################
 
+design = model.matrix( ~ Disease,info)
+
 simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "variancePartition") ) %do% {
 	cat("\r", j, "        ")
 
 	# set parameters
 	v_indiv = rbeta(1, 2, 3)
-	v_random = 1
-	v_disease = rbeta(1, 50, 500)
-
-	# differentially expressed genes
-	# if ! DE, set to zero
-	v_disease = ifelse(j <= n_de_genes,  v_disease, 0)
 
 	# Individual
 	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
 	dsgn_indiv[dsgn_indiv==1] = sqrt(v_indiv)
 	Sigma_id = tcrossprod(dsgn_indiv)
-	diag(Sigma_id) = 0 
+	diag(Sigma_id) = 1 
 
-	# Disease
-	dsgn_disease = model.matrix( ~ 0 + Disease ,info)
-	dsgn_disease[dsgn_disease==1] = sqrt(v_disease)
-	Sigma_disease = tcrossprod(dsgn_disease)
-	diag(Sigma_disease) = 0
+	# draw indiv level value
+	eta = t(rmvnorm(1, rep(0, nrow(info)), sigma=cov2cor(Sigma_id)))
 
-	# random noise
-	Sigma_random = diag(v_random, nrow(info))
-
-	# sample gene expression
-	K = Sigma_id + Sigma_disease + Sigma_random
-	K = cov2cor(K)
-	y = t(rmvnorm(1, rep(0, nrow(info)), K))
-
-	# fit <- lmer( y ~ (1|Individual) + (1|Disease), info, REML=FALSE)
-	# v = calcVarPart( fit )
-	# v
-
+	# if DE gene, add component of fold change 
 	if( j <= n_de_genes){
-		beta = coef(summary(lm(y ~ Disease, info)))[2,1]
-
-		# scale  to produce a fold change of 3
-		y = y * 3/beta
+		eta = eta + model.matrix( ~ Disease,info)[,2] * opt$disease_fc
 	}
+
+	# add noise
+	a = 2*opt$hsq
+	b = 2*(1-opt$hsq)
+
+	# use given heritability
+	h_sq_other = rbeta(1, a,b)
+	error_var = (1-h_sq_other)/h_sq_other  * var(eta)
+
+	# generate phenotype
+	y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
 
 	list( FC = t(y) - min(y) + 1 )
 }
-
 
 
 FC = matrix(NA, nrow=length(fastaTranscripts), ncol=n_samples*n_reps)
@@ -120,6 +109,19 @@ for(j in 1:nrow(FC)){
 	FC[j,] = simParams[[j]]$FC
 	# modelStats[j,] = simParams[[j]]$modelStats
 }
+
+rownames(info) = info$Experiment
+colnames(FC) = info$Experiment
+
+# Just for testing
+# vp = fitExtractVarPartModel( FC[1:100,], ~ (1|Individual) + (1|Disease), info)
+
+# form <- ~ Disease + (1|Individual)
+# L = getContrast( FC, form, info, "Disease1")
+# fit = dream(FC[1:100,], form, info, L)
+# fit = eBayes( fit )
+# topTable(fit)
+
 
 deGeneList = names(fastaTranscripts)[1:n_de_genes]
 # deGeneList = gsub(".*gene=(\\S+)", "\\1", deGeneList)
