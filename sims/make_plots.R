@@ -96,6 +96,8 @@ summTime = resTime[,data.frame(mean=mean(time), sd=sd(time)),by=c("method", "n_d
 summTime$method = factor(summTime$method, df_plots$method)
 col = df_plots$color[df_plots$method %in% levels(summTime$method)]
 
+file = paste0(folder,'/../figures/combine_time.pdf')
+pdf( file )
 ggplot(summTime, aes(n_donor,mean/60, color=method)) + geom_line() + geom_errorbar(aes(ymin = (mean-sd)/60, ymax = (mean+sd)/60)) + scale_y_log10() + theme_bw() + theme(aspect.ratio=1, legend.position="bottom")  + scale_color_manual(values=col) + facet_wrap(~n_reps) + xlab("# Donors") + ylab("Run time (minutes)")
 dev.off()
 
@@ -220,7 +222,7 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	aupr.rand.score = prList[[method]]$rand$auc.integral	
 	col = df_plots$color[df_plots$method %in% levels(aupr$method)]
 
-	fig_aupr = ggplot(aupr, aes(method, value, fill=method)) + geom_bar(stat="identity") + coord_flip() + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("AUPR") + geom_hline(yintercept=aupr.rand.score, linetype=2) + ylim(0,1)
+	fig_aupr = ggplot(aupr, aes(method, value, fill=method)) + geom_bar(stat="identity") + coord_flip() + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("AUPR") + geom_hline(yintercept=aupr.rand.score, linetype=2) 
 
 	# Plot PR
 	#========
