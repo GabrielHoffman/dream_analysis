@@ -70,7 +70,7 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 	cat("\r", j, "        ")
 
 	# set parameters
-	v_indiv = rbeta(1, 2, 3)
+	v_indiv = rbeta(1, 1.5, 2)
 
 	# Individual
 	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
