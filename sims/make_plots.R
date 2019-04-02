@@ -640,9 +640,9 @@ fig1 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity")
 
 df_a = df_fpr[(n_donor > 14),]
 # drop macau2 if all empty
-if( df_a[method=="macau2",unique(value)] == 0 ){
-	df_a = df_a[method!="macau2",]
-}
+# if( df_a[method=="macau2",unique(value)] == 0 ){
+# 	df_a = df_a[method!="macau2",]
+# }
 df_a$method = droplevels(df_a$method)
 col = df_plots$color[df_plots$method %in% levels(df_a$method)]
 
