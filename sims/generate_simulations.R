@@ -68,9 +68,9 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 	cat("\r", j, "        ")
 
 	# set parameters
-	v_indiv = rbeta(1, 2, 10)
+	v_indiv = rbeta(1, 2, 3)
 	v_random = 1
-	v_disease = rbeta(1, 5, 50)
+	v_disease = rbeta(1, 50, 500)
 
 	# differentially expressed genes
 	# if ! DE, set to zero
