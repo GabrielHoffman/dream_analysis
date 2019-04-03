@@ -64,6 +64,7 @@ info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=
 # simulate from variance components
 ###################################
 
+# fastaTranscripts = fastaTranscripts[1:1000]
 design = model.matrix( ~ Disease,info)
 
 simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "variancePartition") ) %do% {
@@ -114,11 +115,16 @@ rownames(info) = info$Experiment
 colnames(FC) = info$Experiment
 
 # Just for testing
-# vp = fitExtractVarPartModel( FC[1:100,], ~ (1|Individual) + (1|Disease), info)
+# vp = fitExtractVarPartModel( FC, ~ (1|Individual) + (1|Disease), info)
+
+# plotVarPart(vp[1:500,])
+# plotVarPart(vp[501:1000,])
+# dev.off()
+
 
 # form <- ~ Disease + (1|Individual)
 # L = getContrast( FC, form, info, "Disease1")
-# fit = dream(FC[1:100,], form, info, L)
+# fit = dream(FC, form, info, L)
 # fit = eBayes( fit )
 # topTable(fit)
 

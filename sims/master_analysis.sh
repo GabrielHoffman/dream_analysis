@@ -96,6 +96,7 @@ comm -23 <(sort all.lst) <(cat running.lst complete.lst | sort) | parallel -P1 l
 N_DE=500
 FC=3
 HSQ=0.4
+EXTRA=""
 
 FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
 cd $FOLDER
