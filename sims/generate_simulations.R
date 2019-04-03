@@ -82,11 +82,6 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 	# draw indiv level value
 	eta = t(rmvnorm(1, rep(0, nrow(info)), sigma=cov2cor(Sigma_id)))
 
-	# if DE gene, add component of fold change 
-	if( j <= n_de_genes){
-		eta = eta + model.matrix( ~ Disease,info)[,2] * opt$disease_fc
-	}
-
 	# add noise
 	a = 2*opt$hsq
 	b = 2*(1-opt$hsq)
@@ -94,6 +89,12 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 	# use given heritability
 	h_sq_other = rbeta(1, a,b)
 	error_var = (1-h_sq_other)/h_sq_other  * var(eta)
+
+	# if DE gene, add component of fold change 
+	if( j <= n_de_genes){
+		eta = eta + model.matrix( ~ Disease,info)[,2] * opt$disease_fc
+		error_var = (1-h_sq)/h_sq * var(eta)
+	}
 
 	# generate phenotype
 	y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
