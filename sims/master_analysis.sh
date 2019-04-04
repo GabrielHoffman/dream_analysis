@@ -33,7 +33,7 @@ FASTA=/hpc/users/hoffmg01/work/RNA_seq_sim/transcriptome/gencode.v19.genes.fa
 # save full name of sim
 N_DE=500
 FC=3
-HSQ=0.8
+HSQ=0.999
 
 LOG=$FOLDER/logs/
 # for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
@@ -91,11 +91,11 @@ comm -23 <(sort all.lst) <(cat running.lst complete.lst | sort) | parallel -P1 l
 # cd /hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims
 # git pull
 
- # \rm -f figures/* jobs/* logs/* results/*
+ # \rm -f figures/* jobs/* logs/* results/* data/*
 
 N_DE=500
 FC=3
-HSQ=0.4
+HSQ=0.999
 EXTRA=""
 
 FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/

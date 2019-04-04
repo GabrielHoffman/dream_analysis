@@ -65,39 +65,68 @@ info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=
 ###################################
 
 # fastaTranscripts = fastaTranscripts[1:1000]
-design = model.matrix( ~ Disease,info)
+# design = model.matrix( ~ Disease,info)
+
+# simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "variancePartition") ) %do% {
+# 	cat("\r", j, "        ")
+
+# 	# set parameters
+# 	v_indiv = rbeta(1, 1.5, 2)
+
+# 	# Individual
+# 	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
+# 	dsgn_indiv[dsgn_indiv==1] = sqrt(v_indiv)
+# 	Sigma_id = tcrossprod(dsgn_indiv)
+# 	diag(Sigma_id) = 1 
+
+# 	# draw indiv level value
+# 	eta = t(rmvnorm(1, rep(0, nrow(info)), sigma=cov2cor(Sigma_id)))
+
+# 	# add noise
+# 	a = 2*opt$hsq
+# 	b = 2*(1-opt$hsq)
+
+# 	# use given heritability
+# 	h_sq_other = rbeta(1, a,b)
+# 	error_var = (1-h_sq_other)/h_sq_other  * var(eta)
+
+# 	# if DE gene, add component of fold change 
+# 	if( j <= n_de_genes){
+# 		eta = eta + model.matrix( ~ Disease,info)[,2] * opt$disease_fc
+# 		error_var = (1-opt$hsq)/opt$hsq * var(eta)
+# 	}
+
+# 	# generate phenotype
+# 	y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
+
+# 	list( FC = t(y) - min(y) + 1 )
+# }
+
+design = model.matrix( ~ Individual + Disease+0,info)
 
 simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "variancePartition") ) %do% {
 	cat("\r", j, "        ")
 
-	# set parameters
-	v_indiv = rbeta(1, 1.5, 2)
+	# indiv_variance = rnorm(1, .5, 2)
+	indiv_variance = 1
+	beta = rnorm(n_samples, 0, max(indiv_variance, .1))
 
-	# Individual
-	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
-	dsgn_indiv[dsgn_indiv==1] = sqrt(v_indiv)
-	Sigma_id = tcrossprod(dsgn_indiv)
-	diag(Sigma_id) = 1 
-
-	# draw indiv level value
-	eta = t(rmvnorm(1, rep(0, nrow(info)), sigma=cov2cor(Sigma_id)))
-
-	# add noise
-	a = 2*opt$hsq
-	b = 2*(1-opt$hsq)
-
-	# use given heritability
-	h_sq_other = rbeta(1, a,b)
-	error_var = (1-h_sq_other)/h_sq_other  * var(eta)
-
-	# if DE gene, add component of fold change 
 	if( j <= n_de_genes){
-		eta = eta + model.matrix( ~ Disease,info)[,2] * opt$disease_fc
-		error_var = (1-h_sq)/h_sq * var(eta)
-	}
+		# beta[] = 0
+		eta = design %*% c(beta, disease_fc)
+		error_var = (1-h_sq)/h_sq  * var(eta)
+	}else{		
+		eta = design %*% c(beta, 0)
 
-	# generate phenotype
+		h_sq_other = rbeta(1, 1, 1.6)
+		error_var = (1-h_sq_other)/h_sq_other  * var(eta)
+	}	
+
 	y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
+
+	# fit <- lmer( y ~ (1|Individual) + (1|Disease), info, REML=FALSE))
+	# v = calcVarPart( fit )
+	# list( FC = t(y) - min(y) + 1, modelStats = v[order(names(v))] )
 
 	list( FC = t(y) - min(y) + 1 )
 }
