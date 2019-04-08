@@ -125,7 +125,7 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 
 	# within-donor noise
 	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
-	dsgn_indiv[dsgn_indiv==1] = 0.9
+	dsgn_indiv[dsgn_indiv==1] = 0.1
 	Sigma_id = tcrossprod(dsgn_indiv)
 	diag(Sigma_id) = 1 
 
