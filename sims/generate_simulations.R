@@ -134,8 +134,8 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 
 	# y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
 
-	fit <- lmer( y ~ (1|Individual) + (1|Disease), info, REML=FALSE)
-	v = calcVarPart( fit )
+	# fit <- lmer( y ~ (1|Individual) + (1|Disease), info, REML=FALSE)
+	# v = calcVarPart( fit )
 	# list( FC = t(y) - min(y) + 1, modelStats = v[order(names(v))] )
 
 	list( FC = t(y) - min(y) + 1 )
