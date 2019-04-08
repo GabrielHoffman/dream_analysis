@@ -121,11 +121,21 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 		h_sq_other = rbeta(1, 1, 1.6)
 		error_var = (1-h_sq_other)/h_sq_other  * var(eta)
 	}	
+	error_var = as.numeric(error_var)
 
-	y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
+	# within-donor noise
+	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
+	dsgn_indiv[dsgn_indiv==1] = 0.9
+	Sigma_id = tcrossprod(dsgn_indiv)
+	diag(Sigma_id) = 1 
 
-	# fit <- lmer( y ~ (1|Individual) + (1|Disease), info, REML=FALSE))
-	# v = calcVarPart( fit )
+	# draw indiv level value
+	y = eta + t(rmvnorm(1, rep(0, nrow(info)), sigma=cov2cor(Sigma_id*error_var)))
+
+	# y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
+
+	fit <- lmer( y ~ (1|Individual) + (1|Disease), info, REML=FALSE)
+	v = calcVarPart( fit )
 	# list( FC = t(y) - min(y) + 1, modelStats = v[order(names(v))] )
 
 	list( FC = t(y) - min(y) + 1 )

@@ -33,7 +33,7 @@ FASTA=/hpc/users/hoffmg01/work/RNA_seq_sim/transcriptome/gencode.v19.genes.fa
 # save full name of sim
 N_DE=500
 FC=3
-HSQ=0.999
+HSQ=0.4
 
 LOG=$FOLDER/logs/
 # for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
