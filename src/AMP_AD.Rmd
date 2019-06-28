@@ -156,7 +156,6 @@ vobj = voom( genes, design, plot=FALSE, block=metadata$individualIdentifier, cor
 ```
 
 ```{r define}
-synapseLogin()
 # load("enrich.RDATA")
 load(synGet( 'syn16816471' )$path)
 
