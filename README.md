@@ -35,3 +35,45 @@ Links point to original publication, public data, html files from current analys
 
 `rmarkdown::render("src/EpiMap.Rmd", output_dir='./', intermediates_dir='./')`
 
+
+### Dependencies
+Install R dependencies
+```
+# Packages used by data analysis code
+packages = c(
+	'Biobase',
+	'GEOquery',
+	'GenomicRanges',
+	'RcppRoll',
+	'biomaRt',
+	'data.table',
+	'doParallel',
+	'edgeR',
+	'foreach',
+	'genomation',
+	'ggplot2',
+	'grid',
+	'gridExtra',
+	'knitr',
+	'limma',
+	'qvalue',
+	'scales',
+	'variancePartition')
+
+# Install from Bioconductor or CRAN
+# Assumes you've already installed Bioconductor 
+# 	http://bioconductor.org/install
+BiocManager::install( packages )
+
+# Install SynapseClient developed by Sage Bionetworks
+# 	https://github.com/Sage-Bionetworks/rSynapseClient
+devtools::install_github('Sage-Bionetworks/rSynapseClient')
+
+# Install synapser developed by Sage Bionetworks
+# 	https://github.com/Sage-Bionetworks/synapser
+install.packages("synapser", repos=c("http://ran.synapse.org", "http://cran.fhcrc.org"))
+```
+
+
+
+
