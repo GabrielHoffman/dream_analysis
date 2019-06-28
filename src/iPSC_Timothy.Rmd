@@ -183,8 +183,6 @@ geneInfoBiomart = getBM(getAtt,filters="illumina_humanref_8_v3",values=rownames(
 library(RcppRoll)
 library(data.table)
 
- synLogin()
-
 dfr2 = fread(synGet('syn17083748')$path)
 
 figList = foreach( ds = names(dupCorList) ) %do% {
