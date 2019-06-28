@@ -95,7 +95,7 @@ comm -23 <(sort all.lst) <(cat running.lst complete.lst | sort) | parallel -P1 l
 
 N_DE=500
 FC=3
-HSQ=0.999
+HSQ=0.4
 EXTRA=""
 
 FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
@@ -128,6 +128,7 @@ done
 done
 
 ls jobs/scripts_*lsf | parallel -P1 "bsub < {}; sleep .2"
+	
 	
 # only sims 1-10
 seq 1 10 | parallel -P1 ls jobs/scripts_*_{}.lsf | parallel -P1 "bsub < {}; sleep .2"
