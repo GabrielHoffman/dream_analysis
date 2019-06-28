@@ -141,9 +141,15 @@ dreamList = foreach(ds = unique( info$differentiation_state) ) %do% {
   cat("\r", ds, '        ')  
   idx = info$differentiation_state == ds
 
-  form <- ~ 0 + genotype + (1|Donor)
-  L = getContrast( geneExpr[,idx], form, info[idx,], c('genotype TS', 'genotype control'))
-  fitmm = dream( geneExpr[,idx], form, info[idx,], L)
+  # old syntax
+  # form <- ~ 0 + genotype + (1|Donor)
+  # L = getContrast( geneExpr[,idx], form, info[idx,], c('genotypeTS', 'genotypecontrol'))
+  # fitmm = dream( geneExpr[,idx], form, info[idx,], L)
+
+  # new syntax
+  form <- ~ genotype + (1|Donor)
+  fitmm = dream( geneExpr[,idx], form, info[idx,])
+
   fitmm = eBayes( fitmm )
   fitmm
 }  
