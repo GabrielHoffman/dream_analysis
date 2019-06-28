@@ -449,7 +449,7 @@ foreach( ds = names(enrichList_dream_tstat) ) %do% {
 
   # dupCor  
   file = paste0("iPSC_Timothy", gsub(" ", "_", ds),"_DupCor.tsv")
-  tab = topTable( dupCorList[[ds]]$fitDupCor, coef="genotype control", number=Inf )
+  tab = topTable( dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf )
   write.table(tab, file=file, sep="\t", quote=FALSE)
 
   # dream
