@@ -248,7 +248,7 @@ do.call("grid.arrange", c(figList, ncol=1))
 ```{r degenes}
 deCount = foreach( ds = names(dupCorList), .combine=rbind ) %do% {
   a = sum(topTable(dreamList[[ds]], number=Inf)$adj.P.Val < 0.05)
-  b = sum(topTable(dupCorList[[ds]]$fitDupCor, coef='genotype control', number=Inf)$adj.P.Val < 0.05)
+  b = sum(topTable(dupCorList[[ds]]$fitDupCor, coef='genotypeTS', number=Inf)$adj.P.Val < 0.05)
 
   rbind(c(cellType=ds, count = a, method = "dream"), 
     c(cellType=ds, count = b, method = "DupCor"))
