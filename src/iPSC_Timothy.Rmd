@@ -225,10 +225,10 @@ figList = foreach( ds = names(dupCorList) ) %do% {
   xlab = expression('['-log[10]~p[dupCor]~']'-'['-log[10]~p[dream]~']')
   ylab = expression('mean eQTL'~R^2)
 
-  fig1 = ggplot(dfroll, aes(delta, CMC_R2_mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*1.1, y = ylim[2]*.9, label = paste0('rho = ', format(resCor_CMC$estimate, digits=3), "\np < ",format(resCor_CMC$p.value, digits=3))) + ggtitle(paste("CMC", ds))
+  fig1 = ggplot(dfroll, aes(delta, CMC_R2_mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.8, y = ylim[2]*.9, label = paste0('rho = ', format(resCor_CMC$estimate, digits=3), "\np < ",format(resCor_CMC$p.value, digits=3))) + ggtitle(paste("CMC", ds))
 
   ylim = c(0, max(dfroll$DGN_R2_mu))
-  fig2 = ggplot(dfroll, aes(delta, DGN_R2_mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*1.1, y = ylim[2]*.9, label = paste0('rho = ', format(resCor_DGN$estimate, digits=3), "\np < ",format(resCor_DGN$p.value, digits=3))) + ggtitle(paste("DGN", ds))
+  fig2 = ggplot(dfroll, aes(delta, DGN_R2_mu)) +  geom_point() + theme_bw(19) + theme(aspect.ratio=1) + xlab(xlab) + ylab(ylab) + geom_smooth(method="loess", span=1, se=FALSE) + ylim(ylim) + xlim(xlim) + annotate("text", x = xlim[1]*.8, y = ylim[2]*.9, label = paste0('rho = ', format(resCor_DGN$estimate, digits=3), "\np < ",format(resCor_DGN$p.value, digits=3))) + ggtitle(paste("DGN", ds))
   arrangeGrob(fig1, fig2, ncol=2)
 }
 do.call("grid.arrange", c(figList, ncol=1))
