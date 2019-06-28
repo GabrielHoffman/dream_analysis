@@ -76,12 +76,14 @@ BiocManager::install( packages )
 # Install SynapseClient developed by Sage Bionetworks
 # 	https://github.com/Sage-Bionetworks/rSynapseClient
 devtools::install_github('Sage-Bionetworks/rSynapseClient')
+```
 
+<!---
 # Install synapser developed by Sage Bionetworks
 # 	https://github.com/Sage-Bionetworks/synapser
 install.packages("synapser", repos=c("http://ran.synapse.org", "http://cran.fhcrc.org"))
 ```
-
+--->
 
 
 
