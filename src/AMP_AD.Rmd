@@ -97,7 +97,7 @@ metadata3 = merge(metadata2, df_clinical, by='individualIdentifier')
 metadata = metadata3[,.SD[which.max(RIN),],by='Lib']
 
 # keep only OKay
-metadata = metadata[(Action=="OKay") & (Region %in% c('BM10', 'BM22', 'BM36', 'BM44')),]
+metadata = metadata[(Action.x=="OKay") & (Action.y=="OKay") & (Region %in% c('BM10', 'BM22', 'BM36', 'BM44')),]
 
 # convert NP1 to disease class
 # 1= control
