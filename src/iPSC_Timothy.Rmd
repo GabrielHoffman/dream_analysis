@@ -302,7 +302,7 @@ names(enrichList_dream_tstat) = names(dreamList)
 
 enrichList_dp_tstat = foreach( ds = names(dreamList) ) %do% {
 
-  tab = topTable( dupCorList[[ds]]$fitDupCor, coef="genotype control", number=Inf )
+  tab = topTable( dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf )
   tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
   tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
   tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
