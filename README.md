@@ -20,20 +20,26 @@ Links point to original publication, public data, html files from current analys
 
 - ##### Timothy Syndrome | [paper](https://www.nature.com/articles/nm.2576), [data](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE25542), [html](https://cdn.rawgit.com/GabrielHoffman/dream_analysis/master/results/iPSC_Timothy.html), [results](https://github.com/GabrielHoffman/dream_analysis/tree/master/results/files/iPSC_Timothy)
 
-`rmarkdown::render("src/iPSC_Timothy.Rmd", output_dir='./', intermediates_dir='./')`
+```r 
+rmarkdown::render("src/iPSC_Timothy.Rmd", output_dir='./', intermediates_dir='./')
+```
 
 - ##### Alzheimer's disease | [paper](https://www.nature.com/articles/sdata2018185), [data](https://www.synapse.org/#!Synapse:syn3159438), [html](https://cdn.rawgit.com/GabrielHoffman/dream_analysis/master/results/AMP_AD.html), [results](https://github.com/GabrielHoffman/dream_analysis/tree/master/results/files/AMP_AD)
 
-`rmarkdown::render("src/AMP_AD.Rmd", output_dir='./', intermediates_dir='./')`
+```r 
+rmarkdown::render("src/AMP_AD.Rmd", output_dir='./', intermediates_dir='./')
+```
 
 - ##### Childhood onset schizophrenia | [paper](https://www.nature.com/articles/s41467-017-02330-5), [data](www.synapse.org/hiPSC_COS), [html](https://cdn.rawgit.com/GabrielHoffman/dream_analysis/master/results/COS.html), [results](https://github.com/GabrielHoffman/dream_analysis/tree/master/results/files/COS)
 
-`rmarkdown::render("src/COS.Rmd", output_dir='./', intermediates_dir='./')`
+```r 
+rmarkdown::render("src/COS.Rmd", output_dir='./', intermediates_dir='./')
+```
 
 
 - ##### Epigenetic map of the human brain | [paper](https://www.nature.com/articles/s41593-018-0187-0), [data](https://www.synapse.org/#!Synapse:syn4566010), [html](https://cdn.rawgit.com/GabrielHoffman/dream_analysis/master/results/EpiMap.html), [results](https://github.com/GabrielHoffman/dream_analysis/tree/master/results/files/EpiMap)
 
-```r
+```r 
 rmarkdown::render("src/EpiMap.Rmd", output_dir='./', intermediates_dir='./')
 ```
 
