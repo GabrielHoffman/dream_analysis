@@ -17,7 +17,6 @@ nthreads = 4
 
 ```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
 suppressPackageStartupMessages(library(doParallel))
-suppressPackageStartupMessages(library(synapseClient))
  
 if( ! exists("cl") ){
   cl <- makeCluster(nthreads)
@@ -37,9 +36,9 @@ suppressPackageStartupMessages(library(grid))
 suppressPackageStartupMessages(library(variancePartition))
 suppressPackageStartupMessages(library(ggplot2))
 
-suppressPackageStartupMessages(library(synapseClient))
+suppressPackageStartupMessages(library(synapser))
 
-synapseLogin()
+synLogin()
 
 options(xtable.type="html")
 
@@ -184,12 +183,12 @@ geneInfoBiomart = getBM(getAtt,filters="illumina_humanref_8_v3",values=rownames(
 library(RcppRoll)
 library(data.table)
 
-dfr2 = fread(getFileLocation(synGet('syn17083748')))
+dfr2 = fread(synGet('syn17083748')$path)
 
 figList = foreach( ds = names(dupCorList) ) %do% {
 
   # Compare p-values and make plot
-  t1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotype control", number=Inf, sort.by="none")$P.Value
+  t1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
   t2 = topTable(dreamList[[ds]], number=Inf, sort.by="none")$P.Value
   
   df_vp = data.frame(vpList[[ds]])
@@ -264,13 +263,13 @@ kable(deCount, row.names=FALSE)
 # Enrichments
 ```{r enrich}
 # load("enrich.RDATA")
-load(getFileLocation(synGet( 'syn16816471' )))
+load(synGet( 'syn16816471' )$path)
 
 # exlucde some gensets: mSigDB C4
 geneSetsCombined = geneSetsCombined[grep("^c4", names(geneSetsCombined), invert=TRUE)]
 
 # geneInfo = readRDS("geneInfo.RDS")
-geneInfo = readRDS(getFileLocation(synGet( 'syn16816472' )))
+geneInfo = readRDS(synGet( 'syn16816472' )$path)
 ```
 
 ```{r enrich_order}
