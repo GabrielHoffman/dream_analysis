@@ -24,9 +24,9 @@ if( ! exists("cl") ){
 	registerDoParallel(cl) 
 }
 
-suppressPackageStartupMessages(library(synapseClient))
+suppressPackageStartupMessages(library(synapser))
 
-synapseLogin()
+synLogin()
 ```
 
 ```{r load.packages, echo=TRUE, message=FALSE, results='hide'}
@@ -38,7 +38,7 @@ suppressPackageStartupMessages(library(gridExtra))
 suppressPackageStartupMessages(library(variancePartition))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(data.table))
-suppressPackageStartupMessages(library(synapseClient))
+suppressPackageStartupMessages(library(synapser))
 
 options(xtable.type="html")
 
@@ -57,7 +57,7 @@ options(markdown.HTML.stylesheet = 'css/custom.css')
 
 ```{r read.geneCounts}
 synIds = c('syn16796116', 'syn16796117', 'syn16796121', 'syn16796123')
-files = sapply( synIds, function(x) getFileLocation(synGet(x)) )
+files = sapply( synIds, function(x) synGet(x)$path )
 
 geneCounts_in = foreach( file = files, .combine=cbind) %do% {
   read.table( file, header=TRUE, row.names=1 )
@@ -65,7 +65,7 @@ geneCounts_in = foreach( file = files, .combine=cbind) %do% {
 colnames(geneCounts_in) = gsub("^(\\S+)\\.", "", colnames(geneCounts_in))
 
 # info = fread("/hpc/users/hoffmg01/work/dev_dream/ampad/msbb.good.samples.renamed.tsv")
-info = read.table(getFileLocation(synGet('syn16816486')), header=TRUE )
+info = read.table(synGet('syn16816486')$path, header=TRUE )
 info = data.table(info)
 
 indivs = intersect(info$Lib, colnames(geneCounts_in))
@@ -78,10 +78,10 @@ geneCounts = geneCounts_in[,colnames(geneCounts_in) %in% indivs]
 
 Meta data is available from https://www.synapse.org/#!Synapse:syn7392158
 ```{r metadata}
-df_rna_covariates = fread(getFileLocation(synGet( 'syn6100548' )))
-df_clinical = fread(getFileLocation(synGet( 'syn6101474' )))
-df_wes = fread(getFileLocation(synGet( 'syn6101472' )))
-sampleInfo = fread(getFileLocation(synGet( 'syn12178047' )))
+df_rna_covariates = fread(synGet( 'syn6100548' )$path)
+df_clinical = fread(synGet( 'syn6101474' )$path)
+df_wes = fread(synGet( 'syn6101472' )))
+sampleInfo = fread(synGet( 'syn12178047' )$path)
 
 
 idx = match(c('BrainID (final)', 'BrainID by annotation'),colnames(sampleInfo))
@@ -158,14 +158,14 @@ vobj = voom( genes, design, plot=FALSE, block=metadata$individualIdentifier, cor
 ```{r define}
 synapseLogin()
 # load("enrich.RDATA")
-load(getFileLocation(synGet( 'syn16816471' )))
+load(synGet( 'syn16816471' )$path)
 
 # exlucde some gensets: mSigDB C4
 geneSetsCombined = geneSetsCombined[grep("^c4", names(geneSetsCombined), invert=TRUE)]
 geneSetsCombined = geneSetsCombined[grep("^CMC", names(geneSetsCombined), invert=TRUE)]
 
 # geneInfo = readRDS("geneInfo.RDS")
-geneInfo = readRDS(getFileLocation(synGet( 'syn16816472' )))
+geneInfo = readRDS(synGet( 'syn16816472' )$path)
 
 get_enrich_order = function( res ){
   res$qvalue = qvalue( res$P.Value )$qvalue
@@ -297,7 +297,7 @@ df_vp$p_dream = p2
 
 library(RcppRoll)
 
-dfr2 = fread(getFileLocation(synGet('syn17083748')))
+dfr2 = fread(synGet('syn17083748')$path)
 dfeqtl = data.table(merge(df_vp,dfr2, by.x="gene", by.y="ensembl_gene_id", all.x=TRUE))
 dfeqtl$DGN_R2[is.na(dfeqtl$DGN_R2)] = 0
 dfeqtl$CMC_R2[is.na(dfeqtl$CMC_R2)] = 0
