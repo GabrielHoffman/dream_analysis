@@ -139,10 +139,13 @@ do.call("grid.arrange", c(figList, ncol=2))
 
 ```{r dream2}
 fitDream = foreach( ct = ctArray ) %do% {
-  form = ~ 0 + BrainRegion + Sex + (1|Individual_ID)
-  L = getContrast( vobj[,idx], form, metadata[idx,], c('BrainRegionDLPFC', 'BrainRegionACC'))
+  # form = ~ 0 + BrainRegion + Sex + (1|Individual_ID)
+  # L = getContrast( vobj[,idx], form, metadata[idx,], c('BrainRegionDLPFC', 'BrainRegionACC'))
+  # idx = which(metadata$CellType == ct)
+  # fit = dream( vobj[,idx], form, metadata[idx,], L)  
+  form = ~ BrainRegion + Sex + (1|Individual_ID)
   idx = which(metadata$CellType == ct)
-  fit = dream( vobj[,idx], form, metadata[idx,], L)  
+  fit = dream( vobj[,idx], form, metadata[idx,]) 
  eBayes(fit)   
 }
 names(fitDream) = ctArray
@@ -153,10 +156,10 @@ names(fitDream) = ctArray
 ```{r dupCor, echo=FALSE, message=FALSE}
 fitDupCorList = foreach( ct = ctArray ) %do% {
 
-  L = getContrast( vobj[,idx], form, metadata[idx,], c('BrainRegionDLPFC', 'BrainRegionACC'))
+  # L = getContrast( vobj[,idx], form, metadata[idx,], c('BrainRegionDLPFC', 'BrainRegionACC'))
   idx = which(metadata$CellType == ct)
 
-  design = model.matrix( ~ 0 + BrainRegion + Sex, metadata[idx,])
+  design = model.matrix( ~ BrainRegion + Sex, metadata[idx,])
    
   # Estimate linear mixed model with a single variance component
   # Fit the model for each gene, 
@@ -165,7 +168,7 @@ fitDupCorList = foreach( ct = ctArray ) %do% {
   # But this step uses only the genome-wide average for the random effect
   fitDupCor <- lmFit(vobj[,idx], design, block=metadata$Individual_ID[idx], correlation=dupcor$consensus)
 
-  fitDupCor = contrasts.fit( fitDupCor, L)
+  # fitDupCor = contrasts.fit( fitDupCor, L)
    
   # Fit Empirical Bayes for moderated t-statistics
   eBayes( fitDupCor )
