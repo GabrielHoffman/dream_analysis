@@ -183,7 +183,7 @@ figCompare = foreach( ct = ctArray ) %do% {
   p1 = topTable(fitDupCorList[[ct]],number=Inf, sort.by="none", coef='BrainRegionDLPFC')$P.Value
   p2 = topTable(fitDream[[ct]], number=Inf, sort.by="none", coef='BrainRegionDLPFC')$P.Value
                     
-  plotCompareP( p1, p2, with(vpList[[ct]] , Individual_ID+Sex), dupcor$consensus) + ggtitle(ct) + theme_bw(20) 
+  plotCompareP( p1, p2, with(vpList[[ct]] , Individual_ID+Sex), dupcor$consensus) + ggtitle(ct)
 }
 do.call("grid.arrange", c(figCompare, ncol=2))     
 ```
