@@ -19,11 +19,20 @@ suppressPackageStartupMessages(library(foreach))
 suppressPackageStartupMessages(library(edgeR))
 suppressPackageStartupMessages(library(limma))
 suppressPackageStartupMessages(library(doParallel))
+suppressPackageStartupMessages(library(BiocParallel))
 suppressPackageStartupMessages(library(PRROC))
 suppressPackageStartupMessages(library(DESeq2))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(lmms))
 suppressPackageStartupMessages(library(MACAU2))
+
+
+# install MACAU2
+# module load udunits proj gdal geos
+# in R
+# install.packages("INLA", repos=c(getOption("repos"), INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
+# remotes::install_github("jakyzhu/MACAU2")
+
 
 # read data from simulations
 countMatrix = readRDS(paste0(opt$folder, '/data/countMatrix_',opt$prefix,'.RDS'))
@@ -122,26 +131,30 @@ fitDupCor <- lmFit(vobj,design,block=info$Individual,correlation=dupcor$consensu
 fitDupCor <- eBayes(fitDupCor)
 })
 
-cl = makeCluster(5)
-registerDoParallel( cl )
+
+BPPARAM = SnowParam(5, "SOCK")
+
+genes = DGEList( countMatrix )
+genes = calcNormFactors( genes )
+form <- ~ Disease + (1|Individual) 
+vobjDream = voomWithDreamWeights( genes[1:100,], form, info, BPPARAM=BPPARAM)
+
 
 # dream: Kenward-Roger approximation
 timeMethods$lmm_KR = system.time({
 form <- ~ Disease + (1|Individual) 
-L = getContrast( vobj, form, info, "Disease1")
-fit2KR = dream( vobj, form, info, L, ddf='Kenward-Roger')
+fit2KR = dream( vobjDream, form, info, ddf='Kenward-Roger', BPPARAM=BPPARAM)
 fit2eKR = eBayes( fit2KR )
 })
 
 # variancePartition
 form <- ~ (1|Disease) + (1|Individual) 
-vp = fitExtractVarPartModel(vobj, form, info)
+vp = fitExtractVarPartModel(vobjDream, form, info, BPPARAM=BPPARAM)
 
 # dream: Satterthwaite approximation
 timeMethods$lmm_Sat = system.time({
 form <- ~ Disease + (1|Individual) 
-L = getContrast( vobj, form, info, "Disease1")
-fitSat = dream( vobj, form, info, L, ddf='Satterthwaite')
+fitSat = dream( vobjDream, form, info, BPPARAM=BPPARAM)
 fitSatEB = eBayes( fitSat )
 })
 
@@ -222,9 +235,12 @@ de_res_p$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=I
 de_res_p$DESeq2 = results(dds)$pvalue
 de_res_p$macau2 = macau_pvalue
 de_res_p$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$P.Value
-de_res_p$lmm_Sat = fitSat$pValue
+
+# de_res_p$lmm_Sat = fitSat$pValue
+de_res_p$lmm_Sat = topTable(fitSat, sort.by="none", number=Inf)$P.Value
 de_res_p$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$P.Value
-de_res_p$lmm_KR = fit2KR$pValue
+# de_res_p$lmm_KR = fit2KR$pValue
+de_res_p$lmm_KR = topTable(fit2e, sort.by="none", number=Inf)$P.Value
 de_res_p$lmm_KR_eBayes = topTable(fit2eKR, sort.by="none", number=Inf)$P.Value
 
 # save results to file
