@@ -137,7 +137,7 @@ BPPARAM = SnowParam(5, "SOCK")
 genes = DGEList( countMatrix )
 genes = calcNormFactors( genes )
 form <- ~ Disease + (1|Individual) 
-vobjDream = voomWithDreamWeights( genes[1:100,], form, info, BPPARAM=BPPARAM)
+vobjDream = voomWithDreamWeights( genes, form, info, BPPARAM=BPPARAM)
 
 
 # dream: Kenward-Roger approximation
