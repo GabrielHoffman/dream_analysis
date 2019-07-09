@@ -132,29 +132,30 @@ fitDupCor <- eBayes(fitDupCor)
 })
 
 
-BPPARAM = SnowParam(5, "SOCK", progressbar=TRUE)
+BPPARAM = SnowParam(6, "SOCK", progressbar=TRUE)
+register(BPPARAM)
 
 genes = DGEList( countMatrix )
 genes = calcNormFactors( genes )
 form <- ~ Disease + (1|Individual) 
-vobjDream = voomWithDreamWeights( genes, form, info, BPPARAM=BPPARAM)
+vobjDream = voomWithDreamWeights( genes, form, info)
 
 
 # dream: Kenward-Roger approximation
 timeMethods$lmm_KR = system.time({
 form <- ~ Disease + (1|Individual) 
-fit2KR = dream( vobjDream, form, info, BPPARAM=BPPARAM) #ddf='Kenward-Roger',
+fit2KR = dream( vobjDream, form, info) #ddf='Kenward-Roger',
 fit2eKR = eBayes( fit2KR )
 })
 
 # variancePartition
 form <- ~ (1|Disease) + (1|Individual) 
-vp = fitExtractVarPartModel(vobjDream, form, info, BPPARAM=BPPARAM)
+vp = fitExtractVarPartModel(vobjDream, form, info)
 
 # dream: Satterthwaite approximation
 timeMethods$lmm_Sat = system.time({
 form <- ~ Disease + (1|Individual) 
-fitSat = dream( vobjDream, form, info, BPPARAM=BPPARAM)
+fitSat = dream( vobjDream, form, info)
 fitSatEB = eBayes( fitSat )
 })
 
@@ -176,8 +177,8 @@ if( ! is.null(opt$macau2) && opt$macau2 ){
 	}
 
 	# K[1:5, 1:5]
-	macau_fit = macau2(countMatrix, info$Disease, RelatednessMatrix=K, fit.model="PMM",numCore=1)
-	})#), fit.maxiter=20)
+	macau_fit = macau2(countMatrix, info$Disease, RelatednessMatrix=K, fit.model="PMM",numCore=5)
+	# })  #), fit.maxiter=20)
 
 	# macau2 can omit some genes, so fill in empty entries with NA
 	macau_fit_all = data.frame(gene = rownames(countMatrix), stringsAsFactors=FALSE)
