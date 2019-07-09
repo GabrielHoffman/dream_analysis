@@ -1,4 +1,4 @@
-#! /usr/bin/env Rscript
+####! /usr/bin/env Rscript
 
 suppressPackageStartupMessages(library(getopt))
 
@@ -154,7 +154,7 @@ vp = fitExtractVarPartModel(vobjDream, form, info, BPPARAM=BPPARAM)
 # dream: Satterthwaite approximation
 timeMethods$lmm_Sat = system.time({
 form <- ~ Disease + (1|Individual) 
-fitSat = dream( vobjDream[1:4,], form, info, BPPARAM=BPPARAM)
+fitSat = dream( vobjDream, form, info, BPPARAM=BPPARAM)
 fitSatEB = eBayes( fitSat )
 })
 
