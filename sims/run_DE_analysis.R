@@ -164,21 +164,22 @@ fitSatEB = eBayes( fitSat )
 
 if( ! is.null(opt$macau2) && opt$macau2 ){
 	timeMethods$macau = system.time({
-	# create block diagonal relatedness matrix
-	K = matrix(0, nrow(info), nrow(info))
-	diag(K) = 1
-	rownames(K) = info$Experiment
-	colnames(K) = info$Experiment
+		# create block diagonal relatedness matrix
+		K = matrix(0, nrow(info), nrow(info))
+		diag(K) = 1
+		rownames(K) = info$Experiment
+		colnames(K) = info$Experiment
 
-	for( ID in unique(info$Individual) ){
-		expr = info$Experiment[info$Individual==ID]
-		i = which(rownames(K) %in% expr)
-		K[i,i] = 1
-	}
+		for( ID in unique(info$Individual) ){
+			expr = info$Experiment[info$Individual==ID]
+			i = which(rownames(K) %in% expr)
+			K[i,i] = 1
+		}
 
-	# K[1:5, 1:5]
-	macau_fit = macau2(countMatrix, info$Disease, RelatednessMatrix=K, fit.model="PMM",numCore=5)
-	# })  #), fit.maxiter=20)
+		# K[1:5, 1:5]
+		macau_fit <- macau2(countMatrix, info$Disease, RelatednessMatrix=K, fit.model="PMM",numCore=5)
+	}) #dnd timing
+	  #), fit.maxiter=20)
 
 	# macau2 can omit some genes, so fill in empty entries with NA
 	macau_fit_all = data.frame(gene = rownames(countMatrix), stringsAsFactors=FALSE)
