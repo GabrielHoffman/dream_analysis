@@ -11,9 +11,12 @@
 # Given a list of all protein coding transcripts
 # extract first transcript per gene
 # all transcripts
-# ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.pc_transcripts.fa.gz
-FASTALL=/hpc/users/hoffmg01/work/RNA_seq_sim/transcriptome/gencode.v19.pc_transcripts.fa
-FASTA=/hpc/users/hoffmg01/work/RNA_seq_sim/transcriptome/gencode.v19.genes.fa
+DIR=/sc/orga/projects/psychencode/gabriel/RNA_seq_sim/RNA_seq_sim_v3/
+cd $DIR
+# wget ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.pc_transcripts.fa.gz
+gunzip gencode.v19.pc_transcripts.fa.gz
+FASTALL=$DIR/transcriptome/gencode.v19.pc_transcripts.fa
+FASTA=$DIR/transcriptome/gencode.v19.genes.fa
 cd $(dirname $FASTA)
 
 # unique genes
@@ -25,10 +28,10 @@ faSomeRecords $FASTALL headers.lst $FASTA
 # Simulate read counts
 #######################
 
-FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
+FOLDER=/sc/orga/projects/psychencode/gabriel/RNA_seq_sim/RNA_seq_sim_v3/
 cd $FOLDER
 mkdir data figures jobs logs results
-FASTA=/hpc/users/hoffmg01/work/RNA_seq_sim/transcriptome/gencode.v19.genes.fa
+FASTA=$FOLDER/transcriptome/gencode.v19.genes.fa
 
 # save full name of sim
 N_DE=500
@@ -61,7 +64,7 @@ echo "#BSUB -J ${PFX}
 #BSUB -L /bin/bash
 
 module purge
-module load R/3.5.1
+module load R/3.5.3
 
 /hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/generate_simulations.R --fasta $FASTA --n_samples ${N_SAMPLES} --n_reps ${N_REPS} --n_de_genes ${N_DE} --disease_fc ${FC} --hsq ${HSQ} --nthreads 20 --seed ${SEED} --out $FOLDER/data --prefix $PFX " >> jobs/sims_${PFX}.lsf
 done
@@ -96,10 +99,11 @@ comm -23 <(sort all.lst) <(cat running.lst complete.lst | sort) | parallel -P1 l
 N_DE=500
 FC=3
 HSQ=0.4
-EXTRA=""
+EXTRA="--macau2"
 
-FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
+FOLDER=/sc/orga/projects/psychencode/gabriel/RNA_seq_sim/RNA_seq_sim_v3/
 cd $FOLDER
+
 LOG=$FOLDER/logs
 for N_SAMPLES in $(seq 4 2 16);
 do
@@ -112,7 +116,7 @@ echo '#!/bin/bash' > jobs/scripts_${PFX}.lsf
 echo "#BSUB -J ${PFX}
 #BSUB -P acc_psychencode
 #BSUB -q premium
-#BSUB -n 5
+#BSUB -n 6
 #BSUB -R span[hosts=1]
 #BSUB -W 24:00
 #BSUB -o $LOG/scripts_${PFX}_%J.stdout
@@ -120,7 +124,14 @@ echo "#BSUB -J ${PFX}
 #BSUB -L /bin/bash
 
 module purge
-module load R/3.5.1
+module load R/3.5.3
+
+# load local version of variancePartition
+R_LIBS=\$R_LIBS_USER:\$R_LIBS
+
+export OMP_NUM_THREADS=1
+
+echo \$( R -e \"packageVersion('variancePartition')\")
 
 /hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/run_DE_analysis.R --prefix ${PFX} --folder $FOLDER $EXTRA " >> jobs/scripts_${PFX}.lsf
 done
@@ -143,7 +154,7 @@ seq 1 10 | parallel -P1 ls jobs/scripts_*_{}.lsf | parallel -P1 "bsub < {}; slee
 ls results/*_p.RDS | parallel -P1 basename {} _p.RDS > complete.lst
 
 # running
-bjobs -w | grep -v JOB_NAME | awk '{print $7}'  > running.lst
+bjobs -w | grep -v JOB_NAME | awk '{print $7}' > running.lst
 
 # all
 ls jobs/scripts_*lsf | parallel -P1 basename {} .lsf | sed 's/scripts_//g' > all.lst
@@ -155,7 +166,7 @@ comm -23 <(sort all.lst) <(cat running.lst complete.lst | sort) | parallel -P1 l
 # Make plots
 ###############
 
-FOLDER=/hpc/users/hoffmg01/work/RNA_seq_sim_v2/
+FOLDER=/sc/orga/projects/psychencode/gabriel/RNA_seq_sim/RNA_seq_sim_v3/
 cd $FOLDER
 
 /hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/make_plots.R --folder $FOLDER/results --nthreads 32

@@ -119,18 +119,18 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 		eta = design %*% c(beta, 0)
 
 		h_sq_other = rbeta(1, 1, 1.6)
-		error_var = (1-h_sq_other)/h_sq_other  * var(eta)
+		error_var = (1-h_sq_other)/h_sq_other * var(eta)
 	}	
 	error_var = as.numeric(error_var)
 
 	# within-donor noise
 	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
-	dsgn_indiv[dsgn_indiv==1] = 0
+	dsgn_indiv[dsgn_indiv==1] = rbeta(1, 1, 1.6)
 	Sigma_id = tcrossprod(dsgn_indiv)
 	diag(Sigma_id) = 1 
 
 	# draw indiv level value
-	y = eta + t(rmvnorm(1, rep(0, nrow(info)), sigma=cov2cor(Sigma_id*error_var)))
+	y = eta + t(rmvnorm(1, rep(0, nrow(info)), sigma=Sigma_id*error_var))
 
 	# y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
 
