@@ -125,7 +125,17 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 
 	# within-donor noise
 	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
-	dsgn_indiv[dsgn_indiv==1] = rbeta(1, 1, 1.6)
+
+	# allow each donor to have its own internal variance
+	for( i in 1:ncol(dsgn_indiv) ){
+
+		idx = which(dsgn_indiv[,i] == 1)
+		dsgn_indiv[idx,i] = sqrt(rbeta(1, 1, 1.6))
+	}
+
+	# homogeneous within-individual variance
+	# dsgn_indiv[dsgn_indiv==1] = 1
+
 	Sigma_id = tcrossprod(dsgn_indiv)
 	diag(Sigma_id) = 1 
 
