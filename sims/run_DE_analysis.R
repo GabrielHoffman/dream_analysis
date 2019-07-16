@@ -144,7 +144,7 @@ vobjDream = voomWithDreamWeights( genes, form, info)
 # dream: Kenward-Roger approximation
 timeMethods$lmm_KR = system.time({
 form <- ~ Disease + (1|Individual) 
-fit2KR = dream( vobjDream, form, info) #ddf='Kenward-Roger',
+fit2KR = dream( vobjDream, form, info, ddf='Kenward-Roger')
 fit2eKR = eBayes( fit2KR )
 })
 
