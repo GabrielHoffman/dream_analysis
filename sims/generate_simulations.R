@@ -59,6 +59,8 @@ info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=
 	Disease = as.character(sort(rep(0:1, n_samples*n_reps / 2))), 
 	Experiment = paste("sample_", gsub(" ", "0", format(1:(n_samples*n_reps), digits=2)), sep=''), stringsAsFactors=FALSE)
 
+info$Batch = sample(0:1, nrow(info), replace=TRUE)
+
 # design = model.matrix( ~ Individual + Disease+0,info)
 
 # simulate from variance components
@@ -102,7 +104,7 @@ info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=
 # 	list( FC = t(y) - min(y) + 1 )
 # }
 
-design = model.matrix( ~ Individual + Disease+0,info)
+design = model.matrix( ~ Individual + Disease+0 + Batch,info)
 
 simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "variancePartition") ) %do% {
 	cat("\r", j, "        ")
@@ -113,10 +115,10 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 
 	if( j <= n_de_genes){
 		# beta[] = 0
-		eta = design %*% c(beta, disease_fc)
+		eta = design %*% c(beta, disease_fc, 1)
 		error_var = (1-h_sq)/h_sq  * var(eta)
 	}else{		
-		eta = design %*% c(beta, 0)
+		eta = design %*% c(beta, 0, 1)
 
 		h_sq_other = rbeta(1, 1, 1.6)
 		error_var = (1-h_sq_other)/h_sq_other * var(eta)
@@ -133,7 +135,7 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 		dsgn_indiv[idx,i] = sqrt(rbeta(1, 1, 1.6))
 	}
 
-	# homogeneous within-individual variance
+	# homogeneous within-individual  
 	# dsgn_indiv[dsgn_indiv==1] = 1
 
 	Sigma_id = tcrossprod(dsgn_indiv)
