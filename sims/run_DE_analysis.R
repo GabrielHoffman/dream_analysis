@@ -51,11 +51,11 @@ timeMethods = list()
 idx = seq(1, nrow(info), by=table(info$Individual)[1])
 genes = DGEList( countMatrix[,idx] )
 genes = calcNormFactors( genes )
-design = model.matrix( ~ Disease, info[idx,])
+design = model.matrix( ~ Disease + Batch, info[idx,])
 
 timeMethods$fit_lmFit = system.time({
 vobj = voom( genes, design, plot=FALSE)
-design = model.matrix( ~ Disease, info[idx,])
+design = model.matrix( ~ Disease + Batch, info[idx,])
 fit_lmFit = lmFit(vobj, design)
 fit_lmFit = eBayes(fit_lmFit)
 })
@@ -64,7 +64,7 @@ fit_lmFit = eBayes(fit_lmFit)
 timeMethods$dds_single = system.time({
 dds_single <- DESeqDataSetFromMatrix(countData = countMatrix[,idx],
                               colData = info[idx,],
-                              design= ~ Disease )
+                              design = ~ Disease + Batch )
 dds_single = DESeq(dds_single)
 })
 
@@ -72,7 +72,7 @@ dds_single = DESeq(dds_single)
 timeMethods$fit_lmFit2 = system.time({
 genes = DGEList( countMatrix )
 genes = calcNormFactors( genes )
-design = model.matrix( ~ Disease, info)
+design = model.matrix( ~ Disease + Batch, info)
 vobj_tmp = voom( genes, design, plot=FALSE)
 dupcor <- duplicateCorrelation(vobj_tmp,design,block=info$Individual)
 vobj = voom( genes, design, plot=FALSE,block=info$Individual,correlation=dupcor$consensus)
@@ -86,7 +86,7 @@ fit_lmFit2 = eBayes(fit_lmFit2)
 timeMethods$DESeq2 = system.time({
 dds <- DESeqDataSetFromMatrix(countData = countMatrix,
                               colData = info,
-                              design= ~ Disease )
+                              design= ~ Disease + Batch)
 dds <- DESeq(dds)
 })
 
@@ -125,7 +125,7 @@ fit_lmFit_sum = eBayes(fit_lmFit_sum)
 
 # dupCor
 timeMethods$lmFit_dupCor = system.time({
-design = model.matrix( ~ Disease, info)
+design = model.matrix( ~ Disease + Batch, info)
 dupcor <- duplicateCorrelation(vobj,design,block=info$Individual)
 fitDupCor <- lmFit(vobj,design,block=info$Individual,correlation=dupcor$consensus)
 fitDupCor <- eBayes(fitDupCor)
@@ -137,24 +137,24 @@ register(BPPARAM)
 
 genes = DGEList( countMatrix )
 genes = calcNormFactors( genes )
-form <- ~ Disease + (1|Individual) 
+form <- ~ Disease + Batch + (1|Individual) 
 vobjDream = voomWithDreamWeights( genes, form, info)
 
 
 # dream: Kenward-Roger approximation
 timeMethods$lmm_KR = system.time({
-form <- ~ Disease + (1|Individual) 
+form <- ~ Disease + Batch + (1|Individual) 
 fit2KR = dream( vobjDream, form, info, ddf='Kenward-Roger')
 fit2eKR = eBayes( fit2KR )
 })
 
 # variancePartition
-form <- ~ (1|Disease) + (1|Individual) 
+form <- ~ (1|Disease) + (1|Batch) + (1|Individual) 
 vp = fitExtractVarPartModel(vobjDream, form, info)
 
 # dream: Satterthwaite approximation
 timeMethods$lmm_Sat = system.time({
-form <- ~ Disease + (1|Individual) 
+form <- ~ Disease + Batch + (1|Individual) 
 fitSat = dream( vobjDream, form, info)
 fitSatEB = eBayes( fitSat )
 })
@@ -177,7 +177,7 @@ if( ! is.null(opt$macau2) && opt$macau2 ){
 		}
 
 		# K[1:5, 1:5]
-		macau_fit <- macau2(countMatrix, info$Disease, RelatednessMatrix=K, fit.model="PMM",numCore=3)
+		macau_fit <- macau2(countMatrix, info$Disease, data.frame(info$Batch), RelatednessMatrix=K, fit.model="PMM",numCore=3)
 	}) #dnd timing
 	  #), fit.maxiter=20)
 
