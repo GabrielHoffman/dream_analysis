@@ -38,6 +38,7 @@ suppressPackageStartupMessages(library(MACAU2))
 countMatrix = readRDS(paste0(opt$folder, '/data/countMatrix_',opt$prefix,'.RDS'))
 info = readRDS(paste0(opt$folder, '/data/info_',opt$prefix,'.RDS'))
 rownames(info) = info$Experiment
+info$Batch = factor(info$Batch)
 
 # filter out genes based on read count
 isexpr = rowSums(cpm(countMatrix)>1) >= 3
