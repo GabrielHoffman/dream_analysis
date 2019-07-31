@@ -30,7 +30,7 @@ faSomeRecords $FASTALL headers.lst $FASTA
 
 FOLDER=/sc/orga/projects/psychencode/gabriel/RNA_seq_sim/RNA_seq_sim_v3/
 cd $FOLDER
-mkdir data figures jobs logs results
+mkdir -p data figures jobs logs results
 FASTA=$FOLDER/transcriptome/gencode.v19.genes.fa
 
 # save full name of sim
@@ -40,15 +40,11 @@ HSQ=0.4
 
 LOG=$FOLDER/logs/
 # for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+for N_SAMPLES in $(echo $(seq 4 2 20));
 do
-# for N_REPS in $(seq 2 4);
+for N_REPS in $(seq 2 4);
 do
 # for SEED in $(seq 1 50);
-
-for N_SAMPLES in $(seq 4 2 16);
-do
-for N_REPS in $(seq 2 2);
-do
 for SEED in $(seq 1 5);
 do
 PFX=${N_SAMPLES}_${N_REPS}_${N_DE}_${FC}_${HSQ}_${SEED}
@@ -66,6 +62,13 @@ echo "#BSUB -J ${PFX}
 module purge
 module load R/3.5.3
 
+# load local version of variancePartition
+R_LIBS=\$R_LIBS_USER:\$R_LIBS
+
+export OMP_NUM_THREADS=1
+
+echo \$( R -e \"packageVersion('variancePartition')\")
+
 /hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/generate_simulations.R --fasta $FASTA --n_samples ${N_SAMPLES} --n_reps ${N_REPS} --n_de_genes ${N_DE} --disease_fc ${FC} --hsq ${HSQ} --nthreads 20 --seed ${SEED} --out $FOLDER/data --prefix $PFX " >> jobs/sims_${PFX}.lsf
 done
 done
@@ -79,7 +82,7 @@ ls jobs/sims_*lsf | parallel -P1 "bsub < {}; sleep .2"
 ls data/countMatrix*.RDS | parallel -P1 basename {} .RDS | sed 's/countMatrix_//g' > complete.lst
 
 # running
-bjobs -w | grep -v JOB_NAME | awk '{print $7}'  > running.lst
+bjobs -w | grep -v JOB_NAME | awk '{print $7}' > running.lst
 
 # all
 ls jobs/sims_*lsf | parallel -P1 basename {} .lsf | sed 's/sims_//g' > all.lst
@@ -99,16 +102,23 @@ comm -23 <(sort all.lst) <(cat running.lst complete.lst | sort) | parallel -P1 l
 N_DE=500
 FC=3
 HSQ=0.4
-EXTRA="--macau2"
 
 FOLDER=/sc/orga/projects/psychencode/gabriel/RNA_seq_sim/RNA_seq_sim_v3/
 cd $FOLDER
 
 LOG=$FOLDER/logs
-for N_SAMPLES in $(seq 4 2 16);
+
+# for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+for N_SAMPLES in $(echo $(seq 4 2 20));
 do
-for N_REPS in $(seq 2 2);
+EXTRA=''
+if [ ${N_SAMPLES} -lt 10 ];
+then
+ EXTRA=""#--macau2
+fi
+for N_REPS in $(seq 2 4);
 do
+# for SEED in $(seq 1 50);
 for SEED in $(seq 1 5);
 do
 PFX=${N_SAMPLES}_${N_REPS}_${N_DE}_${FC}_${HSQ}_${SEED}
@@ -145,8 +155,8 @@ ls jobs/scripts_*lsf | parallel -P1 "bsub < {}; sleep .2"
 seq 1 10 | parallel -P1 ls jobs/scripts_*_{}.lsf | parallel -P1 "bsub < {}; sleep .2"
 
 
-1) show eBayes vs raw in the supplement
-2) time course
+# 1) show eBayes vs raw in the supplement
+# 2) time course
 
 
 # resubmit crashed jobs
