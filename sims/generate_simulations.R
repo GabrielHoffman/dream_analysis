@@ -62,7 +62,9 @@ info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=
 info$Batch = sample(0:1, nrow(info), replace=TRUE)
 
 # sampling until design matrix is not singular
-while( min(svd(model.matrix(~Disease + Batch, info))$d) <=0 ){
+idx = seq(1, nrow(info), by=table(info$Individual)[1])
+
+while( min(svd(model.matrix(~Disease + Batch, info))$d) <=0 && min(svd(model.matrix(~Disease + Batch, info[idx,]))$d) <=0 ){
 	info$Batch = sample(0:1, nrow(info), replace=TRUE)
 }
 
