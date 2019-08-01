@@ -594,8 +594,12 @@ col = df_plots$color[df_plots$method %in% levels(df$key)]
 file = paste0(folder,'/../figures/','combine_choose', ".pdf")
 pdf( file, width=7, height=20)
 fig1 = ggplot(df[(n_donor <= 14),], aes(n_chosen, n_false, color=key)) + geom_line() + facet_grid( n_donor ~ n_reps) + xlim(0, 300) + ylim(0, 50) + theme_bw(10) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), axis.text.y = element_text(size=8), legend.position="bottom") + scale_color_manual(values=col) + xlab("genes selected") + ylab("false discoveries")
-fig2 = ggplot(df[(n_donor > 14),], aes(n_chosen, n_false, color=key)) + geom_line() + facet_grid( n_donor ~ n_reps) + xlim(0, 550) + ylim(0, 50) + theme_bw(10) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), axis.text.x =  element_text(size=8), legend.position="bottom") + scale_color_manual(values=col) + xlab("genes selected") + ylab("false discoveries")
-grid.arrange(fig1, fig2, ncol=2)
+if( nrow(df[n_donor > 14,]) > 0 ){
+	fig2 = ggplot(df[(n_donor > 14),], aes(n_chosen, n_false, color=key)) + geom_line() + facet_grid( n_donor ~ n_reps) + xlim(0, 550) + ylim(0, 50) + theme_bw(10) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), axis.text.x =  element_text(size=8), legend.position="bottom") + scale_color_manual(values=col) + xlab("genes selected") + ylab("false discoveries")
+	grid.arrange(fig1, fig2, ncol=2)
+}else{
+	fig1
+}
 dev.off()
 
 # Precision recall
@@ -614,8 +618,12 @@ randCurve = dfpr[,unique(rnd.value)]
 file = paste0(folder,'/../figures/','combine_pr2', ".pdf")
 pdf( file, width=8, height=15)
 fig1 = ggplot(dfpr[(n_donor <= 14),], aes(recall, precision, color=method)) + geom_line()  + theme_bw(10) + facet_grid( n_donor ~ n_reps) + xlim(0,1) + ylim(0,1) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="bottom", axis.text.x=element_text(size=6)) + scale_color_manual(values=col) + geom_hline(yintercept=randCurve, linetype=2)
-fig2 = ggplot(dfpr[(n_donor > 14),], aes(recall, precision, color=method)) + geom_line()  + theme_bw(10) + facet_grid( n_donor ~ n_reps) + xlim(0,1) + ylim(0,1) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="bottom", axis.text.x=element_text(size=6)) + scale_color_manual(values=col) + geom_hline(yintercept=randCurve, linetype=2)
-grid.arrange(fig1, fig2, ncol=2)
+if( nrow(df[n_donor > 14,]) > 0 ){
+	fig2 = ggplot(dfpr[(n_donor > 14),], aes(recall, precision, color=method)) + geom_line()  + theme_bw(10) + facet_grid( n_donor ~ n_reps) + xlim(0,1) + ylim(0,1) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="bottom", axis.text.x=element_text(size=6)) + scale_color_manual(values=col) + geom_hline(yintercept=randCurve, linetype=2)
+	grid.arrange(fig1, fig2, ncol=2)
+}else{
+	fig1
+}
 dev.off()
 
 # False positive rate
@@ -639,15 +647,19 @@ col = df_plots$color[df_plots$method %in% levels(df_a$method)]
 fig1 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("False positive rate at p<0.05") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
 
 df_a = df_fpr[(n_donor > 14),]
+if( nrow(df_a) > 0 ){
 # drop macau2 if all empty
 # if( df_a[method=="macau2",unique(value)] == 0 ){
 # 	df_a = df_a[method!="macau2",]
 # }
-df_a$method = droplevels(df_a$method)
-col = df_plots$color[df_plots$method %in% levels(df_a$method)]
+	df_a$method = droplevels(df_a$method)
+	col = df_plots$color[df_plots$method %in% levels(df_a$method)]
 
-fig2 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("False positive rate at p<0.05") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
-grid.arrange(fig1, fig2, ncol=2)
+	fig2 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("False positive rate at p<0.05") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
+	grid.arrange(fig1, fig2, ncol=2)
+}else{
+	fig1
+}
 dev.off()
 
 
@@ -672,10 +684,14 @@ col = df_plots$color[df_plots$method %in% levels(df_a$method)]
 fig1 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
 
 df_a = df_aupr[(n_donor > 14),]
-df_a$method = droplevels(df_a$method)
-col = df_plots$color[df_plots$method %in% levels(df_a$method)]
-fig2 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, 1)
-grid.arrange(fig1, fig2, ncol=2)
+if( nrow(df_a) > 0 ){
+	df_a$method = droplevels(df_a$method)
+	col = df_plots$color[df_plots$method %in% levels(df_a$method)]
+	fig2 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, 1)
+	grid.arrange(fig1, fig2, ncol=2)
+}else{
+	fig1
+}
 dev.off()
 
 
