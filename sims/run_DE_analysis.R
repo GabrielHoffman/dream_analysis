@@ -138,13 +138,13 @@ register(BPPARAM)
 
 genes = DGEList( countMatrix )
 genes = calcNormFactors( genes )
-form <- ~ Disease + Batch + (1|Individual) 
+form <- ~ Disease + (1|Batch) + (1|Individual) 
 vobjDream = voomWithDreamWeights( genes, form, info)
 
 
 # dream: Kenward-Roger approximation
 timeMethods$lmm_KR = system.time({
-form <- ~ Disease + Batch + (1|Individual) 
+form <- ~ Disease + (1|Batch) + (1|Individual) 
 fit2KR = dream( vobjDream, form, info, ddf='Kenward-Roger')
 fit2eKR = eBayes( fit2KR )
 })
@@ -155,7 +155,7 @@ vp = fitExtractVarPartModel(vobjDream, form, info)
 
 # dream: Satterthwaite approximation
 timeMethods$lmm_Sat = system.time({
-form <- ~ Disease + Batch + (1|Individual) 
+form <- ~ Disease + (1|Batch) + (1|Individual) 
 fitSat = dream( vobjDream, form, info)
 fitSatEB = eBayes( fitSat )
 })

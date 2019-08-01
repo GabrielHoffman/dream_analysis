@@ -40,7 +40,7 @@ HSQ=0.4
 
 LOG=$FOLDER/logs/
 # for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
-for N_SAMPLES in $(echo $(seq 4 2 20));
+for N_SAMPLES in $(echo $(seq 8 2 14));
 do
 for N_REPS in $(seq 2 4);
 do
@@ -109,7 +109,7 @@ cd $FOLDER
 LOG=$FOLDER/logs
 
 # for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
-for N_SAMPLES in $(echo $(seq 4 2 20));
+for N_SAMPLES in $(echo $(seq 8 2 14));
 do
 EXTRA=''
 if [ ${N_SAMPLES} -lt 10 ];
@@ -128,7 +128,7 @@ echo "#BSUB -J ${PFX}
 #BSUB -q premium
 #BSUB -n 6
 #BSUB -R span[hosts=1]
-#BSUB -W 24:00
+#BSUB -W 8:00
 #BSUB -o $LOG/scripts_${PFX}_%J.stdout
 #BSUB -eo $LOG/scripts_${PFX}_%J.stderr
 #BSUB -L /bin/bash
