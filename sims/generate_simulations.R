@@ -150,7 +150,7 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 	
 	# var(eta_batch) is beta^2
 	# equals var(eta) + error_var
-	beta = sqrt(rbeta(1, 1, 1.6)*(var(eta) + error_var))
+	beta = sqrt(rbeta(1, 10, 100)*(var(eta) + error_var))
 	eta_batch = scale(info$Batch) * c(beta)
 
 	# draw indiv level value
