@@ -122,10 +122,10 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 
 	if( j <= n_de_genes){
 		# beta[] = 0
-		eta = design %*% c(beta, disease_fc, .5)
+		eta = design %*% c(beta, disease_fc, 3)
 		error_var = (1-h_sq)/h_sq  * var(eta)
 	}else{		
-		eta = design %*% c(beta, 0, .5)
+		eta = design %*% c(beta, 0, 3)
 
 		h_sq_other = rbeta(1, 1, 1.6)
 		error_var = (1-h_sq_other)/h_sq_other * var(eta)
