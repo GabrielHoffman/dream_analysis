@@ -111,7 +111,7 @@ while( min(svd(model.matrix(~Disease + Batch, info))$d) <=0 || min(svd(model.mat
 # 	list( FC = t(y) - min(y) + 1 )
 # }
 
-design = model.matrix( ~ Individual + Disease+0 + Batch,info)
+design = model.matrix( ~ Individual + Disease+0,info)
 
 simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "variancePartition") ) %do% {
 	cat("\r", j, "        ")
@@ -122,10 +122,10 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 
 	if( j <= n_de_genes){
 		# beta[] = 0
-		eta = design %*% c(beta, disease_fc, 10)
+		eta = design %*% c(beta, disease_fc)
 		error_var = (1-h_sq)/h_sq  * var(eta)
 	}else{		
-		eta = design %*% c(beta, 0, 10)
+		eta = design %*% c(beta, 0)
 
 		h_sq_other = rbeta(1, 1, 1.6)
 		error_var = (1-h_sq_other)/h_sq_other * var(eta)
@@ -147,9 +147,14 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 
 	Sigma_id = tcrossprod(dsgn_indiv)
 	diag(Sigma_id) = 1 
+	
+	# var(eta_batch) is beta^2
+	# equals var(eta) + error_var
+	beta = sqrt(rbeta(1, 1, 1.6)*(var(eta) + error_var))
+	eta_batch = scale(info$Batch) * c(beta)
 
 	# draw indiv level value
-	y = eta + t(rmvnorm(1, rep(0, nrow(info)), sigma=Sigma_id*error_var))
+	y = eta + eta_batch + t(rmvnorm(1, rep(0, nrow(info)), sigma=Sigma_id*error_var))
 
 	# y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
 
