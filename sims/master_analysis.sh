@@ -111,10 +111,10 @@ LOG=$FOLDER/logs
 # for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
 for N_SAMPLES in $(echo $(seq 8 2 14));
 do
-EXTRA=''
-if [ ${N_SAMPLES} -lt 10 ];
+EXTRA='--macau2'
+if [ ${N_SAMPLES} -lt 14 ];
 then
- EXTRA=""#--macau2
+ EXTRA='--macau2'
 fi
 for N_REPS in $(seq 2 4);
 do
