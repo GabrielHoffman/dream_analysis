@@ -150,17 +150,14 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 	
 	# var(eta_batch) is beta^2
 	# equals var(eta) + error_var
-	beta = sqrt(rbeta(1, 10, 100)*(var(eta) + error_var))
+	beta = sqrt(rbeta(1, 30, 100)*(var(eta) + error_var))
 	eta_batch = scale(info$Batch) * c(beta)
 
 	# draw indiv level value
 	y = eta + eta_batch + t(rmvnorm(1, rep(0, nrow(info)), sigma=Sigma_id*error_var))
 
-	# y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
-
-	# fit <- lmer( y ~ (1|Individual) + (1|Disease), info, REML=FALSE)
+	# fit <- lmer( y ~ (1|Individual) + (1|Disease) + (1|Batch), info, REML=FALSE)
 	# v = calcVarPart( fit )
-	# list( FC = t(y) - min(y) + 1, modelStats = v[order(names(v))] )
 
 	list( FC = t(y) - min(y) + 1 )
 }
