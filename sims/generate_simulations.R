@@ -2,6 +2,8 @@
 
 suppressPackageStartupMessages(library(getopt))
 
+# opt = list(n_samples = 20, n_reps = 3, n_de_genes = 500, disease_fc = 2, hsq = .4)
+
 a = matrix(c(
 	'fasta', 		'a', 1, "character",
 	'n_samples', 	's', 1, "integer",
@@ -59,13 +61,13 @@ info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=
 	Disease = as.character(sort(rep(0:1, n_samples*n_reps / 2))), 
 	Experiment = paste("sample_", gsub(" ", "0", format(1:(n_samples*n_reps), digits=2)), sep=''), stringsAsFactors=FALSE)
 
-info$Batch = sample(0:1, nrow(info), replace=TRUE)
+info$Batch = sample(0:2, nrow(info), replace=TRUE)
 
 # sampling until design matrix is not singular
 idx = seq(1, nrow(info), by=table(info$Individual)[1])
 
 while( min(svd(model.matrix(~Disease + Batch, info))$d) <=0 || min(svd(model.matrix(~Disease + Batch, info[idx,]))$d) <=0 ){
-	info$Batch = sample(0:1, nrow(info), replace=TRUE)
+	info$Batch = sample(0:2, nrow(info), replace=TRUE)
 }
 
 # design = model.matrix( ~ Individual + Disease+0,info)
@@ -73,47 +75,11 @@ while( min(svd(model.matrix(~Disease + Batch, info))$d) <=0 || min(svd(model.mat
 # simulate from variance components
 ###################################
 
-# fastaTranscripts = fastaTranscripts[1:1000]
-# design = model.matrix( ~ Disease,info)
-
-# simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "variancePartition") ) %do% {
-# 	cat("\r", j, "        ")
-
-# 	# set parameters
-# 	v_indiv = rbeta(1, 1.5, 2)
-
-# 	# Individual
-# 	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
-# 	dsgn_indiv[dsgn_indiv==1] = sqrt(v_indiv)
-# 	Sigma_id = tcrossprod(dsgn_indiv)
-# 	diag(Sigma_id) = 1 
-
-# 	# draw indiv level value
-# 	eta = t(rmvnorm(1, rep(0, nrow(info)), sigma=cov2cor(Sigma_id)))
-
-# 	# add noise
-# 	a = 2*opt$hsq
-# 	b = 2*(1-opt$hsq)
-
-# 	# use given heritability
-# 	h_sq_other = rbeta(1, a,b)
-# 	error_var = (1-h_sq_other)/h_sq_other  * var(eta)
-
-# 	# if DE gene, add component of fold change 
-# 	if( j <= n_de_genes){
-# 		eta = eta + model.matrix( ~ Disease,info)[,2] * opt$disease_fc
-# 		error_var = (1-opt$hsq)/opt$hsq * var(eta)
-# 	}
-
-# 	# generate phenotype
-# 	y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
-
-# 	list( FC = t(y) - min(y) + 1 )
-# }
 
 design = model.matrix( ~ Individual + Disease+0,info)
 
-simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "variancePartition") ) %do% {
+
+simParams = foreach(j=1:length(fastaTranscripts) ) %do% {
 	cat("\r", j, "        ")
 
 	# indiv_variance = rnorm(1, .5, 2)
@@ -128,39 +94,65 @@ simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "varianceP
 		eta = design %*% c(beta, 0)
 
 		h_sq_other = rbeta(1, 1, 1.6)
-		error_var = (1-h_sq_other)/h_sq_other * var(eta)
+		error_var = (1-h_sq_other)/h_sq_other  * var(eta)
 	}	
-	error_var = as.numeric(error_var)
 
-	# within-donor noise
-	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
+	y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
 
-	# allow each donor to have its own internal variance
-	for( i in 1:ncol(dsgn_indiv) ){
-
-		idx = which(dsgn_indiv[,i] == 1)
-		dsgn_indiv[idx,i] = sqrt(rbeta(1, 1, 1.6))
-	}
-
-	# homogeneous within-individual  
-	# dsgn_indiv[dsgn_indiv==1] = 1
-
-	Sigma_id = tcrossprod(dsgn_indiv)
-	diag(Sigma_id) = 1 
-	
-	# var(eta_batch) is beta^2
-	# equals var(eta) + error_var
-	beta = sqrt(rbeta(1, 30, 100)*(var(eta) + error_var))
-	eta_batch = scale(info$Batch) * c(beta)
-
-	# draw indiv level value
-	y = eta + eta_batch + t(rmvnorm(1, rep(0, nrow(info)), sigma=Sigma_id*error_var))
-
-	# fit <- lmer( y ~ (1|Individual) + (1|Disease) + (1|Batch), info, REML=FALSE)
-	# v = calcVarPart( fit )
-
-	list( FC = t(y) - min(y) + 1 )
+	list( FC = t(y) - min(y) + 1)
 }
+
+
+# design = model.matrix( ~ Individual + Disease+0,info)
+
+# simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "variancePartition") ) %do% {
+# 	cat("\r", j, "        ")
+
+# 	# indiv_variance = rnorm(1, .5, 2)
+# 	indiv_variance = 1
+# 	beta = rnorm(n_samples, 0, max(indiv_variance, .1))
+
+# 	if( j <= n_de_genes){
+# 		# beta[] = 0
+# 		eta = design %*% c(beta, disease_fc)
+# 		error_var = (1-h_sq)/h_sq  * var(eta)
+# 	}else{		
+# 		eta = design %*% c(beta, 0)
+
+# 		h_sq_other = rbeta(1, 1, 1.6)
+# 		error_var = (1-h_sq_other)/h_sq_other * var(eta)
+# 	}	
+# 	error_var = as.numeric(error_var)
+
+# 	# within-donor noise
+# 	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
+
+# 	# allow each donor to have its own internal variance
+# 	for( i in 1:ncol(dsgn_indiv) ){
+
+# 		idx = which(dsgn_indiv[,i] == 1)
+# 		dsgn_indiv[idx,i] = sqrt(rbeta(1, 1, 3))
+# 	}
+
+# 	# homogeneous within-individual  
+# 	# dsgn_indiv[dsgn_indiv==1] = 1
+
+# 	Sigma_id = tcrossprod(dsgn_indiv)
+# 	diag(Sigma_id) = 1 
+	
+# 	# var(eta_batch) is beta^2
+# 	# equals var(eta) + error_var
+# 	beta = sqrt(rbeta(1, 1, 10)*(var(eta) + error_var))
+# 	eta_batch = scale(as.numeric(info$Batch)) * c(beta)
+
+# 	# draw indiv level value
+# 	y = eta + eta_batch + t(rmvnorm(1, rep(0, nrow(info)), sigma=Sigma_id*error_var))
+
+# 	# fit <- lmer( y ~ (1|Individual) + (1|Disease) + (1|Batch), info, REML=FALSE)
+# 	# v = calcVarPart( fit )
+
+# 	list( FC = t(y) - min(y) + 1 )
+# }
 
 
 FC = matrix(NA, nrow=length(fastaTranscripts), ncol=n_samples*n_reps)
@@ -175,8 +167,18 @@ for(j in 1:nrow(FC)){
 rownames(info) = info$Experiment
 colnames(FC) = info$Experiment
 
+rownames(FC) = sapply(strsplit(names(fastaTranscripts), '\\|'), function(x) x[2])
+
 # Just for testing
-# vp = fitExtractVarPartModel( FC, ~ (1|Individual) + (1|Disease), info)
+# August 6, 2019
+# library(BiocParallel)
+# register(SnowParam(12, "SOCK", progressbar=TRUE))
+
+# info$Batch = factor(info$Batch)
+# vp = fitExtractVarPartModel( FC, ~ (1|Individual) + (1|Disease) + (1|Batch), info)
+
+# plotVarPart(vp)
+
 
 # plotVarPart(vp[1:500,])
 # plotVarPart(vp[501:1000,])
@@ -217,7 +219,53 @@ saveRDS(countMatrix, paste(opt$out, "/countMatrix_", opt$prefix, ".RDS", sep='')
 
 
 
+# check Batch effect
 
+# info$Batch = factor(info$Batch)
+
+# # filter out genes based on read count
+# isexpr = rowSums(cpm(countMatrix)>1) >= 3
+# countMatrix = countMatrix[isexpr,]
+# rownames(countMatrix) = sapply(strsplit(rownames(countMatrix), '\\|'), function(x) x[2])
+
+
+# timeMethods = list()
+
+# # voom single replicate
+# genes = DGEList( countMatrix )
+# genes = calcNormFactors( genes )
+# design = model.matrix( ~ Disease + Batch, info)
+
+
+# vobj = voom( genes, design, plot=FALSE)
+
+
+
+# form <- ~ (1|Disease) + (1|Batch) + (1|Individual) 
+# form <- ~ Batch
+# vp_cpm = fitExtractVarPartModel(vobj, form, info)
+
+# # plotVarPart(vp_cpm)
+
+
+# df = merge(vp, vp_cpm, by="row.names")
+
+
+# plot(df$Disease.x, df$Disease.y)
+# abline(0,1, col="red")
+
+# plot(df$Individual.x, df$Individual.y)
+# abline(0,1, col="red")
+
+# plot(df$Batch.x, df$Batch.y)
+# abline(0,1, col="red")
+
+
+# plot(df$Residuals.x, df$Residuals.y)
+# abline(0,1, col="red")
+
+
+# /sc/orga/projects/CommonMind/jaro/dreamExtWeightError.R
 
 
 
