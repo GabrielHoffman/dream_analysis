@@ -97,7 +97,12 @@ simParams = foreach(j=1:length(fastaTranscripts) ) %do% {
 		error_var = (1-h_sq_other)/h_sq_other  * var(eta)
 	}	
 
-	y = eta + rnorm(nrow(eta), 0, sqrt(error_var))
+	# var(eta_batch) is beta^2
+	# equals var(eta) + error_var
+	beta = sqrt(rbeta(1, 1, 10)*(var(eta) + error_var))
+	eta_batch = scale(as.numeric(info$Batch)) * c(beta)
+
+	y = eta + eta_batch + rnorm(nrow(eta), 0, sqrt(error_var))
 
 	list( FC = t(y) - min(y) + 1)
 }
