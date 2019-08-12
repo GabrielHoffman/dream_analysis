@@ -14,13 +14,43 @@ a = matrix(c(
 	'nthreads', 	't', 1, "integer",
 	'seed', 		'i', 1, "integer",
 	'prefix', 		'p', 1, "character",
+	'param_ID', 	'k', 1, "character", 
+	'param_Disease', 'e', 1, "character",
+	'param_Batch', 	'b', 1, "character",
 	'out', 			'o', 1, "character"
 ),nrow=4)
 
 opt = getopt( t(a));
 
+# Process variance fraction parameters
+#######################################
+
+# parameters are mean and variance of the variance fraction
+opt$param_ID = as.numeric(strsplit(opt$param_ID, ' ')[[1]])
+opt$param_Disease = as.numeric(strsplit(opt$param_Disease, ' ')[[1]])
+opt$param_Batch = as.numeric(strsplit(opt$param_Batch, ' ')[[1]])
+
+# convert mean and variances in parameters of beta distribution
+# https://en.wikipedia.org/wiki/Beta_distribution#Parameter_estimation
+# there is a limit on the variance given constraints of the beta distribution.
+# If var exceeds this limit, assign maximum allows variance
+estimate_beta_paramters = function(mu, v){
+	v = min(v, 0.8*mu*(1-mu))
+
+	alpha = mu*(mu*(1-mu)/v - 1)
+	beta = (1-mu) *(mu*(1-mu)/v - 1)
+
+	c(alpha=alpha, beta=beta)
+}
+
+opt$distr_ID = estimate_beta_paramters( opt$param_ID[1], opt$param_ID[2] )
+opt$distr_Disease = estimate_beta_paramters( opt$param_Disease[1], opt$param_Disease[2] )
+opt$distr_Batch = estimate_beta_paramters( opt$param_Batch[1], opt$param_Batch[2] )
+
+# Load packages
+###############
 suppressPackageStartupMessages(library(Biostrings))
-suppressPackageStartupMessages(library(polyester)) # v1.7.1
+suppressPackageStartupMessages(library(polyester)) 
 suppressPackageStartupMessages(library(stringr))
 suppressPackageStartupMessages(library(lme4))
 suppressPackageStartupMessages(library(variancePartition))
@@ -30,14 +60,10 @@ suppressPackageStartupMessages(library(edgeR))
 suppressPackageStartupMessages(library(limma))
 suppressPackageStartupMessages(library(mvtnorm))
 
-source("/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/helper_functions.R")
-
-# cl = makeCluster(opt$nthreads)
-# registerDoParallel( cl )
-
+# set seed
 set.seed( opt$seed )
 
-# fasta_use = '~/work/RNA_seq_sim/transcriptome/transcripts_all_unique.fa'
+# read transcripts
 fastaTranscripts = readDNAStringSet( opt$fasta )
 
 i = sample(1:length(fastaTranscripts), length(fastaTranscripts), replace=FALSE)
@@ -50,7 +76,9 @@ n_reads_per = .09
 readspertx = round(n_reads_per * width(fastaTranscripts) )
 # sum(readspertx)
 
-# design matrix
+# Create design matrix
+######################
+
 n_samples = opt$n_samples
 n_reps = opt$n_reps
 n_de_genes = opt$n_de_genes
@@ -59,9 +87,9 @@ h_sq = opt$hsq
 
 info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=''),
 	Disease = as.character(sort(rep(0:1, n_samples*n_reps / 2))), 
-	Experiment = paste("sample_", gsub(" ", "0", format(1:(n_samples*n_reps), digits=2)), sep=''), stringsAsFactors=FALSE)
+	Experiment = paste("sample_", gsub(" ", "0", format(1:(n_samples*n_reps), digits=2)), sep=''))
 
-info$Batch = sample(0:2, nrow(info), replace=TRUE)
+info$Batch = factor(sample(0:2, nrow(info), replace=TRUE))
 
 # sampling until design matrix is not singular
 idx = seq(1, nrow(info), by=table(info$Individual)[1])
@@ -70,108 +98,59 @@ while( min(svd(model.matrix(~Disease + Batch, info))$d) <=0 || min(svd(model.mat
 	info$Batch = sample(0:2, nrow(info), replace=TRUE)
 }
 
-# design = model.matrix( ~ Individual + Disease+0,info)
 
-# simulate from variance components
-###################################
+# Simulate fold changes from variance components
+################################################
 
-
-design = model.matrix( ~ Individual + Disease+0,info)
-
+design_ID = model.matrix( ~ 0+Individual,info)
+design_Disease = model.matrix( ~ 0+Disease,info)
+design_Batch = model.matrix( ~ 0+Batch,info)
 
 simParams = foreach(j=1:length(fastaTranscripts) ) %do% {
 	cat("\r", j, "        ")
 
-	# indiv_variance = rnorm(1, .5, 2)
-	indiv_variance = 1
-	beta = rnorm(n_samples, 0, max(indiv_variance, .1))
+	# Individual
+	eta_ID = design_ID %*% rnorm(nlevels(info$Individual))
+
+	# Batch
+	eta_batch = design_Batch %*% rnorm(nlevels(info$Batch))
+
+	# draw variance fractions
+	sigSq_ID = rbeta(1, opt$distr_ID[1], opt$distr_ID[2])
+	sigSq_Batch = rbeta(1, opt$distr_Batch[1], opt$distr_Batch[2])
 
 	if( j <= n_de_genes){
-		# beta[] = 0
-		eta = design %*% c(beta, disease_fc)
-		error_var = (1-h_sq)/h_sq  * var(eta)
-	}else{		
-		eta = design %*% c(beta, 0)
+		# Disease
+		eta_Disease = design_Disease %*% rnorm(nlevels(info$Disease))
 
-		h_sq_other = rbeta(1, 1, 1.6)
-		error_var = (1-h_sq_other)/h_sq_other  * var(eta)
-	}	
+		sigSq_Disease = rbeta(1, opt$distr_Disease[1], opt$distr_Disease[2])
+		sigSq_Resid = max(1 - sigSq_ID - sigSq_Disease - sigSq_Batch, .01)
 
-	# var(eta_batch) is beta^2
-	# equals var(eta) + error_var
-	beta = sqrt(rbeta(1, 1, 10)*(var(eta) + error_var))
-	eta_batch = scale(as.numeric(info$Batch)) * c(beta)
+		# combine
+		y = scale(eta_ID) * (sigSq_ID-sigSq_Disease) + 
+			scale(eta_batch) * sigSq_Batch + 
+			scale(eta_Disease) * sigSq_Disease +			 
+			rnorm(nrow(info)) * sigSq_Resid
+	}else{
+		sigSq_Resid = max(1 - sigSq_ID - sigSq_Batch, .01)
 
-	y = eta + eta_batch + rnorm(nrow(eta), 0, sqrt(error_var))
+		# combine
+		y = scale(eta_ID) * sigSq_ID + 
+			scale(eta_batch) * sigSq_Batch + 		 
+			rnorm(nrow(info)) * sigSq_Resid
+	}
+
+	# fit = lm( y ~ Disease, info)
+	# calcVarPart(fit)
 
 	list( FC = t(y) - min(y) + 1)
 }
 
-
-# design = model.matrix( ~ Individual + Disease+0,info)
-
-# simParams = foreach(j=1:length(fastaTranscripts), .packages=c("lme4", "variancePartition") ) %do% {
-# 	cat("\r", j, "        ")
-
-# 	# indiv_variance = rnorm(1, .5, 2)
-# 	indiv_variance = 1
-# 	beta = rnorm(n_samples, 0, max(indiv_variance, .1))
-
-# 	if( j <= n_de_genes){
-# 		# beta[] = 0
-# 		eta = design %*% c(beta, disease_fc)
-# 		error_var = (1-h_sq)/h_sq  * var(eta)
-# 	}else{		
-# 		eta = design %*% c(beta, 0)
-
-# 		h_sq_other = rbeta(1, 1, 1.6)
-# 		error_var = (1-h_sq_other)/h_sq_other * var(eta)
-# 	}	
-# 	error_var = as.numeric(error_var)
-
-# 	# within-donor noise
-# 	dsgn_indiv = model.matrix( ~ 0 + Individual ,info)
-
-# 	# allow each donor to have its own internal variance
-# 	for( i in 1:ncol(dsgn_indiv) ){
-
-# 		idx = which(dsgn_indiv[,i] == 1)
-# 		dsgn_indiv[idx,i] = sqrt(rbeta(1, 1, 3))
-# 	}
-
-# 	# homogeneous within-individual  
-# 	# dsgn_indiv[dsgn_indiv==1] = 1
-
-# 	Sigma_id = tcrossprod(dsgn_indiv)
-# 	diag(Sigma_id) = 1 
-	
-# 	# var(eta_batch) is beta^2
-# 	# equals var(eta) + error_var
-# 	beta = sqrt(rbeta(1, 1, 10)*(var(eta) + error_var))
-# 	eta_batch = scale(as.numeric(info$Batch)) * c(beta)
-
-# 	# draw indiv level value
-# 	y = eta + eta_batch + t(rmvnorm(1, rep(0, nrow(info)), sigma=Sigma_id*error_var))
-
-# 	# fit <- lmer( y ~ (1|Individual) + (1|Disease) + (1|Batch), info, REML=FALSE)
-# 	# v = calcVarPart( fit )
-
-# 	list( FC = t(y) - min(y) + 1 )
-# }
-
-
-FC = matrix(NA, nrow=length(fastaTranscripts), ncol=n_samples*n_reps)
-# modelStats = matrix(NA, nrow(FC), ncol=3)
-# colnames(modelStats) = names(simParams[[1]]$modelStats)
-
-for(j in 1:nrow(FC)){
-	FC[j,] = simParams[[j]]$FC
-	# modelStats[j,] = simParams[[j]]$modelStats
-}
-
+# store fold changes for each gene and sample
+FC = lapply( simParams, function(x) x$FC)
+FC = do.call("rbind", FC)
 rownames(info) = info$Experiment
 colnames(FC) = info$Experiment
-
 rownames(FC) = sapply(strsplit(names(fastaTranscripts), '\\|'), function(x) x[2])
 
 # Just for testing
@@ -180,59 +159,59 @@ rownames(FC) = sapply(strsplit(names(fastaTranscripts), '\\|'), function(x) x[2]
 # register(SnowParam(12, "SOCK", progressbar=TRUE))
 
 # info$Batch = factor(info$Batch)
-# vp = fitExtractVarPartModel( FC, ~ (1|Individual) + (1|Disease) + (1|Batch), info)
+# vp = fitExtractVarPartModel( FC[1:2000,], ~ (1|Individual) + (1|Disease) + (1|Batch), info)
 
-# plotVarPart(vp)
+# fig = plotVarPart(vp)
+# ggsave("Rplots.png", fig)
 
-
-# plotVarPart(vp[1:500,])
-# plotVarPart(vp[501:1000,])
-# dev.off()
-
-
-# form <- ~ Disease + (1|Individual)
-# L = getContrast( FC, form, info, "Disease1")
-# fit = dream(FC, form, info, L)
-# fit = eBayes( fit )
-# topTable(fit)
-
-
+# names of differentiall expressed genes
 deGeneList = names(fastaTranscripts)[1:n_de_genes]
-# deGeneList = gsub(".*gene=(\\S+)", "\\1", deGeneList)
 
-lib_sizes = runif(nrow(info), .5, 1.5)
+lib_sizes = runif(nrow(info), .5, 1.5)/15
 
-#  rm -f bam/* simulated_reads/*
+# Simulate read counts
+######################
+
+# overwrite this function in polyester to decrease runtime
+assignInNamespace('sgseq', function(x,...){1}, "polyester")
+
+# try this
+#reads_per_transcript=readspertx[1:length(readspertx)]
+
+FC_scale = t(apply(FC, 1, function(x) x / sd(x)))
+
+# Saves count matrix to file, so read it in afterwards
+polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts,  meanmodel=TRUE,
+    num_reps = as.matrix(rep(1, n_samples*n_reps)), fold_changes=FC_scale, lib_sizes=lib_sizes,outdir=paste0(opt$out,'/', opt$prefix), gzip=TRUE, reportCoverage=TRUE, simReads=FALSE)
+
+# load counts_matrix from file
+load(paste0(opt$out,'/', opt$prefix ,'/sim_counts_matrix.rda'))
+
+countMatrix = round(counts_matrix)
+
+colSums(countMatrix)
+
+# Save results
+###############
+
 saveRDS(info, paste(opt$out, "/info_", opt$prefix, ".RDS", sep=''))
 saveRDS(deGeneList, paste(opt$out, "/deGeneList_", opt$prefix, ".RDS", sep=''))
-# saveRDS(modelStats, paste(opt$out, "/modelStats_", opt$prefix, ".RDS", sep=''))
+saveRDS(countMatrix, paste(opt$out, "/countMatrix_", opt$prefix, ".RDS", sep=''))
 save(list=ls(), file=paste(opt$out, "/infoAll_", opt$prefix, ".RData", sep=''))
 
-# simulation call:
-
-# simulate_experiment(fasta_use, reads_per_transcript=readspertx, 
-    # num_reps = rep(1, n_samples*n_reps), fold_changes=FC, lib_sizes=lib_sizes,outdir='~/work/RNA_seq_sim/simulated_reads', gzip=TRUE, reportCoverage=TRUE) 
-
-countMatrix = simulate_experiment_justCounts(transcripts=fastaTranscripts, reads_per_transcript=readspertx, 
-    num_reps = rep(1, n_samples*n_reps), fold_changes=FC, lib_sizes=lib_sizes,outdir=opt$out, gzip=TRUE, reportCoverage=TRUE, simReads=FALSE) #), meanmodel=TRUE )
-
-
-rownames(countMatrix) = names(fastaTranscripts)
-colnames(countMatrix) = info$Experiment
-
-saveRDS(countMatrix, paste(opt$out, "/countMatrix_", opt$prefix, ".RDS", sep=''))
 
 
 
-# check Batch effect
+
+# Check variance components
+###########################
 
 # info$Batch = factor(info$Batch)
 
-# # filter out genes based on read count
+# # # filter out genes based on read count
 # isexpr = rowSums(cpm(countMatrix)>1) >= 3
 # countMatrix = countMatrix[isexpr,]
 # rownames(countMatrix) = sapply(strsplit(rownames(countMatrix), '\\|'), function(x) x[2])
-
 
 # timeMethods = list()
 
@@ -241,16 +220,16 @@ saveRDS(countMatrix, paste(opt$out, "/countMatrix_", opt$prefix, ".RDS", sep='')
 # genes = calcNormFactors( genes )
 # design = model.matrix( ~ Disease + Batch, info)
 
-
 # vobj = voom( genes, design, plot=FALSE)
 
-
-
 # form <- ~ (1|Disease) + (1|Batch) + (1|Individual) 
-# form <- ~ Batch
-# vp_cpm = fitExtractVarPartModel(vobj, form, info)
+# # form <- ~ Batch
+# vp_cpm = fitExtractVarPartModel(vobj[1:2000,], form, info)
 
-# # plotVarPart(vp_cpm)
+# fig = plotVarPart(vp_cpm)
+# ggsave("Rplots.png", fig)
+
+
 
 
 # df = merge(vp, vp_cpm, by="row.names")
