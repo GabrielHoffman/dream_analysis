@@ -10,7 +10,6 @@ a = matrix(c(
 	'n_reps', 		'r', 1, "integer",
 	'n_de_genes', 	'd', 1, "integer",
 	'disease_fc', 	'f', 1, "integer",
-	'hsq', 			'h', 1, "numeric",
 	'nthreads', 	't', 1, "integer",
 	'seed', 		'i', 1, "integer",
 	'prefix', 		'p', 1, "character",
