@@ -39,7 +39,7 @@ knitr::opts_chunk$set(
   message=TRUE,
   error = FALSE,
   tidy = FALSE,
-  cache = TRUE,
+  cache = FALSE,
   dev = c("png", "pdf"), 
   fig.width=7, fig.height=7)
 
