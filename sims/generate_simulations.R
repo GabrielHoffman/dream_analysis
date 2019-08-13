@@ -43,8 +43,8 @@ estimate_beta_paramters = function(mu, v){
 }
 
 opt$distr_ID = estimate_beta_paramters( opt$array_ID[1], opt$array_ID[2] )
-opt$distr_Disease = estimate_beta_paramters( opt$array_Disease[1], opt$param_Disease[2] )
-opt$distr_Batch = estimate_beta_paramters( opt$arrayBatch[1], opt$array_Batch[2] )
+opt$distr_Disease = estimate_beta_paramters( opt$array_Disease[1], opt$array_Disease[2] )
+opt$distr_Batch = estimate_beta_paramters( opt$array_Batch[1], opt$array_Batch[2] )
 
 # Load packages
 ###############
