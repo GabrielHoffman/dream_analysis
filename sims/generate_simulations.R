@@ -33,7 +33,7 @@ opt$array_Batch = as.numeric(strsplit(opt$param_Batch, ' ')[[1]])
 # https://en.wikipedia.org/wiki/Beta_distribution#Parameter_estimation
 # there is a limit on the variance given constraints of the beta distribution.
 # If var exceeds this limit, assign maximum allows variance
-estimate_beta_paramters = function(mu, v){
+estimate_beta_parameters = function(mu, v){
 	v = min(v, 0.8*mu*(1-mu))
 
 	alpha = mu*(mu*(1-mu)/v - 1)
@@ -42,9 +42,9 @@ estimate_beta_paramters = function(mu, v){
 	c(alpha=alpha, beta=beta)
 }
 
-opt$distr_ID = estimate_beta_paramters( opt$array_ID[1], opt$array_ID[2] )
-opt$distr_Disease = estimate_beta_paramters( opt$array_Disease[1], opt$array_Disease[2] )
-opt$distr_Batch = estimate_beta_paramters( opt$array_Batch[1], opt$array_Batch[2] )
+opt$distr_ID = estimate_beta_parameters( opt$array_ID[1], opt$array_ID[2] )
+opt$distr_Disease = estimate_beta_parameters( opt$array_Disease[1], opt$array_Disease[2] )
+opt$distr_Batch = estimate_beta_parameters( opt$array_Batch[1], opt$array_Batch[2] )
 
 # Load packages
 ###############
@@ -105,7 +105,7 @@ design_ID = model.matrix( ~ 0+Individual,info)
 design_Disease = model.matrix( ~ 0+Disease,info)
 design_Batch = model.matrix( ~ 0+Batch,info)
 
-simParams = foreach(j=1:length(fastaTranscripts) ) %do% {
+simParams = foreach(j=1:length(fastaTranscripts)[1:2000] ) %do% {
 	cat("\r", j, "        ")
 
 	# Individual
@@ -154,14 +154,15 @@ rownames(FC) = sapply(strsplit(names(fastaTranscripts), '\\|'), function(x) x[2]
 
 # Just for testing
 # August 6, 2019
-# library(BiocParallel)
-# register(SnowParam(12, "SOCK", progressbar=TRUE))
+library(BiocParallel)
+register(SnowParam(12, "SOCK", progressbar=TRUE))
 
-# info$Batch = factor(info$Batch)
-# vp = fitExtractVarPartModel( FC[1:2000,], ~ (1|Individual) + (1|Disease) + (1|Batch), info)
+info$Batch = factor(info$Batch)
+vp = fitExtractVarPartModel( FC[1:2000,], ~ (1|Individual) + (1|Disease) + (1|Batch), info)
 
-# fig = plotVarPart(vp)
-# ggsave("Rplots.png", fig)
+fig = plotVarPart(vp)
+ggsave("Rplots.png", fig)
+q()
 
 # names of differentiall expressed genes
 deGeneList = names(fastaTranscripts)[1:n_de_genes]
