@@ -163,7 +163,11 @@ get_enrich_order = function( res ){
   res$gene = geneInfo$geneName[match(rownames(res), geneInfo$Geneid)]
   res$symbol = sub("^(ENSG.*)$", NA, res$gene)
 
-  tstat = res$t
+  if( !is.null(res$t) ){
+    tstat = res$t
+  }else{
+    tstat = res$F
+  }
   names(tstat) = res$symbol
   tstat = tstat[!is.na(names(tstat))]
 
@@ -273,7 +277,7 @@ fitmm = eBayes( fitmm )
 # Compare -log10 p from dream and duplicateCorrelation
 ```{r compare_braak}
 p1 = topTable(fitDupCor, number=Inf, sort.by="none")$P.Value
-p2 = topTable(fitmm, number=Inf, sort.by="none")$P.Value
+p2 = topTable(fitmm, coef='L1', number=Inf, sort.by="none")$P.Value
       
 plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
 ```
@@ -329,10 +333,10 @@ ggplot(dfroll, aes(delta, DGN_R2_mu)) +  geom_point() + theme_bw(19) + theme(asp
 
 # Top categories from each analysis
 ```{r camera_enrich_braak}
-res = topTable(fitDupCor, number=1e7) 
+res = topTable(fitDupCor, number=Inf) 
 enrich_dupCor_camera = get_enrich_order( res ) 
    
-res = topTable(fitmm, number=1e7)  
+res = topTable(fitmm, coef="L1", number=Inf)  
 enrich_dream_camera = get_enrich_order( res )   
 ```
  
@@ -351,10 +355,10 @@ plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)
 
 ```{r save_enrichments}
 file = "./AMP_AD_DupCor.tsv"
-write.table(topTable(fitDupCor, number=1e7), file=file, sep="\t", quote=FALSE)
+write.table(topTable(fitDupCor, number=Inf), file=file, sep="\t", quote=FALSE)
 
 file = "./AMP_AD_dream.tsv"
-write.table(topTable(fitmm, number=1e7), file=file, sep="\t", quote=FALSE)
+write.table(topTable(fitmm, coef="L1", number=Inf), file=file, sep="\t", quote=FALSE)
 
 file = "./AMP_AD_DupCor_enrichment.tsv"
 write.table(enrich_dupCor_camera, file=file, sep="\t", quote=FALSE)
@@ -387,7 +391,7 @@ sum(topTable(fitDupCor, number=Inf)$adj.P.Val < 0.05)
 
 # Number of differentially expressed genes from dream 
 ```{r}
-sum(topTable(fitmm, number=Inf)$adj.P.Val < 0.05)
+sum(topTable(fitmm, coef="L1", number=Inf)$adj.P.Val < 0.05)
 ```
 
 
