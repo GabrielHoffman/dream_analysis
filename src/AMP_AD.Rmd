@@ -17,14 +17,10 @@ nthreads = 8
 ```
 
 ```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
-suppressPackageStartupMessages(library(doParallel))
-
-if( ! exists("cl") ){
-	cl <- makeCluster(nthreads)
-	registerDoParallel(cl) 
-}
-
 suppressPackageStartupMessages(library(synapser))
+suppressPackageStartupMessages(library(BiocParallel))
+
+register(SnowParam(8, "SOCK", progressbar=TRUE))
 
 synLogin()
 ```

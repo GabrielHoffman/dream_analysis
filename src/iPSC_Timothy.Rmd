@@ -16,12 +16,9 @@ nthreads = 4
 ```
 
 ```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
-suppressPackageStartupMessages(library(doParallel))
- 
-if( ! exists("cl") ){
-  cl <- makeCluster(nthreads)
-  registerDoParallel(cl) 
-}
+suppressPackageStartupMessages(library(BiocParallel))
+
+register(SnowParam(8, "SOCK", progressbar=TRUE))
 ```
 
 ```{r load.packages, echo=FALSE, message=FALSE, results='hide'}

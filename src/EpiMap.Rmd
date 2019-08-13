@@ -56,11 +56,8 @@ options(markdown.HTML.stylesheet = 'css/custom.css')
 ```
 
 ```{r load.always, cache=FALSE, echo=FALSE, message=FALSE}
-suppressPackageStartupMessages(library(doParallel))
-if( ! exists("cl") ){
-  cl <- parallel::makeForkCluster(nthreads, outfile='')
-  registerDoParallel(cl)
-}
+suppressPackageStartupMessages(library(BiocParallel))
+register(SnowParam(8, "SOCK", progressbar=TRUE))
 suppressPackageStartupMessages(library(synapser))
 # login once and then save info
 # synLogin("user.name", "password", rememberMe=TRUE)

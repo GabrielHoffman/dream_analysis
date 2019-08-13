@@ -23,10 +23,8 @@ nthreads = 12
 ```
 
 ```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
-suppressPackageStartupMessages(library(doParallel))
-
-cl <- makeCluster(nthreads)
-registerDoParallel(cl)
+suppressPackageStartupMessages(library(BiocParallel))
+register(SnowParam(8, "SOCK", progressbar=TRUE))
 ```
 
 ```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
@@ -184,6 +182,7 @@ fit2 = eBayes(fit2)
 # Dream
 ```{r dream2, echo=TRUE, message=FALSE}
 form = ~ Interaction - 1 + MEF + Fibroblast + Sex + (1|Donor)
+form = ~ Interaction  + MEF + Fibroblast + Sex + (1|Donor)
 
 # SZNPC = InteractionSZ_NPC - InteractionCT_NPC, 
 L_npc = getContrast( vobj, form, metadata2, "InteractionSZ_NPC")
