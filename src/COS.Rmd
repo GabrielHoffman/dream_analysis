@@ -180,7 +180,7 @@ fit2 = eBayes(fit2)
 # Dream
 ```{r dream2, echo=TRUE, message=FALSE}
 form = ~ Interaction - 1 + MEF + Fibroblast + Sex + (1|Donor)
-form = ~ Interaction  + MEF + Fibroblast + Sex + (1|Donor)
+# form = ~ Interaction  + MEF + Fibroblast + Sex + (1|Donor)
 
 # SZNPC = InteractionSZ_NPC - InteractionCT_NPC, 
 L_npc = getContrast( vobj, form, metadata2, "InteractionSZ_NPC")
