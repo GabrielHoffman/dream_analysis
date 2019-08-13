@@ -25,9 +25,9 @@ opt = getopt( t(a));
 #######################################
 
 # parameters are mean and variance of the variance fraction
-opt$param_ID = as.numeric(strsplit(opt$param_ID, ' ')[[1]])
-opt$param_Disease = as.numeric(strsplit(opt$param_Disease, ' ')[[1]])
-opt$param_Batch = as.numeric(strsplit(opt$param_Batch, ' ')[[1]])
+opt$array_ID = as.numeric(strsplit(opt$param_ID, ' ')[[1]])
+opt$array_Disease = as.numeric(strsplit(opt$param_Disease, ' ')[[1]])
+opt$array_Batch = as.numeric(strsplit(opt$param_Batch, ' ')[[1]])
 
 # convert mean and variances in parameters of beta distribution
 # https://en.wikipedia.org/wiki/Beta_distribution#Parameter_estimation
@@ -42,9 +42,9 @@ estimate_beta_paramters = function(mu, v){
 	c(alpha=alpha, beta=beta)
 }
 
-opt$distr_ID = estimate_beta_paramters( opt$param_ID[1], opt$param_ID[2] )
-opt$distr_Disease = estimate_beta_paramters( opt$param_Disease[1], opt$param_Disease[2] )
-opt$distr_Batch = estimate_beta_paramters( opt$param_Batch[1], opt$param_Batch[2] )
+opt$distr_ID = estimate_beta_paramters( opt$array_ID[1], opt$array_ID[2] )
+opt$distr_Disease = estimate_beta_paramters( opt$array_Disease[1], opt$param_Disease[2] )
+opt$distr_Batch = estimate_beta_paramters( opt$arrayBatch[1], opt$array_Batch[2] )
 
 # Load packages
 ###############
