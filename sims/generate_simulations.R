@@ -105,7 +105,7 @@ design_ID = model.matrix( ~ 0+Individual,info)
 design_Disease = model.matrix( ~ 0+Disease,info)
 design_Batch = model.matrix( ~ 0+Batch,info)
 
-simParams = foreach(j=1:length(fastaTranscripts)[1:2000] ) %do% {
+simParams = foreach(j=1:length(fastaTranscripts) ) %do% {
 	cat("\r", j, "        ")
 
 	# Individual
@@ -154,15 +154,15 @@ rownames(FC) = sapply(strsplit(names(fastaTranscripts), '\\|'), function(x) x[2]
 
 # Just for testing
 # August 6, 2019
-library(BiocParallel)
-register(SnowParam(12, "SOCK", progressbar=TRUE))
+# library(BiocParallel)
+# register(SnowParam(12, "SOCK", progressbar=TRUE))
 
-info$Batch = factor(info$Batch)
-vp = fitExtractVarPartModel( FC[1:2000,], ~ (1|Individual) + (1|Disease) + (1|Batch), info)
+# info$Batch = factor(info$Batch)
+# vp = fitExtractVarPartModel( FC[1:2000,], ~ (1|Individual) + (1|Disease) + (1|Batch), info)
 
-fig = plotVarPart(vp)
-ggsave("Rplots.png", fig)
-q()
+# fig = plotVarPart(vp)
+# ggsave("Rplots.png", fig)
+# q()
 
 # names of differentiall expressed genes
 deGeneList = names(fastaTranscripts)[1:n_de_genes]
