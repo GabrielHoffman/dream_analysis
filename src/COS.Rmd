@@ -126,6 +126,9 @@ rownames(cibersort) = gsub("-2$", "R", rownames(cibersort))
 
 metadata2 = merge(metadata, cibersort, by.x='Sample.Name', by.y='row.names')
 rownames(metadata2) = metadata2$Sample.Name
+
+idx = match( colnames(vobj), rownames(metadata2) )
+metadata2 = metadata2[idx,]
 ```
 
 
