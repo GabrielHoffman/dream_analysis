@@ -65,11 +65,9 @@ geneCounts = geneCounts_in[,colnames(geneCounts_in) %in% indivs]
 ```
 
 
-
-
 Meta data is available from https://www.synapse.org/#!Synapse:syn7392158
 ```{r metadata}
-df_rna_covariates = fread(synGet( 'syn6100548' )$path)
+df_rna_covariates = fread(synGet( 'syn6100548', version='7' )$path)
 df_clinical = fread(synGet( 'syn6101474' )$path)
 df_wes = fread(synGet( 'syn6101472' )$path)
 sampleInfo = fread(synGet( 'syn12178047' )$path)
@@ -227,7 +225,7 @@ vp = fitExtractVarPartModel( vobj, form, metadata)
 ```
 
 ```{r vp.plot}
-plotVarPart( sortCols( vp ) )      
+plotVarPart( sortCols( vp ) )              
 ```
 
 
