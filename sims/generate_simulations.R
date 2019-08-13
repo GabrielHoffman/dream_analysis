@@ -94,7 +94,7 @@ info$Batch = factor(sample(0:2, nrow(info), replace=TRUE))
 idx = seq(1, nrow(info), by=table(info$Individual)[1])
 
 while( min(svd(model.matrix(~Disease + Batch, info))$d) <=0 || min(svd(model.matrix(~Disease + Batch, info[idx,]))$d) <=0 ){
-	info$Batch = sample(0:2, nrow(info), replace=TRUE)
+	info$Batch = factor(sample(0:2, nrow(info), replace=TRUE))
 }
 
 
