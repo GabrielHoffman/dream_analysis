@@ -147,7 +147,7 @@ figList = foreach( ds = names(dupCorList) ) %do% {
 
   # Compare p-values and make plot
   t1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
-  t2 = topTable(dreamList[[ds]], number=Inf, sort.by="none")$P.Value
+  t2 = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by="none")$P.Value
 
   plotCompareP( t1, t2, with(vpList[[ds]], Donor + genotype), dupCorList[[ds]]$consensus) + ggtitle( ds )
 }
@@ -175,7 +175,7 @@ figList = foreach( ds = names(dupCorList) ) %do% {
 
   # Compare p-values and make plot
   t1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
-  t2 = topTable(dreamList[[ds]], number=Inf, sort.by="none")$P.Value
+  t2 = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by="none")$P.Value
   
   df_vp = data.frame(vpList[[ds]])
   df_vp$gene = rownames(vp)
@@ -229,7 +229,7 @@ do.call("grid.arrange", c(figList, ncol=1))
 ## Count DE genes between cases and controls in each cell type
 ```{r degenes}
 deCount = foreach( ds = names(dupCorList), .combine=rbind ) %do% {
-  a = sum(topTable(dreamList[[ds]], number=Inf)$adj.P.Val < 0.05)
+  a = sum(topTable(dreamList[[ds]], coef="genotypeTS", number=Inf)$adj.P.Val < 0.05)
   b = sum(topTable(dupCorList[[ds]]$fitDupCor, coef='genotypeTS', number=Inf)$adj.P.Val < 0.05)
 
   rbind(c(cellType=ds, count = a, method = "dream"), 
@@ -271,7 +271,7 @@ get_enrich_order = function( res ){
 
 enrichList_dream_tstat = foreach( ds = names(dreamList) ) %do% {
 
-  tab = topTable(dreamList[[ds]], number=Inf )
+  tab = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf )
   tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
   tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
   tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
@@ -299,7 +299,7 @@ names(enrichList_dp_tstat) = names(dreamList)
 ```{r}
 de_dream = foreach( ds = names(dreamList) ) %do% {
 
-  tab = topTable(dreamList[[ds]], number=Inf )
+  tab = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf )
   tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
   tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
   tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
@@ -435,7 +435,7 @@ foreach( ds = names(enrichList_dream_tstat) ) %do% {
 
   # dream
   file = paste0("iPSC_Timothy", gsub(" ", "_", ds),"_dream.tsv")
-  write.table(topTable(dreamList[[ds]], number=Inf ), file=file, sep="\t", quote=FALSE)
+  write.table(topTable(dreamList[[ds]], coef="genotypeTS", number=Inf ), file=file, sep="\t", quote=FALSE)
 
   # dupCor
   file = paste0("iPSC_Timothy", gsub(" ", "_", ds),"_DupCor_enrichment.tsv")
