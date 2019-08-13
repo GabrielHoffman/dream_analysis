@@ -17,11 +17,6 @@ rmarkdown::render("COS.Rmd", output_dir='./', intermediates_dir='./')
 rmarkdown::render("~/scripts/dream/COS.Rmd", output_dir='./', intermediates_dir='./')
 --->
 
-
-```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
-nthreads = 12
-```
-
 ```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
 suppressPackageStartupMessages(library(BiocParallel))
 register(SnowParam(8, "SOCK", progressbar=TRUE))

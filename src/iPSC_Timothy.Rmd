@@ -11,13 +11,8 @@ output:
 ---
 
 
-```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
-nthreads = 4
-```
-
 ```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
 suppressPackageStartupMessages(library(BiocParallel))
-
 register(SnowParam(8, "SOCK", progressbar=TRUE))
 ```
 

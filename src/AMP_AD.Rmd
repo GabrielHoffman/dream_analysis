@@ -11,11 +11,6 @@ output:
 ---
 
 
-```{r initialize, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
-nthreads = 8
-# rm(cl)
-```
-
 ```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
 suppressPackageStartupMessages(library(synapser))
 suppressPackageStartupMessages(library(BiocParallel))
