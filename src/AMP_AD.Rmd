@@ -228,8 +228,6 @@ vp = fitExtractVarPartModel( vobj, form, metadata)
 plotVarPart( sortCols( vp ) )              
 ```
 
-q()
-
 # Compare expression with Braak stage
 ```{r limma_braak, echo=FALSE, message=FALSE}
 n_samples = table(metadata$individualIdentifier)
