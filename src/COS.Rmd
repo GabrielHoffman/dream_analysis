@@ -23,7 +23,7 @@ register(SnowParam(8, "SOCK", progressbar=TRUE))
 ```
 
 ```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
-
+suppressPackageStartupMessages(library(data.table))
 suppressPackageStartupMessages(library(knitr))
 suppressPackageStartupMessages(library(scales))
 suppressPackageStartupMessages(library(qvalue))
