@@ -210,6 +210,9 @@ plotCompareP( t1, t2, vp$Donor, dupcor$consensus, fraction=.1) + ggtitle("Neuron
 
 # compare to eQTL
 ```{r eqtl.Neuron}
+
+setwd('/sc/orga/projects/psychencode/gabriel/dream_analysis/src')
+
 df_vp = data.frame(vp)
 df_vp$gene = rownames(vp)
 df_vp$p_dupCor = t1
@@ -271,6 +274,9 @@ plotCompareP( t1, t2, vp$Donor, dupcor$consensus, fraction=.1) + ggtitle("NPC")
 
 # compare to eQTL
 ```{r eqtl.NPC}
+
+setwd('/sc/orga/projects/psychencode/gabriel/dream_analysis/src')
+
 df_vp = data.frame(vp)
 df_vp$gene = rownames(vp)
 df_vp$p_dupCor = t1
@@ -456,6 +462,8 @@ plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)
 ```
 
 ```{r save_enrichments}
+setwd('/sc/orga/projects/psychencode/gabriel/dream_analysis/src')
+
 file = "./COS_NPC_DupCor.tsv"
 write.table(topTable(fit2, coef="SZNPC", number=Inf), file=file, sep="\t", quote=FALSE)
 file = "./COS_neuron_DupCor.tsv"
