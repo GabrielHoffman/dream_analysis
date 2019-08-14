@@ -48,6 +48,8 @@ knitr::opts_chunk$set(
   fig.width=7, fig.height=7)
 
 options(markdown.HTML.stylesheet = 'css/custom.css')
+
+setwd('/sc/orga/projects/psychencode/gabriel/dream_analysis/src')
 ```
 
 ```{r load.always, cache=FALSE, echo=FALSE, message=FALSE}
