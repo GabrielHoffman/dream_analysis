@@ -56,7 +56,10 @@ genes = calcNormFactors( genes )
 design = model.matrix( ~ Disease + Batch, info[idx,])
 
 timeMethods$fit_lmFit = system.time({
-vobj = voom( genes, design, plot=FALSE)
+file = paste0(opt$folder, '/figures/voom_', opt$prefix, ".pdf")
+pdf( file )
+vobj = voom( genes, design, plot=TRUE)
+dev.off()
 design = model.matrix( ~ Disease + Batch, info[idx,])
 fit_lmFit = lmFit(vobj, design)
 fit_lmFit = eBayes(fit_lmFit)
@@ -161,6 +164,26 @@ form <- ~ Disease + (1|Batch) + (1|Individual)
 fitSat = dream( vobjDream, form, info)
 fitSatEB = eBayes( fitSat )
 })
+
+# plot(-log10(fitSat$p.value), -log10(fitSatEB$p.value))
+# abline(0,1, col="red")
+
+
+# library(lmerTest)
+# i=85
+# y = t(t(vobjDream$E[i,]))
+# fit = lmer( y ~ Disease + (1|Batch) + (1|Individual), info )
+# summary(fit)
+
+# res = variancePartition:::.standardized_t_stat(limma::eBayes(fitSat))
+# plot(-log10(fitSat$p.value), -log10(res$p.value))
+# abline(0,1, col="red")
+
+# res = limma::eBayes(variancePartition:::.standardized_t_stat(fitSat))
+# plot(-log10(fitSat$p.value), -log10(res$p.value))
+# abline(0,1, col="red")
+
+
 
 # MACAU2
 ########
