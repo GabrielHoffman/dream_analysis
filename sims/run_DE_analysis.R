@@ -165,6 +165,26 @@ fitSat = dream( vobjDream, form, info)
 fitSatEB = eBayes( fitSat )
 })
 
+# plot(-log10(fitSat$p.value), -log10(fitSatEB$p.value))
+# abline(0,1, col="red")
+
+
+# library(lmerTest)
+# i=85
+# y = t(t(vobjDream$E[i,]))
+# fit = lmer( y ~ Disease + (1|Batch) + (1|Individual), info )
+# summary(fit)
+
+# res = variancePartition:::.standardized_t_stat(limma::eBayes(fitSat))
+# plot(-log10(fitSat$p.value), -log10(res$p.value))
+# abline(0,1, col="red")
+
+# res = limma::eBayes(variancePartition:::.standardized_t_stat(fitSat))
+# plot(-log10(fitSat$p.value), -log10(res$p.value))
+# abline(0,1, col="red")
+
+
+
 # MACAU2
 ########
 
