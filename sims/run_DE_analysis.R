@@ -56,7 +56,10 @@ genes = calcNormFactors( genes )
 design = model.matrix( ~ Disease + Batch, info[idx,])
 
 timeMethods$fit_lmFit = system.time({
-vobj = voom( genes, design, plot=FALSE)
+file = paste0(opt$folder, '/figures/voom_', opt$prefix, ".pdf")
+pdf( file )
+vobj = voom( genes, design, plot=TRUE)
+dev.off()
 design = model.matrix( ~ Disease + Batch, info[idx,])
 fit_lmFit = lmFit(vobj, design)
 fit_lmFit = eBayes(fit_lmFit)
