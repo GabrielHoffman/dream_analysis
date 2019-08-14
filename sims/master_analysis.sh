@@ -22,7 +22,7 @@ cd $(dirname $FASTA)
 # unique genes
 cat $FASTALL | grep '>' | cut -f2 -d'|' | cut -f1 -d'.' | sort -u | parallel -P10 "grep -m1 {} $FASTALL" | sed 's/^>//g' > headers.lst
 
-# get genes greater than 400 bp and less thatn 16 kb
+# get genes greater than 500 bp and less than 8 kb
 cat headers.lst | awk -vFS='|' '{if($7>500 && $7 < 8000) print $0}' > headers_size.lst
 
 # faSomeRecords $FASTALL headers.lst $FASTA
