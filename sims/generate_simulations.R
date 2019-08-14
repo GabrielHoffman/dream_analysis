@@ -72,7 +72,7 @@ n_reads_per = .09
 
 # ~20x coverage ----> reads per transcript = transcriptlength/readlength * 20
 # here all transcripts will have ~equal FPKM
-readspertx = round(n_reads_per * width(fastaTranscripts) )
+# readspertx = round(n_reads_per * width(fastaTranscripts) )
 # sum(readspertx)
 
 # Create design matrix
@@ -167,7 +167,7 @@ rownames(FC) = sapply(strsplit(names(fastaTranscripts), '\\|'), function(x) x[2]
 # names of differentiall expressed genes
 deGeneList = names(fastaTranscripts)[1:n_de_genes]
 
-lib_sizes = runif(nrow(info), .5, 1.5)/5
+lib_sizes = runif(nrow(info), .5, 1.5) /3
 
 # Simulate read counts
 ######################
@@ -183,24 +183,29 @@ FC_scale = t(apply(FC, 1, function(x){
 	x - min(x) + 1
 	})) 
 
-readspertx = round(20 * width(fastaTranscripts) / 10)
+reads_per_transcript = 2^runif(length(fastaTranscripts), 2, 14)
+
+size = reads_per_transcript * FC_scale / 5
 
 # Saves count matrix to file, so read it in afterwards
-polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts,   ,reads_per_transcript=readspertx,  meanmodel=1,
+polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts,   ,reads_per_transcript=reads_per_transcript, size=size,
     num_reps = as.matrix(rep(1, n_samples*n_reps)), fold_changes=FC_scale, lib_sizes=lib_sizes,outdir=paste0(opt$out,'/', opt$prefix), gzip=TRUE, reportCoverage=TRUE, simReads=FALSE)
+
+# hist(log2(reads_per_transcript))
 
 # load counts_matrix from file
 load(paste0(opt$out,'/', opt$prefix ,'/sim_counts_matrix.rda'))
 
 countMatrix = round(counts_matrix)
 
-# range(colSums(countMatrix))
 
-# isexpr = rowSums(cpm(countMatrix)>1) >= 3
-# table(isexpr)
+ range(colSums(countMatrix))
+
+isexpr = rowSums(cpm(countMatrix)>.1) >= 3
+table(isexpr)
 
 
-# # # voom single replicate
+# # voom single replicate
 # genes = DGEList( countMatrix[isexpr,] )
 # genes = calcNormFactors( genes )
 # design = model.matrix( ~ Disease + Batch, info)
@@ -208,12 +213,19 @@ countMatrix = round(counts_matrix)
 # vobj = voom( genes, design, plot=TRUE)
 
 
+
+
 # i = which.max(rowSums(cpm(countMatrix)))
 # cpm(countMatrix)[i,]
 # cpm(countMatrix)[i+1,]
 
 
+# dds <- DESeqDataSetFromMatrix(countData = countMatrix,
+#                               colData = info,
+#                               design = ~ Disease + Batch )
+# dds = DESeq(dds)
 
+# plotDispEsts(dds)
 
 # Save results
 ###############

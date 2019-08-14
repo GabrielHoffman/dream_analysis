@@ -35,13 +35,14 @@ suppressPackageStartupMessages(library(MACAU2))
 
 
 # read data from simulations
-countMatrix = readRDS(paste0(opt$folder, '/data/countMatrix_',opt$prefix,'.RDS'))
+countMatrixOrig = readRDS(paste0(opt$folder, '/data/countMatrix_',opt$prefix,'.RDS'))
 info = readRDS(paste0(opt$folder, '/data/info_',opt$prefix,'.RDS'))
 rownames(info) = info$Experiment
 info$Batch = factor(info$Batch)
 
 # filter out genes based on read count
-isexpr = rowSums(cpm(countMatrix)>.1) >= 3
+isexpr = rowSums(cpm(countMatrixOrig)>.1) >= 3
+isexpr[] = TRUE
 countMatrix = countMatrix[isexpr,]
 rownames(countMatrix) = sapply(strsplit(rownames(countMatrix), '\\|'), function(x) x[2])
 
@@ -62,8 +63,9 @@ fit_lmFit = eBayes(fit_lmFit)
 })
 
 # DESeq2 one sample
+# DESeq2 get full count matrix, no filtering
 timeMethods$dds_single = system.time({
-dds_single <- DESeqDataSetFromMatrix(countData = countMatrix[,idx],
+dds_single <- DESeqDataSetFromMatrix(countData = countMatrixOrig[,idx],
                               colData = info[idx,],
                               design = ~ Disease + Batch )
 dds_single = DESeq(dds_single)
@@ -85,7 +87,7 @@ fit_lmFit2 = eBayes(fit_lmFit2)
 
 # DESeq2 all samples
 timeMethods$DESeq2 = system.time({
-dds <- DESeqDataSetFromMatrix(countData = countMatrix,
+dds <- DESeqDataSetFromMatrix(countData = countMatrixOrig,
                               colData = info,
                               design= ~ Disease + Batch)
 dds <- DESeq(dds)
@@ -101,7 +103,7 @@ dds <- DESeq(dds)
 # Sum reads by sample
 timeMethods$DESeq2_sum = system.time({
 countMatrix_sum = lapply( unique(info$Individual), function(ID){
-	rowSums(countMatrix[,info$Experiment[info$Individual == ID],drop=FALSE])
+	rowSums(countMatrixOrig[,info$Experiment[info$Individual == ID],drop=FALSE])
 	} )
 countMatrix_sum2 = do.call("cbind", countMatrix_sum)
 colnames(countMatrix_sum2) = info$Experiment[idx]
