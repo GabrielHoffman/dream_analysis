@@ -44,8 +44,6 @@ knitr::opts_chunk$set(
   fig.width=7, fig.height=7)
 
 options(markdown.HTML.stylesheet = 'css/custom.css')
-
-setwd('/sc/orga/projects/psychencode/gabriel/dream_analysis/src')
 ```
 
 ```{r read.geneCounts}
@@ -284,6 +282,8 @@ plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
 
 # compare to eQTL
 ```{r eqtl}
+setwd('/sc/orga/projects/psychencode/gabriel/dream_analysis/src')
+
 df_vp = data.frame(vp)
 df_vp$gene = rownames(vp)
 df_vp$p_dupCor = p1
@@ -354,6 +354,8 @@ plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)
 ```
 
 ```{r save_enrichments}
+setwd('/sc/orga/projects/psychencode/gabriel/dream_analysis/src')
+
 file = "./AMP_AD_DupCor.tsv"
 write.table(topTable(fitDupCor, number=Inf), file=file, sep="\t", quote=FALSE)
 
