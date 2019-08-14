@@ -22,7 +22,11 @@ cd $(dirname $FASTA)
 # unique genes
 cat $FASTALL | grep '>' | cut -f2 -d'|' | cut -f1 -d'.' | sort -u | parallel -P10 "grep -m1 {} $FASTALL" | sed 's/^>//g' > headers.lst
 
-faSomeRecords $FASTALL headers.lst $FASTA
+# get genes greater than 400 bp and less thatn 16 kb
+cat headers.lst | awk -vFS='|' '{if($7>500 && $7 < 8000) print $0}' > headers_size.lst
+
+# faSomeRecords $FASTALL headers.lst $FASTA
+faSomeRecords $FASTALL headers_size.lst $FASTA
 
 
 # Simulate read counts
@@ -30,6 +34,7 @@ faSomeRecords $FASTALL headers.lst $FASTA
 
 FOLDER=/sc/orga/projects/psychencode/gabriel/RNA_seq_sim/RNA_seq_sim_v3/
 cd $FOLDER
+# rm -rf data figures jobs logs results
 mkdir -p data figures jobs logs results
 FASTA=$FOLDER/transcriptome/gencode.v19.genes.fa
 
@@ -69,7 +74,7 @@ export OMP_NUM_THREADS=1
 
 echo \$( R -e \"packageVersion('variancePartition')\")
 
-/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/generate_simulations.R --fasta $FASTA --n_samples ${N_SAMPLES} --n_reps ${N_REPS} --n_de_genes ${N_DE} --disease_fc ${FC} --hsq ${HSQ} --nthreads 20 --seed ${SEED} --out $FOLDER/data --prefix $PFX " >> jobs/sims_${PFX}.lsf
+/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/generate_simulations.R --fasta $FASTA --n_samples ${N_SAMPLES} --n_reps ${N_REPS} --n_de_genes ${N_DE} --disease_fc ${FC} --nthreads 20  --param_ID '.3 .03' --param_Disease '.2 0.005' --param_Batch '.2 0.01' --seed ${SEED} --out $FOLDER/data --prefix $PFX " >> jobs/sims_${PFX}.lsf
 done
 done
 done

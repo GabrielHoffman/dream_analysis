@@ -167,7 +167,7 @@ rownames(FC) = sapply(strsplit(names(fastaTranscripts), '\\|'), function(x) x[2]
 # names of differentiall expressed genes
 deGeneList = names(fastaTranscripts)[1:n_de_genes]
 
-lib_sizes = runif(nrow(info), .5, 1.5)/15
+lib_sizes = runif(nrow(info), .5, 1.5)/5
 
 # Simulate read counts
 ######################
@@ -177,11 +177,16 @@ assignInNamespace('sgseq', function(x,...){1}, "polyester")
 
 # try this
 #reads_per_transcript=readspertx[1:length(readspertx)]
+# meanmodel=FALSE,
 
-FC_scale = t(apply(FC, 1, function(x) x / sd(x)))
+FC_scale = t(apply(FC, 1, function(x){
+	x - min(x) + 1
+	})) 
+
+readspertx = round(20 * width(fastaTranscripts) / 10)
 
 # Saves count matrix to file, so read it in afterwards
-polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts,  meanmodel=TRUE,
+polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts,   ,reads_per_transcript=readspertx,  meanmodel=1,
     num_reps = as.matrix(rep(1, n_samples*n_reps)), fold_changes=FC_scale, lib_sizes=lib_sizes,outdir=paste0(opt$out,'/', opt$prefix), gzip=TRUE, reportCoverage=TRUE, simReads=FALSE)
 
 # load counts_matrix from file
@@ -189,7 +194,26 @@ load(paste0(opt$out,'/', opt$prefix ,'/sim_counts_matrix.rda'))
 
 countMatrix = round(counts_matrix)
 
-colSums(countMatrix)
+# range(colSums(countMatrix))
+
+# isexpr = rowSums(cpm(countMatrix)>1) >= 3
+# table(isexpr)
+
+
+# # # voom single replicate
+# genes = DGEList( countMatrix[isexpr,] )
+# genes = calcNormFactors( genes )
+# design = model.matrix( ~ Disease + Batch, info)
+
+# vobj = voom( genes, design, plot=TRUE)
+
+
+# i = which.max(rowSums(cpm(countMatrix)))
+# cpm(countMatrix)[i,]
+# cpm(countMatrix)[i+1,]
+
+
+
 
 # Save results
 ###############
