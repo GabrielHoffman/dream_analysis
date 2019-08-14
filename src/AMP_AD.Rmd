@@ -235,8 +235,9 @@ n_samples = table(metadata$individualIdentifier)
 # idx = with(metadata, !is.na(DiseaseClass) & (!is.na(Apo1)) &(!is.na(bbscore)) &(individualIdentifier %in%  names(n_samples[n_samples==4])) )
 idx = rep(TRUE, nrow(metadata))
 
-design = model.matrix( ~ 0 + Region + Region:bbscore + Run + LIMS + `Sex (final)` + RIN + rRNA.rate + PMI + Age + Apo1  + Apo2, metadata[idx,])
- 
+design = model.matrix( ~ 0 + Region + Region:bbscore + Run + LIMS + `Sex (final)` + RIN + PMI + Age + Apo1  + Apo2, metadata[idx,])
+ # + rRNA.rate
+
 # Estimate linear mixed model with a single variance component
 # Fit the model for each gene, 
 dupcor <- duplicateCorrelation(vobj[,idx],design,block=metadata$individualIdentifier[idx])
