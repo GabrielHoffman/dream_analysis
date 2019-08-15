@@ -170,10 +170,17 @@ fitSatEB = eBayes( fitSat )
 
 
 # library(lmerTest)
-# i=85
+# i=2
 # y = t(t(vobjDream$E[i,]))
-# fit = lmer( y ~ Disease + (1|Batch) + (1|Individual), info )
+# w = t(t(vobjDream$weights[i,]))
+# fit = lmer( y ~ Disease + (1|Batch) + (1|Individual), info, weights= w / max(w), REML=FALSE )
 # summary(fit)
+
+# fit = lmer( y ~ Disease + (1|Batch) + (1|Individual), info, weights= w / max(w), REML=TRUE )
+# summary(fit)
+
+# where does df come from in dream
+
 
 # res = variancePartition:::.standardized_t_stat(limma::eBayes(fitSat))
 # plot(-log10(fitSat$p.value), -log10(res$p.value))
