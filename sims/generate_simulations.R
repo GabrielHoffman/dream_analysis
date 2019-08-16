@@ -199,6 +199,7 @@ FC_scale = t(apply(FC, 1, function(x){
 # reads_per_transcript=reads_per_transcript, size=size,
 # Saves count matrix to file, so read it in afterwards
 polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts, 
+	meanmodel=TRUE,
     num_reps = as.matrix(rep(1, n_samples*n_reps)), fold_changes=FC_scale, lib_sizes=lib_sizes,outdir=paste0(opt$out,'/', opt$prefix), gzip=TRUE, reportCoverage=TRUE, simReads=FALSE)
 
 # hist(log2(reads_per_transcript))
@@ -209,19 +210,20 @@ load(paste0(opt$out,'/', opt$prefix ,'/sim_counts_matrix.rda'))
 countMatrix = round(counts_matrix)
 
 
-#  range(colSums(countMatrix))
+ range(colSums(countMatrix))
+mean( colSums(countMatrix))
 
-# isexpr = rowSums(cpm(countMatrix)>.1) >= 3
-# table(isexpr)
+isexpr = rowSums(cpm(countMatrix)>.1) >= 3
+table(isexpr)
 
-# isexpr[] = TRUE
+isexpr[] = TRUE
 
-# # # voom single replicate
-# genes = DGEList( countMatrix[isexpr,] )
-# genes = calcNormFactors( genes )
-# design = model.matrix( ~ Disease + Batch, info)
+# # voom single replicate
+genes = DGEList( countMatrix[isexpr,] )
+genes = calcNormFactors( genes )
+design = model.matrix( ~ Disease + Batch, info)
 
-# vobj = voom( genes, design, plot=TRUE)
+vobj = voom( genes, design, plot=TRUE)
 
 
 
