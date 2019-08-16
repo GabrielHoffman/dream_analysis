@@ -180,15 +180,26 @@ assignInNamespace('sgseq', function(x,...){1}, "polyester")
 # meanmodel=FALSE,
 
 FC_scale = t(apply(FC, 1, function(x){
+	x = x/8
 	x - min(x) + 1
 	})) 
 
 reads_per_transcript = 2^runif(length(fastaTranscripts), 2, 14)
 
-size = reads_per_transcript * FC_scale / 5
+# b0 = -3.0158
+# b1 = 0.8688
+# sigma = 4.152
+# logmus = b0 + b1 * log2(width(fastaTranscripts)) + rnorm(length(fastaTranscripts),
+#     0, sigma)
+# reads_per_transcript = 2^logmus - 1
+# reads_per_transcript = pmax(reads_per_transcript, 1)
 
+# size = reads_per_transcript * FC_scale / 3
+
+# reads_per_transcript=reads_per_transcript, size=size,
 # Saves count matrix to file, so read it in afterwards
-polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts,   ,reads_per_transcript=reads_per_transcript, size=size,
+polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts,   
+	reads_per_transcript=reads_per_transcript,
     num_reps = as.matrix(rep(1, n_samples*n_reps)), fold_changes=FC_scale, lib_sizes=lib_sizes,outdir=paste0(opt$out,'/', opt$prefix), gzip=TRUE, reportCoverage=TRUE, simReads=FALSE)
 
 # hist(log2(reads_per_transcript))
@@ -204,13 +215,14 @@ countMatrix = round(counts_matrix)
 isexpr = rowSums(cpm(countMatrix)>.1) >= 3
 table(isexpr)
 
+isexpr[] = TRUE
 
 # # voom single replicate
-# genes = DGEList( countMatrix[isexpr,] )
-# genes = calcNormFactors( genes )
-# design = model.matrix( ~ Disease + Batch, info)
+genes = DGEList( countMatrix[isexpr,] )
+genes = calcNormFactors( genes )
+design = model.matrix( ~ Disease + Batch, info)
 
-# vobj = voom( genes, design, plot=TRUE)
+vobj = voom( genes, design, plot=TRUE)
 
 
 
