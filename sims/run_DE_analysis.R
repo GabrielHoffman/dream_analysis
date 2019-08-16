@@ -36,15 +36,17 @@ suppressPackageStartupMessages(library(MACAU2))
 
 # read data from simulations
 countMatrixOrig = readRDS(paste0(opt$folder, '/data/countMatrix_',opt$prefix,'.RDS'))
+rownames(countMatrixOrig) = sapply(strsplit(rownames(countMatrixOrig), '\\|'), function(x) x[2])
+
 info = readRDS(paste0(opt$folder, '/data/info_',opt$prefix,'.RDS'))
 rownames(info) = info$Experiment
 info$Batch = factor(info$Batch)
 
 # filter out genes based on read count
-isexpr = rowSums(cpm(countMatrixOrig)>.1) >= 3
-isexpr[] = TRUE
+isexpr = rowSums(cpm(countMatrixOrig)>1) >= 3
+# isexpr[] = TRUE
 countMatrix = countMatrixOrig[isexpr,]
-rownames(countMatrix) = sapply(strsplit(rownames(countMatrix), '\\|'), function(x) x[2])
+
 
 
 timeMethods = list()
@@ -210,18 +212,18 @@ if( ! is.null(opt$macau2) && opt$macau2 ){
 		}
 
 		# K[1:5, 1:5]
-		macau_fit <- macau2(countMatrix, info$Disease, data.frame(info$Batch), RelatednessMatrix=K, fit.model="PMM",numCore=3)
+		macau_fit <- macau2(countMatrixOrig, info$Disease, data.frame(info$Batch), RelatednessMatrix=K, fit.model="PMM",numCore=6)
 	}) #dnd timing
 	  #), fit.maxiter=20)
 
 	# macau2 can omit some genes, so fill in empty entries with NA
-	macau_fit_all = data.frame(gene = rownames(countMatrix), stringsAsFactors=FALSE)
+	macau_fit_all = data.frame(gene = rownames(countMatrixOrig), stringsAsFactors=FALSE)
 	macau_fit_all = merge( macau_fit_all, macau_fit, by.x="gene", by.y="row.names", all.x=TRUE, sort=FALSE)
 
 	macau_padj = p.adjust(macau_fit_all$pvalue, 'fdr')
 	macau_pvalue = macau_fit_all$pvalue
 }else{
-	macau_padj = macau_pvalue = rep(NA, nrow(countMatrix))
+	macau_padj = macau_pvalue = rep(NA, nrow(countMatrixOrig))
 	timeMethods$macau = NA
 }
 
@@ -243,43 +245,180 @@ if( ! is.null(opt$macau2) && opt$macau2 ){
 ###################
 
 # Adjusted pvalue
-de_res = data.frame( true = rep(0,nrow(countMatrix)))
+#----------------
+de_res = data.frame( EnsID = rownames(countMatrixOrig), true = rep(0,nrow(countMatrixOrig)), stringsAsFactors=FALSE)
 de_res$true[1:500] = 1
-de_res$lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
-de_res$DESeq2_single = results(dds_single)$padj
-de_res$lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
-de_res$DESeq2_sum = results(dds_sum)$padj
-de_res$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
-de_res$DESeq2 = results(dds)$padj
-de_res$macau2 = macau_padj
-de_res$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
+
+# fit_lmFit
+df = data.frame(EnsID = rownames(fit_lmFit), 
+	lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# DESeq2_single
+df = data.frame(EnsID = rownames(dds_single), 
+	DESeq2_single = results(dds_single)$padj, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# lmFit_sum
+df = data.frame(EnsID = rownames(fit_lmFit), 
+	lmFit_sum = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# DESeq2_sum
+df = data.frame(EnsID = rownames(dds_sum), 
+	DESeq2_sum = results(dds_sum)$padj, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# lmFit2
+df = data.frame(EnsID = rownames(fit_lmFit2), 
+	lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# DESeq2
+df = data.frame(EnsID = rownames(dds), 
+	DESeq2 = results(dds)$padj, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# macau2
+df = data.frame(EnsID = rownames(countMatrixOrig), 
+	macau2 = macau_padj, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# lmFit_dupCor
+df = data.frame(EnsID = rownames(fitDupCor), 
+	lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# lmm_Sat
+df = data.frame(EnsID = rownames(fitSat), 
+	lmm_Sat = topTable(fitSat, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+
+# lmm_Sat_eBayes
+df = data.frame(EnsID = rownames(fitSatEB), 
+	lmm_Sat_eBayes = topTable(fitSatEB, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# lmm_KR
+df = data.frame(EnsID = rownames(fit2KR), 
+	lmm_KR = topTable(fit2KR, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# lmm_KR_eBayes
+df = data.frame(EnsID = rownames(fit2eKR), 
+	lmm_KR_eBayes = topTable(fit2eKR, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# replace NA with 1
+de_res[is.na(de_res)] = 1
+
+
+# de_res$lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
+# de_res$DESeq2_single = results(dds_single)$padj
+# de_res$lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
+# de_res$DESeq2_sum = results(dds_sum)$padj
+# de_res$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
+# de_res$DESeq2 = results(dds)$padj
+# de_res$macau2 = macau_padj
+# de_res$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
 
 # de_res$lmm_Sat = p.adjust(fitSat$pValue, "fdr") 
-de_res$lmm_Sat =  topTable(fitSat, sort.by="none", number=Inf)$adj.P.Val
-de_res$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$adj.P.Val
-# de_res$lmm_KR = p.adjust(fit2KR$pValue, "fdr") 
-de_res$lmm_KR = topTable(fit2KR, sort.by="none", number=Inf)$adj.P.Val
-de_res$lmm_KR_eBayes = topTable(fit2eKR, sort.by="none", number=Inf)$adj.P.Val
+# de_res$lmm_Sat =  topTable(fitSat, sort.by="none", number=Inf)$adj.P.Val
+# de_res$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$adj.P.Val
+# # de_res$lmm_KR = p.adjust(fit2KR$pValue, "fdr") 
+# de_res$lmm_KR = topTable(fit2KR, sort.by="none", number=Inf)$adj.P.Val
+# de_res$lmm_KR_eBayes = topTable(fit2eKR, sort.by="none", number=Inf)$adj.P.Val
 
 
 # pValue
-de_res_p = data.frame( true = rep(0,nrow(countMatrix)))
-de_res_p$true[1:500] = 1
-de_res_p$lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$P.Value
-de_res_p$DESeq2_single = results(dds_single)$pvalue
-de_res_p$lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", number=Inf)$P.Value
-de_res_p$DESeq2_sum = results(dds_sum)$pvalue
-de_res_p$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$P.Value
-de_res_p$DESeq2 = results(dds)$pvalue
-de_res_p$macau2 = macau_pvalue
-de_res_p$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$P.Value
+#-------
 
-# de_res_p$lmm_Sat = fitSat$pValue
-de_res_p$lmm_Sat = topTable(fitSat, sort.by="none", number=Inf)$P.Value
-de_res_p$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$P.Value
-# de_res_p$lmm_KR = fit2KR$pValue
-de_res_p$lmm_KR = topTable(fit2KR, sort.by="none", number=Inf)$P.Value
-de_res_p$lmm_KR_eBayes = topTable(fit2eKR, sort.by="none", number=Inf)$P.Value
+de_res_p = data.frame( EnsID = rownames(countMatrixOrig), true = rep(0,nrow(countMatrixOrig)), stringsAsFactors=FALSE)
+de_res_p$true[1:500] = 1
+
+# fit_lmFit
+df = data.frame(EnsID = rownames(fit_lmFit), 
+	lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# DESeq2_single
+df = data.frame(EnsID = rownames(dds_single), 
+	DESeq2_single = results(dds_single)$pvalue, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# lmFit_sum
+df = data.frame(EnsID = rownames(fit_lmFit_sum), 
+	lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# DESeq2_sum
+df = data.frame(EnsID = rownames(dds_sum), 
+	DESeq2_sum = results(dds_sum)$pvalue, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# lmFit2
+df = data.frame(EnsID = rownames(fit_lmFit2), 
+	lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# DESeq2
+df = data.frame(EnsID = rownames(dds), 
+	DESeq2 = results(dds)$pvalue, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# macau2
+df = data.frame(EnsID = rownames(countMatrixOrig), 
+	macau2 = macau_padj, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# lmFit_dupCor
+df = data.frame(EnsID = rownames(fitDupCor), 
+	lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# lmm_Sat
+df = data.frame(EnsID = rownames(fitSat), 
+	lmm_Sat = topTable(fitSat, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+
+# lmm_Sat_eBayes
+df = data.frame(EnsID = rownames(fitSatEB), 
+	lmm_Sat_eBayes = topTable(fitSatEB, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# lmm_KR
+df = data.frame(EnsID = rownames(fit2KR), 
+	lmm_KR = topTable(fit2KR, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# lmm_KR_eBayes
+df = data.frame(EnsID = rownames(fit2eKR), 
+	lmm_KR_eBayes = topTable(fit2eKR, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+
+# replace NA with 1
+de_res_p[is.na(de_res_p)] = 1
+
+# de_res_p = data.frame( true = rep(0,nrow(countMatrix)))
+# de_res_p$true[1:500] = 1
+# de_res_p$lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$P.Value
+# de_res_p$DESeq2_single = results(dds_single)$pvalue
+# de_res_p$lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", number=Inf)$P.Value
+# de_res_p$DESeq2_sum = results(dds_sum)$pvalue
+# de_res_p$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$P.Value
+# de_res_p$DESeq2 = results(dds)$pvalue
+# de_res_p$macau2 = macau_pvalue
+# de_res_p$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$P.Value
+
+# # de_res_p$lmm_Sat = fitSat$pValue
+# de_res_p$lmm_Sat = topTable(fitSat, sort.by="none", number=Inf)$P.Value
+# de_res_p$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$P.Value
+# # de_res_p$lmm_KR = fit2KR$pValue
+# de_res_p$lmm_KR = topTable(fit2KR, sort.by="none", number=Inf)$P.Value
+# de_res_p$lmm_KR_eBayes = topTable(fit2eKR, sort.by="none", number=Inf)$P.Value
 
 # save results to file
 #######################
