@@ -210,19 +210,19 @@ load(paste0(opt$out,'/', opt$prefix ,'/sim_counts_matrix.rda'))
 countMatrix = round(counts_matrix)
 
 
- range(colSums(countMatrix))
+#  range(colSums(countMatrix))
 
-isexpr = rowSums(cpm(countMatrix)>.1) >= 3
-table(isexpr)
+# isexpr = rowSums(cpm(countMatrix)>.1) >= 3
+# table(isexpr)
 
-isexpr[] = TRUE
+# isexpr[] = TRUE
 
-# # voom single replicate
-genes = DGEList( countMatrix[isexpr,] )
-genes = calcNormFactors( genes )
-design = model.matrix( ~ Disease + Batch, info)
+# # # voom single replicate
+# genes = DGEList( countMatrix[isexpr,] )
+# genes = calcNormFactors( genes )
+# design = model.matrix( ~ Disease + Batch, info)
 
-vobj = voom( genes, design, plot=TRUE)
+# vobj = voom( genes, design, plot=TRUE)
 
 
 
