@@ -212,7 +212,7 @@ if( ! is.null(opt$macau2) && opt$macau2 ){
 		}
 
 		# K[1:5, 1:5]
-		macau_fit <- macau2(countMatrixOrig, info$Disease, data.frame(info$Batch), RelatednessMatrix=K, fit.model="PMM",numCore=6)
+		macau_fit <- macau2(countMatrix, info$Disease, data.frame(info$Batch), RelatednessMatrix=K, fit.model="PMM",numCore=6)
 	}) #dnd timing
 	  #), fit.maxiter=20)
 
