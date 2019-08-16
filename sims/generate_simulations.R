@@ -180,11 +180,11 @@ assignInNamespace('sgseq', function(x,...){1}, "polyester")
 # meanmodel=FALSE,
 
 FC_scale = t(apply(FC, 1, function(x){
-	x = x/8
+	x = x/4
 	x - min(x) + 1
 	})) 
 
-reads_per_transcript = 2^runif(length(fastaTranscripts), 2, 14)
+# reads_per_transcript = 2^runif(length(fastaTranscripts), 2, 14)
 
 # b0 = -3.0158
 # b1 = 0.8688
@@ -198,8 +198,7 @@ reads_per_transcript = 2^runif(length(fastaTranscripts), 2, 14)
 
 # reads_per_transcript=reads_per_transcript, size=size,
 # Saves count matrix to file, so read it in afterwards
-polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts,   
-	reads_per_transcript=reads_per_transcript,
+polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts, 
     num_reps = as.matrix(rep(1, n_samples*n_reps)), fold_changes=FC_scale, lib_sizes=lib_sizes,outdir=paste0(opt$out,'/', opt$prefix), gzip=TRUE, reportCoverage=TRUE, simReads=FALSE)
 
 # hist(log2(reads_per_transcript))
