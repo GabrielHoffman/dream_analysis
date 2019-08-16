@@ -260,54 +260,54 @@ df = data.frame(EnsID = rownames(dds_single),
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # lmFit_sum
-df = data.frame(EnsID = rownames(fit_lmFit_sum), 
-	lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+df = data.frame(EnsID = rownames(fit_lmFit), 
+	lmFit_sum = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # DESeq2_sum
 df = data.frame(EnsID = rownames(dds_sum), 
-	DESeq2_single = results(dds_sum)$padj, stringsAsFactors=FALSE)
+	DESeq2_sum = results(dds_sum)$padj, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # lmFit2
 df = data.frame(EnsID = rownames(fit_lmFit2), 
-	lmFit = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+	lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # DESeq2
 df = data.frame(EnsID = rownames(dds), 
-	DESeq2_single = results(dds)$padj, stringsAsFactors=FALSE)
+	DESeq2 = results(dds)$padj, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # macau2
 df = data.frame(EnsID = rownames(countMatrixOrig), 
-	DESeq2_single = macau_padj, stringsAsFactors=FALSE)
+	macau2 = macau_padj, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # lmFit_dupCor
 df = data.frame(EnsID = rownames(fitDupCor), 
-	lmFit = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+	lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # lmm_Sat
 df = data.frame(EnsID = rownames(fitSat), 
-	lmFit = topTable(fitSat, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+	lmm_Sat = topTable(fitSat, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 
 # lmm_Sat_eBayes
 df = data.frame(EnsID = rownames(fitSatEB), 
-	lmFit = topTable(fitSatEB, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+	lmm_Sat_eBayes = topTable(fitSatEB, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # lmm_KR
 df = data.frame(EnsID = rownames(fit2KR), 
-	lmFit = topTable(fit2KR, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+	lmm_KR = topTable(fit2KR, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # lmm_KR_eBayes
 df = data.frame(EnsID = rownames(fit2eKR), 
-	lmFit = topTable(fit2eKR, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+	lmm_KR_eBayes = topTable(fit2eKR, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # replace NA with 1
@@ -340,63 +340,63 @@ de_res_p$true[1:500] = 1
 # fit_lmFit
 df = data.frame(EnsID = rownames(fit_lmFit), 
 	lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # DESeq2_single
 df = data.frame(EnsID = rownames(dds_single), 
 	DESeq2_single = results(dds_single)$pvalue, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmFit_sum
 df = data.frame(EnsID = rownames(fit_lmFit_sum), 
-	lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+	lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # DESeq2_sum
 df = data.frame(EnsID = rownames(dds_sum), 
-	DESeq2_single = results(dds_sum)$pvalue, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+	DESeq2_sum = results(dds_sum)$pvalue, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmFit2
 df = data.frame(EnsID = rownames(fit_lmFit2), 
-	lmFit = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+	lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # DESeq2
 df = data.frame(EnsID = rownames(dds), 
-	DESeq2_single = results(dds)$pvalue, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+	DESeq2 = results(dds)$pvalue, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # macau2
 df = data.frame(EnsID = rownames(countMatrixOrig), 
-	DESeq2_single = macau_padj, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+	macau2 = macau_padj, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmFit_dupCor
 df = data.frame(EnsID = rownames(fitDupCor), 
-	lmFit = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+	lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmm_Sat
 df = data.frame(EnsID = rownames(fitSat), 
-	lmFit = topTable(fitSat, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+	lmm_Sat = topTable(fitSat, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 
 # lmm_Sat_eBayes
 df = data.frame(EnsID = rownames(fitSatEB), 
-	lmFit = topTable(fitSatEB, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+	lmm_Sat_eBayes = topTable(fitSatEB, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmm_KR
 df = data.frame(EnsID = rownames(fit2KR), 
-	lmFit = topTable(fit2KR, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+	lmm_KR = topTable(fit2KR, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmm_KR_eBayes
 df = data.frame(EnsID = rownames(fit2eKR), 
-	lmFit = topTable(fit2eKR, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
-de_res_p = merge( de_res, df, by="EnsID", all=TRUE )
+	lmm_KR_eBayes = topTable(fit2eKR, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 
 # replace NA with 1
