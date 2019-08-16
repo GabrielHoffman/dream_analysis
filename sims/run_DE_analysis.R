@@ -312,6 +312,8 @@ de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # replace NA with 1
 de_res[is.na(de_res)] = 1
+rownames(de_res) = de_res$EnsID
+de_res = de_res[,-1]
 
 
 # de_res$lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
@@ -398,9 +400,11 @@ df = data.frame(EnsID = rownames(fit2eKR),
 	lmm_KR_eBayes = topTable(fit2eKR, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
 de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
-
 # replace NA with 1
 de_res_p[is.na(de_res_p)] = 1
+rownames(de_res_p) = de_res_p$EnsID
+de_res_p = de_res_p[,-1]
+
 
 # de_res_p = data.frame( true = rep(0,nrow(countMatrix)))
 # de_res_p$true[1:500] = 1
