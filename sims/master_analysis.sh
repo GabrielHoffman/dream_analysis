@@ -44,13 +44,13 @@ FC=3
 HSQ=0.4
 
 LOG=$FOLDER/logs/
-# for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
-for N_SAMPLES in $(echo $(seq 8 2 14));
+for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+# for N_SAMPLES in $(echo $(seq 8 2 14));
 do
 for N_REPS in $(seq 2 4);
 do
 # for SEED in $(seq 1 50);
-for SEED in $(seq 1 5);
+for SEED in $(seq 1 10);
 do
 PFX=${N_SAMPLES}_${N_REPS}_${N_DE}_${FC}_${HSQ}_${SEED}
 echo '#!/bin/bash' > jobs/sims_${PFX}.lsf
@@ -113,8 +113,8 @@ cd $FOLDER
 
 LOG=$FOLDER/logs
 
-# for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
-for N_SAMPLES in $(echo $(seq 8 2 14));
+for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+# for N_SAMPLES in $(echo $(seq 8 2 14));
 do
 EXTRA='--macau2'
 if [ ${N_SAMPLES} -lt 14 ];
@@ -124,7 +124,7 @@ fi
 for N_REPS in $(seq 2 4);
 do
 # for SEED in $(seq 1 50);
-for SEED in $(seq 1 5);
+for SEED in $(seq 1 10);
 do
 PFX=${N_SAMPLES}_${N_REPS}_${N_DE}_${FC}_${HSQ}_${SEED}
 echo '#!/bin/bash' > jobs/scripts_${PFX}.lsf
