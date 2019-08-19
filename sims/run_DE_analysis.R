@@ -174,15 +174,18 @@ fitSatEB = eBayes( fitSat )
 # abline(0,1, col="red")
 
 
+# fit2KR = dream( vobjDream[2313:2329,], form, info, ddf='Kenward-Roger')
+
+
 # library(lmerTest)
-# i=2
+# i=2313
 # y = t(t(vobjDream$E[i,]))
 # w = t(t(vobjDream$weights[i,]))
-# fit = lmer( y ~ Disease + (1|Batch) + (1|Individual), info, weights= w / max(w), REML=FALSE )
+# fit = lmer( y ~ Disease + (1|Batch) + (1|Individual), info, weights= w / max(w), REML=FALSE)
 # summary(fit)
 
 # fit = lmer( y ~ Disease + (1|Batch) + (1|Individual), info, weights= w / max(w), REML=TRUE )
-# summary(fit)
+# summary(fit, ddf="Ken" )
 
 # where does df come from in dream
 
