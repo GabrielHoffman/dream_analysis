@@ -146,8 +146,11 @@ register(BPPARAM)
 genes = DGEList( countMatrix )
 genes = calcNormFactors( genes )
 form <- ~ Disease + (1|Batch) + (1|Individual) 
-vobjDream = voomWithDreamWeights( genes, form, info)
 
+file = paste0(opt$folder, '/figures/voomWithDreamWeights_', opt$prefix, ".pdf")
+pdf( file )
+vobjDream = voomWithDreamWeights( genes, form, info, plot=TRUE)
+dev.off()
 
 # dream: Kenward-Roger approximation
 timeMethods$lmm_KR = system.time({

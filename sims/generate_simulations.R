@@ -68,9 +68,8 @@ fastaTranscripts = readDNAStringSet( opt$fasta )
 i = sample(1:length(fastaTranscripts), length(fastaTranscripts), replace=FALSE)
 fastaTranscripts = fastaTranscripts[i]
 
-n_reads_per = .09
-
 # ~20x coverage ----> reads per transcript = transcriptlength/readlength * 20
+# n_reads_per = .09
 # here all transcripts will have ~equal FPKM
 # readspertx = round(n_reads_per * width(fastaTranscripts) )
 # sum(readspertx)
@@ -180,7 +179,7 @@ assignInNamespace('sgseq', function(x,...){1}, "polyester")
 # meanmodel=FALSE,
 
 FC_scale = t(apply(FC, 1, function(x){
-	x = x/4
+	x = x/40
 	x - min(x) + 1
 	})) 
 
@@ -213,19 +212,20 @@ countMatrix = round(counts_matrix)
  range(colSums(countMatrix))
 mean( colSums(countMatrix))
 
-isexpr = rowSums(cpm(countMatrix)>.1) >= 3
-table(isexpr)
+# isexpr = rowSums(cpm(countMatrix)>.1) >= 3
+# table(isexpr)
 
-isexpr[] = TRUE
+# isexpr[] = TRUE
 
-# # voom single replicate
-genes = DGEList( countMatrix[isexpr,] )
-genes = calcNormFactors( genes )
-design = model.matrix( ~ Disease + Batch, info)
+# # # voom single replicate
+# genes = DGEList( countMatrix[isexpr,] )
+# genes = calcNormFactors( genes )
+# design = model.matrix( ~ Disease + Batch, info)
 
-vobj = voom( genes, design, plot=TRUE)
+# vobj = voom( genes, design, plot=TRUE)
 
 
+# vobj = voomWithDreamWeights( genes, ~ Disease + (1|Batch) + (1|Individual), info, plot=TRUE)
 
 
 # i = which.max(rowSums(cpm(countMatrix)))
