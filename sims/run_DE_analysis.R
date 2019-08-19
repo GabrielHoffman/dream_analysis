@@ -317,7 +317,7 @@ df = data.frame(EnsID = rownames(fit2eKR),
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # replace NA with 1
-de_res[is.na(de_res)] = 1
+# de_res[is.na(de_res)] = 1
 rownames(de_res) = de_res$EnsID
 de_res = de_res[,-1]
 
@@ -407,7 +407,7 @@ df = data.frame(EnsID = rownames(fit2eKR),
 de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # replace NA with 1
-de_res_p[is.na(de_res_p)] = 1
+# de_res_p[is.na(de_res_p)] = 1
 rownames(de_res_p) = de_res_p$EnsID
 de_res_p = de_res_p[,-1]
 
