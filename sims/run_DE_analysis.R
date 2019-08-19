@@ -47,6 +47,10 @@ isexpr = rowSums(cpm(countMatrixOrig)>.1) >= 3
 isexpr[] = TRUE
 countMatrix = countMatrixOrig[isexpr,]
 
+# read DE list
+file = paste0("data/deGeneList_", opt$prefix, ".RDS")
+deGenes = readRDS(file)
+deGenes = sapply(strsplit(deGenes, '\\|'), function(x) x[2])
 
 
 timeMethods = list()
@@ -253,7 +257,7 @@ if( ! is.null(opt$macau2) && opt$macau2 ){
 # Adjusted pvalue
 #----------------
 de_res = data.frame( EnsID = rownames(countMatrixOrig), true = rep(0,nrow(countMatrixOrig)), stringsAsFactors=FALSE)
-de_res$true[1:500] = 1
+de_res$true[de_res$EnsID %in% deGenes] = 1
 
 # fit_lmFit
 df = data.frame(EnsID = rownames(fit_lmFit), 
@@ -343,7 +347,7 @@ de_res = de_res[,-1]
 #-------
 
 de_res_p = data.frame( EnsID = rownames(countMatrixOrig), true = rep(0,nrow(countMatrixOrig)), stringsAsFactors=FALSE)
-de_res_p$true[1:500] = 1
+de_res_p$true[de_res_p$EnsID %in% deGenes] = 1
 
 # fit_lmFit
 df = data.frame(EnsID = rownames(fit_lmFit), 
