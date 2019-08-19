@@ -85,7 +85,7 @@ h_sq = opt$hsq
 
 info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=''),
 	Disease = as.character(sort(rep(0:1, n_samples*n_reps / 2))), 
-	Experiment = paste("sample_", gsub(" ", "0", format(1:(n_samples*n_reps), digits=2)), sep=''))
+	Experiment = paste0("sample_", gsub(" ", "0", format(1:(n_samples*n_reps), width=3)), sep=''))
 
 info$Batch = factor(sample(0:2, nrow(info), replace=TRUE))
 
@@ -207,7 +207,7 @@ polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts,
 load(paste0(opt$out,'/', opt$prefix ,'/sim_counts_matrix.rda'))
 
 countMatrix = round(counts_matrix)
-
+colnames(countMatrix) = colnames(FC_scale)
 
  range(colSums(countMatrix))
 mean( colSums(countMatrix))
