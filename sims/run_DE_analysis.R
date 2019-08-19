@@ -377,7 +377,7 @@ de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # macau2
 df = data.frame(EnsID = rownames(countMatrixOrig), 
-	macau2 = macau_padj, stringsAsFactors=FALSE)
+	macau2 = macau_pvalue, stringsAsFactors=FALSE)
 de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmFit_dupCor
