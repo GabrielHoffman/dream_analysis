@@ -44,7 +44,7 @@ info$Batch = factor(info$Batch)
 
 # filter out genes based on read count
 isexpr = rowSums(cpm(countMatrixOrig)>.1) >= 3
-# isexpr[] = TRUE
+isexpr[] = TRUE
 countMatrix = countMatrixOrig[isexpr,]
 
 
