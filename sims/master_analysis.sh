@@ -74,7 +74,7 @@ export OMP_NUM_THREADS=1
 
 echo \$( R -e \"packageVersion('variancePartition')\")
 
-/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/generate_simulations.R --fasta $FASTA --n_samples ${N_SAMPLES} --n_reps ${N_REPS} --n_de_genes ${N_DE} --disease_fc ${FC} --nthreads 20  --param_ID '.3 .03' --param_Disease '.2 0.005' --param_Batch '.2 0.01' --seed ${SEED} --out $FOLDER/data --prefix $PFX " >> jobs/sims_${PFX}.lsf
+/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/generate_simulations.R --fasta $FASTA --n_samples ${N_SAMPLES} --n_reps ${N_REPS} --n_de_genes ${N_DE} --disease_fc ${FC} --nthreads 20 --param_ID '.45 .03' --param_Disease '.25 0.005' --param_Batch '.25 0.01' --seed ${SEED} --out $FOLDER/data --prefix $PFX " >> jobs/sims_${PFX}.lsf
 done
 done
 done
