@@ -180,7 +180,7 @@ assignInNamespace('sgseq', function(x,...){1}, "polyester")
 # meanmodel=FALSE,
 
 FC_scale = t(apply(FC, 1, function(x){
-	x = x/5
+	x = x/3
 	x - min(x) + 1
 	})) 
 
@@ -198,14 +198,14 @@ FC_scale = t(apply(FC, 1, function(x){
 
 # reads_per_transcript=reads_per_transcript, size=size,
 # Saves count matrix to file, so read it in afterwards
-# polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts, 
-# 	meanmodel=TRUE,
-#     num_reps = as.matrix(rep(1, n_samples*n_reps)), fold_changes=FC_scale, lib_sizes=lib_sizes,outdir=paste0(opt$out,'/', opt$prefix), gzip=TRUE, reportCoverage=TRUE, simReads=FALSE)
-
-
 polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts, 
-	reads_per_transcript = 2^runif(length(fastaTranscripts), 2, 14),
+	meanmodel=TRUE,
     num_reps = as.matrix(rep(1, n_samples*n_reps)), fold_changes=FC_scale, lib_sizes=lib_sizes,outdir=paste0(opt$out,'/', opt$prefix), gzip=TRUE, reportCoverage=TRUE, simReads=FALSE)
+
+
+# polyester::simulate_experiment(opt$fasta, transcripts=fastaTranscripts, 
+# 	reads_per_transcript = 2^runif(length(fastaTranscripts), 2, 14),
+#     num_reps = as.matrix(rep(1, n_samples*n_reps)), fold_changes=FC_scale, lib_sizes=lib_sizes,outdir=paste0(opt$out,'/', opt$prefix), gzip=TRUE, reportCoverage=TRUE, simReads=FALSE)
 
 # hist(log2(reads_per_transcript))
 

@@ -44,8 +44,8 @@ FC=3
 HSQ=0.4
 
 LOG=$FOLDER/logs/
-for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
-# for N_SAMPLES in $(echo $(seq 8 2 14));
+# for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+for N_SAMPLES in $(echo $(seq 8 2 14));
 do
 for N_REPS in $(seq 2 4);
 do
@@ -113,8 +113,8 @@ cd $FOLDER
 
 LOG=$FOLDER/logs
 
-for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
-# for N_SAMPLES in $(echo $(seq 8 2 14));
+# for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+for N_SAMPLES in $(echo $(seq 8 2 14));
 do
 EXTRA='--macau2'
 if [ ${N_SAMPLES} -lt 14 ];
@@ -153,7 +153,7 @@ done
 done
 done
 
-ls jobs/scripts_*lsf | grep _10_ | head | parallel -P1 "bsub < {}; sleep .2"
+ls jobs/scripts_*lsf | head | parallel -P1 "bsub < {}; sleep .2"
 	
 	
 # only sims 1-10
