@@ -179,7 +179,7 @@ assignInNamespace('sgseq', function(x,...){1}, "polyester")
 # meanmodel=FALSE,
 
 FC_scale = t(apply(FC, 1, function(x){
-	x = x/40
+	x = x/20
 	x - min(x) + 1
 	})) 
 
