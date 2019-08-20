@@ -335,7 +335,7 @@ de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # DESeq2_single
 df = data.frame(EnsID = rownames(dds_single), 
-	DESeq2_single = results(dds_single)$pvalue, stringsAsFactors=FALSE)
+	DESeq2_single = results(dds_single, contrast =c('Disease', '1', '0'))$pvalue, stringsAsFactors=FALSE)
 de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmFit_sum
@@ -345,7 +345,7 @@ de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # DESeq2_sum
 df = data.frame(EnsID = rownames(dds_sum), 
-	DESeq2_sum = results(dds_sum)$pvalue, stringsAsFactors=FALSE)
+	DESeq2_sum = results(dds_sum, contrast =c('Disease', '1', '0'))$pvalue, stringsAsFactors=FALSE)
 de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmFit2
@@ -355,7 +355,7 @@ de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # DESeq2
 df = data.frame(EnsID = rownames(dds), 
-	DESeq2 = results(dds)$pvalue, stringsAsFactors=FALSE)
+	DESeq2 = results(dds, contrast =c('Disease', '1', '0'))$pvalue, stringsAsFactors=FALSE)
 de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # macau2
