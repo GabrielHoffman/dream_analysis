@@ -268,8 +268,8 @@ df = data.frame(EnsID = rownames(dds_single),
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # lmFit_sum
-df = data.frame(EnsID = rownames(fit_lmFit), 
-	lmFit_sum = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+df = data.frame(EnsID = rownames(fit_lmFit_sum), 
+	lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # DESeq2_sum
@@ -318,27 +318,8 @@ df = data.frame(EnsID = rownames(fit2eKR),
 	lmm_KR_eBayes = topTable(fit2eKR, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
-# replace NA with 1
-# de_res[is.na(de_res)] = 1
 rownames(de_res) = de_res$EnsID
 de_res = de_res[,-1]
-
-
-# de_res$lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
-# de_res$DESeq2_single = results(dds_single)$padj
-# de_res$lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
-# de_res$DESeq2_sum = results(dds_sum)$padj
-# de_res$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
-# de_res$DESeq2 = results(dds)$padj
-# de_res$macau2 = macau_padj
-# de_res$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val
-
-# de_res$lmm_Sat = p.adjust(fitSat$pValue, "fdr") 
-# de_res$lmm_Sat =  topTable(fitSat, sort.by="none", number=Inf)$adj.P.Val
-# de_res$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$adj.P.Val
-# # de_res$lmm_KR = p.adjust(fit2KR$pValue, "fdr") 
-# de_res$lmm_KR = topTable(fit2KR, sort.by="none", number=Inf)$adj.P.Val
-# de_res$lmm_KR_eBayes = topTable(fit2eKR, sort.by="none", number=Inf)$adj.P.Val
 
 
 # pValue
@@ -408,29 +389,9 @@ df = data.frame(EnsID = rownames(fit2eKR),
 	lmm_KR_eBayes = topTable(fit2eKR, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
 de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
-# replace NA with 1
-# de_res_p[is.na(de_res_p)] = 1
 rownames(de_res_p) = de_res_p$EnsID
 de_res_p = de_res_p[,-1]
 
-
-# de_res_p = data.frame( true = rep(0,nrow(countMatrix)))
-# de_res_p$true[1:500] = 1
-# de_res_p$lmFit = topTable(fit_lmFit, coef='Disease1', sort.by="none", number=Inf)$P.Value
-# de_res_p$DESeq2_single = results(dds_single)$pvalue
-# de_res_p$lmFit_sum = topTable(fit_lmFit_sum, coef='Disease1', sort.by="none", number=Inf)$P.Value
-# de_res_p$DESeq2_sum = results(dds_sum)$pvalue
-# de_res_p$lmFit2 = topTable(fit_lmFit2, coef='Disease1', sort.by="none", number=Inf)$P.Value
-# de_res_p$DESeq2 = results(dds)$pvalue
-# de_res_p$macau2 = macau_pvalue
-# de_res_p$lmFit_dupCor = topTable(fitDupCor, coef='Disease1', sort.by="none", number=Inf)$P.Value
-
-# # de_res_p$lmm_Sat = fitSat$pValue
-# de_res_p$lmm_Sat = topTable(fitSat, sort.by="none", number=Inf)$P.Value
-# de_res_p$lmm_Sat_eBayes = topTable(fitSatEB, sort.by="none", number=Inf)$P.Value
-# # de_res_p$lmm_KR = fit2KR$pValue
-# de_res_p$lmm_KR = topTable(fit2KR, sort.by="none", number=Inf)$P.Value
-# de_res_p$lmm_KR_eBayes = topTable(fit2eKR, sort.by="none", number=Inf)$P.Value
 
 # save results to file
 #######################
@@ -450,23 +411,9 @@ saveRDS(timeMethods, file)
 
 # Compare p-values and make plot
 ################################
+
 t1 = topTable(fitDupCor, coef="Disease1", number=Inf, sort.by="none")$P.Value
 t2 = topTable(fitSatEB, number=Inf, sort.by="none")$P.Value
-# t2 = fitSat@pValue
-
-# df2 = data.frame(idx=1:length(t1), dupCor=-log10(t1), fitMixedModelTest=-log10(t2), vp, delta = vp$Individual < dupcor$consensus)
-
-# l1 = lm(fitMixedModelTest ~ dupCor, df2[df2$delta,])
-# l2 = lm(fitMixedModelTest ~ dupCor, df2[!df2$delta,])
-
-# df_line = data.frame(rbind(coef(l1), coef(l2)))
-# colnames(df_line) = c('a', 'b')
-# df_line$type = c('blue', 'red')
-
-# fig2 = ggplot(df2, aes(dupCor, fitMixedModelTest, color = Individual, shape=idx <=500)) + geom_abline() + geom_point(size=2) + theme_bw(12) + scale_colour_gradient2(low="blue", mid="green", high="red", midpoint=dupcor$consensus) + theme(aspect.ratio=1) +
-# 	xlab("dupCor (-log10 p)") + ylab("fitMixedModelTest (-log10 p)") +
-# 	geom_abline( intercept=df_line$a, slope=df_line$b, color=df_line$type, linetype=2)
-
 
 fig2 = plotCompareP( t1, t2, vp$Individual, dupcor$consensus)
 

@@ -65,15 +65,6 @@ set.seed( opt$seed )
 # read transcripts
 fastaTranscripts = readDNAStringSet( opt$fasta )
 
-# i = sample(1:length(fastaTranscripts), length(fastaTranscripts), replace=FALSE)
-# fastaTranscripts = fastaTranscripts[i]
-
-# ~20x coverage ----> reads per transcript = transcriptlength/readlength * 20
-# n_reads_per = .09
-# here all transcripts will have ~equal FPKM
-# readspertx = round(n_reads_per * width(fastaTranscripts) )
-# sum(readspertx)
-
 # Create design matrix
 ######################
 
@@ -96,6 +87,10 @@ while( min(svd(model.matrix(~Disease + Batch, info))$d) <=0 || min(svd(model.mat
 	info$Batch = factor(sample(0:1, nrow(info), replace=TRUE))
 }
 
+# draw names of differentially expressed genes
+##############################################
+
+deGeneIdx = sample(1:length(fastaTranscripts), opt$n_de_genes, replace=FALSE)
 
 # Simulate fold changes from variance components
 ################################################
@@ -117,7 +112,7 @@ simParams = foreach(j=1:length(fastaTranscripts) ) %do% {
 	sigSq_ID = rbeta(1, opt$distr_ID[1], opt$distr_ID[2])
 	sigSq_Batch = rbeta(1, opt$distr_Batch[1], opt$distr_Batch[2])
 
-	if( j <= n_de_genes){
+	if( j %in% deGeneIdx){
 		# Disease
 		eta_Disease = design_Disease %*% rnorm(nlevels(info$Disease))
 
@@ -163,10 +158,6 @@ rownames(FC) = sapply(strsplit(names(fastaTranscripts), '\\|'), function(x) x[2]
 # fig = plotVarPart(vp)
 # ggsave("Rplots.png", fig)
 # q()
-
-# names of differentiall expressed genes
-deGeneList = names(fastaTranscripts)[1:n_de_genes]
-deGeneList = sapply(strsplit(deGeneList, '\\|'), function(x) x[2])
 
 
 lib_sizes = runif(nrow(info), .5, 1.5) /3
@@ -254,7 +245,11 @@ mean( colSums(countMatrix))
 ###############
 
 saveRDS(info, paste(opt$out, "/info_", opt$prefix, ".RDS", sep=''))
+
+
+deGeneList = sapply(strsplit(names(fastaTranscripts)[deGeneIdx], '\\|'), function(x) x[2])
 saveRDS(deGeneList, paste(opt$out, "/deGeneList_", opt$prefix, ".RDS", sep=''))
+
 saveRDS(countMatrix, paste(opt$out, "/countMatrix_", opt$prefix, ".RDS", sep=''))
 save(list=ls(), file=paste(opt$out, "/infoAll_", opt$prefix, ".RData", sep=''))
 
@@ -307,9 +302,6 @@ save(list=ls(), file=paste(opt$out, "/infoAll_", opt$prefix, ".RData", sep=''))
 
 # plot(df$Residuals.x, df$Residuals.y)
 # abline(0,1, col="red")
-
-
-# /sc/orga/projects/CommonMind/jaro/dreamExtWeightError.R
 
 
 
