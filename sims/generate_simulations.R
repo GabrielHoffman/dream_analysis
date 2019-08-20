@@ -166,6 +166,8 @@ rownames(FC) = sapply(strsplit(names(fastaTranscripts), '\\|'), function(x) x[2]
 
 # names of differentiall expressed genes
 deGeneList = names(fastaTranscripts)[1:n_de_genes]
+deGeneList = sapply(strsplit(deGeneList, '\\|'), function(x) x[2])
+
 
 lib_sizes = runif(nrow(info), .5, 1.5) /3
 
@@ -264,7 +266,7 @@ save(list=ls(), file=paste(opt$out, "/infoAll_", opt$prefix, ".RData", sep=''))
 # info$Batch = factor(info$Batch)
 
 # # # filter out genes based on read count
-# isexpr = rowSums(cpm(countMatrix)>1) >= 3
+# isexpr = rowSums(cpm(countMatrix)>.1) >= 3
 # countMatrix = countMatrix[isexpr,]
 # rownames(countMatrix) = sapply(strsplit(rownames(countMatrix), '\\|'), function(x) x[2])
 
@@ -275,13 +277,14 @@ save(list=ls(), file=paste(opt$out, "/infoAll_", opt$prefix, ".RData", sep=''))
 # genes = calcNormFactors( genes )
 # design = model.matrix( ~ Disease + Batch, info)
 
-# vobj = voom( genes, design, plot=FALSE)
+# vobj = voom( genes, design, plot=TRUE)
 
 # form <- ~ (1|Disease) + (1|Batch) + (1|Individual) 
 # # form <- ~ Batch
 # vp_cpm = fitExtractVarPartModel(vobj[1:2000,], form, info)
 
 # fig = plotVarPart(vp_cpm)
+# fig
 # ggsave("Rplots.png", fig)
 
 
