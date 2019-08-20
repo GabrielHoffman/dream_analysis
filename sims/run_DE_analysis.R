@@ -266,7 +266,7 @@ de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # DESeq2_single
 df = data.frame(EnsID = rownames(dds_single), 
-	DESeq2_single = results(dds_single)$padj, stringsAsFactors=FALSE)
+	DESeq2_single = results(dds_single, contrast =c('Disease', '1', '0'))$padj, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # lmFit_sum
@@ -276,7 +276,7 @@ de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # DESeq2_sum
 df = data.frame(EnsID = rownames(dds_sum), 
-	DESeq2_sum = results(dds_sum)$padj, stringsAsFactors=FALSE)
+	DESeq2_sum = results(dds_sum, contrast =c('Disease', '1', '0'))$padj, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # lmFit2
@@ -286,7 +286,7 @@ de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # DESeq2
 df = data.frame(EnsID = rownames(dds), 
-	DESeq2 = results(dds)$padj, stringsAsFactors=FALSE)
+	DESeq2 = results(dds, contrast =c('Disease', '1', '0'))$padj, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # macau2
