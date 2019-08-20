@@ -65,8 +65,8 @@ set.seed( opt$seed )
 # read transcripts
 fastaTranscripts = readDNAStringSet( opt$fasta )
 
-i = sample(1:length(fastaTranscripts), length(fastaTranscripts), replace=FALSE)
-fastaTranscripts = fastaTranscripts[i]
+# i = sample(1:length(fastaTranscripts), length(fastaTranscripts), replace=FALSE)
+# fastaTranscripts = fastaTranscripts[i]
 
 # ~20x coverage ----> reads per transcript = transcriptlength/readlength * 20
 # n_reads_per = .09
