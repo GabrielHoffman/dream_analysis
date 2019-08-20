@@ -117,7 +117,8 @@ LOG=$FOLDER/logs
 for N_SAMPLES in $(echo $(seq 8 2 14));
 do
 EXTRA='--macau2'
-if [ ${N_SAMPLES} -lt 14 ];
+EXTRA=''
+if [ ${N_SAMPLES} -lt 16 ];
 then
  EXTRA='--macau2'
 fi
@@ -153,7 +154,7 @@ done
 done
 done
 
-ls jobs/scripts_*lsf | head | parallel -P1 "bsub < {}; sleep .2"
+ls jobs/scripts_*lsf | parallel -P1 "bsub < {}; sleep .2"
 	
 	
 # only sims 1-10
