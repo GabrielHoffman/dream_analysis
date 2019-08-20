@@ -102,6 +102,7 @@ dds <- DESeq(dds)
 # table(results(dds)$padj < 0.05)
 
 
+
 # Sum reads from replicates
 ###########################
 

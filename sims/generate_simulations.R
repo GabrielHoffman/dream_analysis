@@ -216,6 +216,8 @@ load(paste0(opt$out,'/', opt$prefix ,'/sim_counts_matrix.rda'))
 
 countMatrix = round(counts_matrix)
 colnames(countMatrix) = colnames(FC_scale)
+rownames(countMatrix) = sapply(strsplit(rownames(countMatrix), '\\|'), function(x) x[2])
+
 
 range(colSums(countMatrix))
 mean( colSums(countMatrix))
