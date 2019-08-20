@@ -117,11 +117,10 @@ LOG=$FOLDER/logs
 for N_SAMPLES in $(echo $(seq 8 2 14));
 do
 EXTRA='--macau2'
-EXTRA=''
-if [ ${N_SAMPLES} -lt 16 ];
-then
- EXTRA='--macau2'
-fi
+# if [ ${N_SAMPLES} -lt 16 ];
+# then
+#  EXTRA='--macau2'
+# fi
 for N_REPS in $(seq 2 4);
 do
 # for SEED in $(seq 1 50);
