@@ -122,7 +122,7 @@ simParams = foreach(j=1:length(fastaTranscripts) ) %do% {
 		eta_Disease = design_Disease %*% rnorm(nlevels(info$Disease))
 
 		sigSq_Disease = rbeta(1, opt$distr_Disease[1], opt$distr_Disease[2])
-		sigSq_Resid = max(1 - sigSq_ID - sigSq_Disease - sigSq_Batch, .1)
+		sigSq_Resid = max(1 - sigSq_ID - sigSq_Disease - sigSq_Batch, .05)
 
 		# combine
 		y = scale(eta_ID) * (sigSq_ID-sigSq_Disease) + 
@@ -130,7 +130,7 @@ simParams = foreach(j=1:length(fastaTranscripts) ) %do% {
 			scale(eta_Disease) * sigSq_Disease +			 
 			rnorm(nrow(info)) * sigSq_Resid
 	}else{
-		sigSq_Resid = max(1 - sigSq_ID - sigSq_Batch, .1)
+		sigSq_Resid = max(1 - sigSq_ID - sigSq_Batch, .05)
 
 		# combine
 		y = scale(eta_ID) * sigSq_ID + 
@@ -180,7 +180,7 @@ assignInNamespace('sgseq', function(x,...){1}, "polyester")
 # meanmodel=FALSE,
 
 FC_scale = t(apply(FC, 1, function(x){
-	x = x/3
+	x = x
 	x - min(x) + 1
 	})) 
 
@@ -215,20 +215,20 @@ load(paste0(opt$out,'/', opt$prefix ,'/sim_counts_matrix.rda'))
 countMatrix = round(counts_matrix)
 colnames(countMatrix) = colnames(FC_scale)
 
- range(colSums(countMatrix))
+range(colSums(countMatrix))
 mean( colSums(countMatrix))
 
-isexpr = rowSums(cpm(countMatrix)>.1) >= 3
-table(isexpr)
+# isexpr = rowSums(cpm(countMatrix)>.1) >= 3
+# table(isexpr)
 
-isexpr[] = TRUE
+# isexpr[] = TRUE
 
 # # voom single replicate
-genes = DGEList( countMatrix[isexpr,] )
-genes = calcNormFactors( genes )
-design = model.matrix( ~ Disease + Batch, info)
+# genes = DGEList( countMatrix[isexpr,] )
+# genes = calcNormFactors( genes )
+# design = model.matrix( ~ Disease + Batch, info)
 
-vobj = voom( genes, design, plot=TRUE)
+# vobj = voom( genes, design, plot=TRUE)
 
 
 # vobj = voomWithDreamWeights( genes, ~ Disease + (1|Batch) + (1|Individual), info, plot=TRUE)
