@@ -36,11 +36,9 @@ suppressPackageStartupMessages(library(MACAU2))
 
 # read data from simulations
 countMatrixOrig = readRDS(paste0(opt$folder, '/data/countMatrix_',opt$prefix,'.RDS'))
-rownames(countMatrixOrig) = sapply(strsplit(rownames(countMatrixOrig), '\\|'), function(x) x[2])
 
 info = readRDS(paste0(opt$folder, '/data/info_',opt$prefix,'.RDS'))
 rownames(info) = info$Experiment
-info$Batch = factor(info$Batch)
 
 # filter out genes based on read count
 isexpr = rowSums(cpm(countMatrixOrig)>.1) >= 3
@@ -50,8 +48,6 @@ countMatrix = countMatrixOrig[isexpr,]
 # read DE list
 file = paste0("data/deGeneList_", opt$prefix, ".RDS")
 deGenes = readRDS(file)
-deGenes = sapply(strsplit(deGenes, '\\|'), function(x) x[2])
-
 
 timeMethods = list()
 
@@ -104,6 +100,7 @@ dds <- DESeq(dds)
 
 # head(results(dds))
 # table(results(dds)$padj < 0.05)
+
 
 # Sum reads from replicates
 ###########################
@@ -476,7 +473,7 @@ file = paste0(opt$folder, '/figures/', opt$prefix, "_prelim.pdf")
 pdf( file )
 fig2
 plotVarPart(vp, main="All")
-plotVarPart(vp[1:500,], main="DE genes")
+plotVarPart(vp[rownames(vp) %in% deGenes,], main="DE genes")
 dev.off()
 
 
