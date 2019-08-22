@@ -221,21 +221,16 @@ if( ! is.null(opt$macau2) && opt$macau2 ){
 
 		# K[1:5, 1:5]
 		macau_fit <- macau2(countMatrix, info$Disease, data.frame(info$Batch), RelatednessMatrix=K, fit.model="PMM",numCore=6, filtering=FALSE)
-	}) #dnd timing
-	  #), fit.maxiter=20)
+	}) 
 
-	# macau2 can omit some genes, so fill in empty entries with NA
-	macau_fit_all = data.frame(gene = rownames(countMatrixOrig), stringsAsFactors=FALSE)
-	macau_fit_all = merge( macau_fit_all, macau_fit, by.x="gene", by.y="row.names", all.x=TRUE, sort=FALSE)
+	macau_fit$p.adj = p.adjust(macau_fit$pvalue, 'fdr')
 
-	macau_padj = p.adjust(macau_fit_all$pvalue, 'fdr')
-	macau_pvalue = macau_fit_all$pvalue
 }else{
 	macau_padj = macau_pvalue = rep(NA, nrow(countMatrixOrig))
 	timeMethods$macau = NA
 }
 
-
+# ggplot(de_res_p, aes(-log10(lmFit), -log10(macau2))) + geom_point()
 
 # lmms
 ######
@@ -288,8 +283,8 @@ df = data.frame(EnsID = rownames(dds),
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # macau2
-df = data.frame(EnsID = rownames(countMatrixOrig), 
-	macau2 = macau_padj, stringsAsFactors=FALSE)
+df = data.frame(EnsID = rownames(macau_fit), 
+	macau2 = macau_fit$p.adj, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
 # lmFit_dupCor
@@ -359,8 +354,8 @@ df = data.frame(EnsID = rownames(dds),
 de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # macau2
-df = data.frame(EnsID = rownames(countMatrixOrig), 
-	macau2 = macau_pvalue, stringsAsFactors=FALSE)
+df = data.frame(EnsID = rownames(macau_fit), 
+	macau2 = macau_fit$pvalue, stringsAsFactors=FALSE)
 de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmFit_dupCor
