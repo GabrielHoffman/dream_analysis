@@ -131,9 +131,9 @@ echo '#!/bin/bash' > jobs/scripts_${PFX}.lsf
 echo "#BSUB -J ${PFX}
 #BSUB -P acc_psychencode
 #BSUB -q premium
-#BSUB -n 6
+#BSUB -n 15
 #BSUB -R span[hosts=1]
-#BSUB -W 8:00
+#BSUB -W 36:00
 #BSUB -o $LOG/scripts_${PFX}_%J.stdout
 #BSUB -eo $LOG/scripts_${PFX}_%J.stderr
 #BSUB -L /bin/bash

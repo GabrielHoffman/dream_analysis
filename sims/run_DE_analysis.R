@@ -142,7 +142,7 @@ fitDupCor <- eBayes(fitDupCor)
 })
 
 
-BPPARAM = SnowParam(6, "SOCK", progressbar=TRUE)
+BPPARAM = SnowParam(12, "SOCK", progressbar=TRUE)
 register(BPPARAM)
 
 genes = DGEList( countMatrix )
@@ -220,7 +220,7 @@ if( ! is.null(opt$macau2) && opt$macau2 ){
 		}
 
 		# K[1:5, 1:5]
-		macau_fit <- macau2(countMatrix, info$Disease, data.frame(info$Batch), RelatednessMatrix=K, fit.model="PMM",numCore=6, filtering=FALSE)
+		macau_fit <- macau2(countMatrix, info$Disease, data.frame(info$Batch), RelatednessMatrix=K, fit.model="PMM",numCore=12, filtering=FALSE)
 	}) 
 
 	macau_fit$p.adj = p.adjust(macau_fit$pvalue, 'fdr')
