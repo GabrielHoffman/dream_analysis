@@ -160,7 +160,7 @@ rownames(FC) = sapply(strsplit(names(fastaTranscripts), '\\|'), function(x) x[2]
 # q()
 
 
-lib_sizes = runif(nrow(info), .5, 1.5) /6
+lib_sizes = runif(nrow(info), .5, 1.5) /4
 
 # Simulate read counts
 ######################
