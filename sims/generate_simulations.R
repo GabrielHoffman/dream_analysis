@@ -112,6 +112,10 @@ simParams = foreach(j=1:length(fastaTranscripts) ) %do% {
 	sigSq_ID = rbeta(1, opt$distr_ID[1], opt$distr_ID[2])
 	sigSq_Batch = rbeta(1, opt$distr_Batch[1], opt$distr_Batch[2])
 
+	# each individual has its own error variance
+	v_var = rnorm( nlevels(info$Individual), 1, sqrt(.2))
+	resid_var = model.matrix( ~ 0+Individual, info) %*% v_var
+
 	if( j %in% deGeneIdx){
 		# Disease
 		eta_Disease = design_Disease %*% rnorm(nlevels(info$Disease))
@@ -123,14 +127,14 @@ simParams = foreach(j=1:length(fastaTranscripts) ) %do% {
 		y = scale(eta_ID) * (sigSq_ID-sigSq_Disease) + 
 			scale(eta_batch) * sigSq_Batch + 
 			scale(eta_Disease) * sigSq_Disease +			 
-			rnorm(nrow(info)) * sigSq_Resid
+			rnorm(nrow(info), 0, sd=sqrt(resid_var)) * sigSq_Resid
 	}else{
 		sigSq_Resid = max(1 - sigSq_ID - sigSq_Batch, .05)
 
 		# combine
 		y = scale(eta_ID) * sigSq_ID + 
 			scale(eta_batch) * sigSq_Batch + 		 
-			rnorm(nrow(info)) * sigSq_Resid
+			rnorm(nrow(info), sd=sqrt(resid_var)) * sigSq_Resid
 	}
 
 	# fit = lm( y ~ Disease, info)
