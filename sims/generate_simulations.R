@@ -80,6 +80,10 @@ info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=
 
 info$Batch = factor(sample(0:1, nrow(info), replace=TRUE))
 
+while( nlevels(info$Batch) < 2){
+	info$Batch = factor(sample(0:1, nrow(info), replace=TRUE))
+}
+
 # sampling until design matrix is not singular
 idx = seq(1, nrow(info), by=table(info$Individual)[1])
 
