@@ -44,13 +44,13 @@ FC=3
 HSQ=0.4
 
 LOG=$FOLDER/logs/
-# for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
-for N_SAMPLES in $(echo $(seq 8 2 14));
+for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+# for N_SAMPLES in $(echo $(seq 8 2 14));
 do
 for N_REPS in $(seq 2 4);
 do
 # for SEED in $(seq 1 50);
-for SEED in $(seq 1 5);
+for SEED in $(seq 1 10);
 do
 PFX=${N_SAMPLES}_${N_REPS}_${N_DE}_${FC}_${HSQ}_${SEED}
 echo '#!/bin/bash' > jobs/sims_${PFX}.lsf
@@ -74,7 +74,7 @@ export OMP_NUM_THREADS=1
 
 echo \$( R -e \"packageVersion('variancePartition')\")
 
-/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/generate_simulations.R --fasta $FASTA --n_samples ${N_SAMPLES} --n_reps ${N_REPS} --n_de_genes ${N_DE} --disease_fc ${FC} --nthreads 20 --param_ID '.6 .03' --param_Disease '.30 0.005' --param_Batch '.10 0.01' --seed ${SEED} --out $FOLDER/data --prefix $PFX " >> jobs/sims_${PFX}.lsf
+/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/generate_simulations.R --fasta $FASTA --n_samples ${N_SAMPLES} --n_reps ${N_REPS} --n_de_genes ${N_DE} --disease_fc ${FC} --nthreads 20 --param_ID '.45 .03' --param_Disease '.30 0.005' --param_Batch '.2 0.01' --seed ${SEED} --out $FOLDER/data --prefix $PFX " >> jobs/sims_${PFX}.lsf
 done
 done
 done
@@ -113,8 +113,8 @@ cd $FOLDER
 
 LOG=$FOLDER/logs
 
-# for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
-for N_SAMPLES in $(echo $(seq 8 2 14));
+for N_SAMPLES in $(echo $(seq 4 2 20) 30 40 50);
+# for N_SAMPLES in $(echo $(seq 8 2 14));
 do
 EXTRA='--macau2'
 # if [ ${N_SAMPLES} -lt 16 ];
@@ -124,7 +124,7 @@ EXTRA='--macau2'
 for N_REPS in $(seq 2 4);
 do
 # for SEED in $(seq 1 50);
-for SEED in $(seq 1 5);
+for SEED in $(seq 1 10);
 do
 PFX=${N_SAMPLES}_${N_REPS}_${N_DE}_${FC}_${HSQ}_${SEED}
 echo '#!/bin/bash' > jobs/scripts_${PFX}.lsf
