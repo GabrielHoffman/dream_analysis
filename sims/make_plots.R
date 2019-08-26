@@ -53,8 +53,8 @@ colnames(df_plots) = c("method", "color")
 
 
 if( opt$noEB ){
-	df_plots$color[df_plots$method == 'dream [std p]'] = '#FF7F00'
-	df_plots$color[df_plots$method == 'dream (KR) [std p]'] = '#FDBF6F'
+	df_plots$color[df_plots$method == 'dream [std p]'] = '#6A3D9A'
+	df_plots$color[df_plots$method == 'dream (KR) [std p]'] = '#CAB2D6'
 }
 
 #################
