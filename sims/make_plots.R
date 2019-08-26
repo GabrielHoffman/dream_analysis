@@ -639,7 +639,7 @@ dfpr = do.call("rbind", lapply(resList, function(x) x$dfpr))
 dfpr = data.table(dfpr)
 
 if( opt$noEB ){
-	dfpr = dfpr[!(dfpr$key %in% c("dream (KR)", "dream")),]
+	dfpr = dfpr[!(dfpr$method %in% c("dream (KR)", "dream")),]
 	dfpr = droplevels(dfpr)
 }
 
@@ -668,7 +668,7 @@ df_fpr = do.call("rbind", lapply(resList, function(x) x$df_fpr))
 df_fpr = data.table(df_fpr)
 
 if( opt$noEB ){
-	df_fpr = df_fpr[!(df_fpr$key %in% c("dream (KR)", "dream")),]
+	df_fpr = df_fpr[!(df_fpr$method %in% c("dream (KR)", "dream")),]
 	df_fpr = droplevels(df_fpr)
 }
 
@@ -710,7 +710,7 @@ df_aupr = do.call("rbind", lapply(resList, function(x) x$aupr))
 df_aupr = data.table(df_aupr)
 
 if( opt$noEB ){
-	df_aupr = df_aupr[!(df_aupr$key %in% c("dream (KR)", "dream")),]
+	df_aupr = df_aupr[!(df_aupr$method %in% c("dream (KR)", "dream")),]
 	df_aupr = droplevels(df_aupr)
 }
 
