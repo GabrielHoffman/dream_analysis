@@ -268,8 +268,6 @@ L['RegionBM36:bbscore'] = 1
 # Apply the contrast matrix L for the hypothesis test  
 # By default, uses the Satterthwaite approximation for the hypothesis test
 fitmm = dream( vobj[,idx], form, metadata[idx,], L)
-
-fitmm = eBayes( fitmm )
 ```
 
 # Compare -log10 p from dream and duplicateCorrelation

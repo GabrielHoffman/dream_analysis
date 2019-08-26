@@ -138,8 +138,7 @@ fitDream = foreach( ct = ctArray ) %do% {
   # fit = dream( vobj[,idx], form, metadata[idx,], L)  
   form = ~ BrainRegion + Sex + (1|Individual_ID)
   idx = which(metadata$CellType == ct)
-  fit = dream( vobj[,idx], form, metadata[idx,]) 
-  eBayes(fit)   
+  dream( vobj[,idx], form, metadata[idx,]) 
 }
 names(fitDream) = ctArray
 ```

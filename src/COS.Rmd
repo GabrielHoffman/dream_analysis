@@ -193,17 +193,15 @@ L_neuron = getContrast( vobj, form, metadata2, "InteractionSZ_6_wk_FB_neuron")
 L_neuron['InteractionCT_6_wk_FB_neuron'] = -1 
 
 fitDream_npc = dream( vobj, form, metadata2, L_npc) 
-fitDream_npc_eb = eBayes( fitDream_npc )
    
 fitDream_neuron = dream( vobj, form, metadata2, L_neuron) 
-fitDream_neuron_eb = eBayes( fitDream_neuron )
 ```
 
 # Analysis of neuron
 # Compare p-values from dream and duplicateCorrelation
 ```{r compare.neuron}
 t1 = topTable(fit2, coef="SZNeuron", number=Inf, sort.by="none")$P.Value
-t2 = topTable(fitDream_neuron_eb, coef="L1", number=Inf, sort.by="none")$P.Value
+t2 = topTable(fitDream_neuron, coef="L1", number=Inf, sort.by="none")$P.Value
 
 plotCompareP( t1, t2, vp$Donor, dupcor$consensus, fraction=.1) + ggtitle("Neuron")
 ```
@@ -267,7 +265,7 @@ ggplot(dfroll, aes(delta, DGN_R2_mu)) +  geom_point() + theme_bw(19) + theme(asp
 # Analysis of NPC
 ```{r compare.npc}
 t1 = topTable(fit2, coef="SZNPC", number=Inf, sort.by="none")$P.Value
-t2 = topTable(fitDream_npc_eb, coef="L1", number=Inf, sort.by="none")$P.Value
+t2 = topTable(fitDream_npc, coef="L1", number=Inf, sort.by="none")$P.Value
 
 plotCompareP( t1, t2, vp$Donor, dupcor$consensus, fraction=.1) + ggtitle("NPC")
 ```
@@ -403,10 +401,10 @@ camera_dupCor_NPC = get_enrich_order( res )
 res = topTable(fit2, coef="SZNeuron", number=Inf, sort.by="none")
 camera_dupCor_neuron = get_enrich_order( res )
 
-res = topTable(fitDream_npc_eb, coef="L1", number=Inf, sort.by='P')
+res = topTable(fitDream_npc, coef="L1", number=Inf, sort.by='P')
 camera_dream_npc = get_enrich_order( res )
 
-res = topTable(fitDream_neuron_eb, coef="L1", number=Inf , sort.by='P')
+res = topTable(fitDream_neuron, coef="L1", number=Inf , sort.by='P')
 camera_dream_neuron = get_enrich_order( res )
 ```
 
@@ -470,9 +468,9 @@ file = "./COS_neuron_DupCor.tsv"
 write.table(topTable(fit2, coef="SZNeuron", number=Inf), file=file, sep="\t", quote=FALSE)
 
 file = "./COS_NPC_dream.tsv"
-write.table(topTable(fitDream_npc_eb, coef="L1", number=Inf), file=file, sep="\t", quote=FALSE)
+write.table(topTable(fitDream_npc, coef="L1", number=Inf), file=file, sep="\t", quote=FALSE)
 file = "./COS_neuron_dream.tsv"
-write.table(topTable(fitDream_neuron_eb, coef="L1", number=Inf), file=file, sep="\t", quote=FALSE)
+write.table(topTable(fitDream_neuron, coef="L1", number=Inf), file=file, sep="\t", quote=FALSE)
 
 
 file = "./COS_NPC_DupCor_enrichment.tsv"
