@@ -51,9 +51,11 @@ df_plots = data.frame(matrix( colarray, ncol=2, byrow=TRUE), stringsAsFactors=FA
 df_plots$X1 = factor(df_plots$X1, df_plots$X1)
 colnames(df_plots) = c("method", "color")
 
-# library(ggplot2)
-# df_plots$value = 1
-# ggplot(df_plots, aes(method, value, fill=method)) + geom_bar(stat="identity") + coord_flip() + scale_fill_manual(values=df_plots$color)
+
+if( opt$noEB ){
+	df_plots$color[df_plots$method == 'dream [std p]'] = '#FF7F00'
+	df_plots$color[df_plots$method == 'dream (KR) [std p]'] = '#FDBF6F'
+}
 
 #################
 # Plot run time #
