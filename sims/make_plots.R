@@ -610,6 +610,11 @@ dev.off()
 df = do.call("rbind", lapply(resList, function(x) x$df))
 df = data.table(df)
 
+if( opt$noEB ){
+	df = df[!(df$key %in% c("dream (KR)", "dream")),]
+	df = droplevels(df)
+}
+
 # saveRDS(df, file=paste0(opt$folder,'/df.RDS'))
 # df = readRDS(paste0(opt$folder,'/df.RDS'))
 
@@ -632,6 +637,11 @@ dev.off()
 
 dfpr = do.call("rbind", lapply(resList, function(x) x$dfpr))
 dfpr = data.table(dfpr)
+
+if( opt$noEB ){
+	dfpr = dfpr[!(dfpr$key %in% c("dream (KR)", "dream")),]
+	dfpr = droplevels(dfpr)
+}
 
 # saveRDS(dfpr, file=paste0(opt$folder,'/dfpr.RDS'))
 # dfpr = readRDS(paste0(opt$folder,'/dfpr.RDS'))
@@ -656,6 +666,11 @@ dev.off()
 
 df_fpr = do.call("rbind", lapply(resList, function(x) x$df_fpr))
 df_fpr = data.table(df_fpr)
+
+if( opt$noEB ){
+	df_fpr = df_fpr[!(df_fpr$key %in% c("dream (KR)", "dream")),]
+	df_fpr = droplevels(df_fpr)
+}
 
 # saveRDS(df_fpr, file=paste0(opt$folder,'/df_fpr.RDS'))
 # df_fpr = readRDS(paste0(opt$folder,'/df_fpr.RDS'))
@@ -693,6 +708,11 @@ dev.off()
 
 df_aupr = do.call("rbind", lapply(resList, function(x) x$aupr))
 df_aupr = data.table(df_aupr)
+
+if( opt$noEB ){
+	df_aupr = df_aupr[!(df_aupr$key %in% c("dream (KR)", "dream")),]
+	df_aupr = droplevels(df_aupr)
+}
 
 # saveRDS(df_aupr, file=paste0(opt$folder,'/df_aupr.RDS'))
 # df_aupr = readRDS(paste0(opt$folder,'/df_aupr.RDS'))
