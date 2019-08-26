@@ -80,14 +80,10 @@ info = data.frame( Individual = paste("ID", sort(rep(1:n_samples, n_reps)), sep=
 
 info$Batch = factor(sample(0:1, nrow(info), replace=TRUE))
 
-while( nlevels(info$Batch) < 2){
-	info$Batch = factor(sample(0:1, nrow(info), replace=TRUE))
-}
-
 # sampling until design matrix is not singular
 idx = seq(1, nrow(info), by=table(info$Individual)[1])
 
-while( min(svd(model.matrix(~Disease + Batch, info))$d) <=0 || min(svd(model.matrix(~Disease + Batch, info[idx,]))$d) <=0 ){
+while( min(svd(model.matrix(~Disease + Batch, info))$d) <=0 || min(svd(model.matrix(~Disease + Batch, info[idx,]))$d) <=0 || (nlevels(info$Batch) < 2) ){
 	info$Batch = factor(sample(0:1, nrow(info), replace=TRUE))
 }
 
@@ -117,7 +113,7 @@ simParams = foreach(j=1:length(fastaTranscripts) ) %do% {
 	sigSq_Batch = rbeta(1, opt$distr_Batch[1], opt$distr_Batch[2])
 
 	# each individual has its own error variance
-	v_var = rnorm( nlevels(info$Individual), 1, sqrt(.2))
+	v_var = rbeta( nlevels(info$Individual), 1, 1) + 0.5
 	resid_var = model.matrix( ~ 0+Individual, info) %*% v_var
 
 	if( j %in% deGeneIdx){
