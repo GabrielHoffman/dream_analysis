@@ -498,7 +498,9 @@ aupr$method = factor(aupr$method, df_plots$method)
 # Drop dream-EB
 if( opt$noEB ){
 	aupr = aupr[!(aupr$method %in% c("dream (KR)", "dream")),]
-	aupr = droplevels(aupr)
+	aupr = droplevels(aupr)	
+	levels(aupr$method)[levels(aupr$method)=='dream [std p]'] <- "dream"
+	levels(aupr$method)[levels(aupr$method)=='dream (KR) [std p]'] <- "dream (KR)"
 }
 
 col = df_plots$color[df_plots$method %in% levels(aupr$method)]
@@ -521,7 +523,9 @@ power_fdr_5$method = factor(power_fdr_5$method, df_plots$method)
 # Drop dream-EB
 if( opt$noEB ){
 	power_fdr_5 = power_fdr_5[!(power_fdr_5$method %in% c("dream (KR)", "dream")),]
-	power_fdr_5 = droplevels(power_fdr_5)
+	power_fdr_5 = droplevels(power_fdr_5)	
+	levels(power_fdr_5$method)[levels(power_fdr_5$method)=='dream [std p]'] <- "dream"
+	levels(power_fdr_5$method)[levels(power_fdr_5$method)=='dream (KR) [std p]'] <- "dream (KR)"
 }
 
 fig = foreach(n_reps = 2:4) %do%{
@@ -542,6 +546,8 @@ df_fpr$method = factor(df_fpr$method, df_plots$method)
 if( opt$noEB ){
 	df_fpr = df_fpr[!(df_fpr$method %in% c("dream (KR)", "dream")),]
 	df_fpr = droplevels(df_fpr)
+	levels(df_fpr$method)[levels(df_fpr$method)=='dream [std p]'] <- "dream"
+	levels(df_fpr$method)[levels(df_fpr$method)=='dream (KR) [std p]'] <- "dream (KR)"
 }
 
 df_fpr = df_fpr[!((df_fpr$method == "macau2")&&(df_fpr$n_donor >14)&&(df_fpr$value == 0)),]
@@ -564,6 +570,8 @@ df_fd$method = factor(df_fd$method, df_plots$method)
 if( opt$noEB ){
 	df_fd = df_fd[!(df_fd$method %in% c("dream (KR)", "dream")),]
 	df_fd = droplevels(df_fd)
+	levels(df_fd$method)[levels(df_fd$method)=='dream [std p]'] <- "dream"
+	levels(df_fd$method)[levels(df_fd$method)=='dream (KR) [std p]'] <- "dream (KR)"
 }
 df_fd = df_fd[!((df_fd$method == "macau2")&&(df_fd$n_donor >14)&&(df_fd$value == 0)),]
 
@@ -613,6 +621,8 @@ df = data.table(df)
 if( opt$noEB ){
 	df = df[!(df$key %in% c("dream (KR)", "dream")),]
 	df = droplevels(df)
+	levels(df$key)[levels(df$key)=='dream [std p]'] <- "dream"
+	levels(df$key)[levels(df$key)=='dream (KR) [std p]'] <- "dream (KR)"
 }
 
 # saveRDS(df, file=paste0(opt$folder,'/df.RDS'))
@@ -641,6 +651,8 @@ dfpr = data.table(dfpr)
 if( opt$noEB ){
 	dfpr = dfpr[!(dfpr$method %in% c("dream (KR)", "dream")),]
 	dfpr = droplevels(dfpr)
+	levels(dfpr$method)[levels(dfpr$method)=='dream [std p]'] <- "dream"
+	levels(dfpr$method)[levels(dfpr$method)=='dream (KR) [std p]'] <- "dream (KR)"
 }
 
 # saveRDS(dfpr, file=paste0(opt$folder,'/dfpr.RDS'))
@@ -670,6 +682,8 @@ df_fpr = data.table(df_fpr)
 if( opt$noEB ){
 	df_fpr = df_fpr[!(df_fpr$method %in% c("dream (KR)", "dream")),]
 	df_fpr = droplevels(df_fpr)
+	levels(df_fpr$method)[levels(df_fpr$method)=='dream [std p]'] <- "dream"
+	levels(df_fpr$method)[levels(df_fpr$method)=='dream (KR) [std p]'] <- "dream (KR)"
 }
 
 # saveRDS(df_fpr, file=paste0(opt$folder,'/df_fpr.RDS'))
@@ -712,6 +726,8 @@ df_aupr = data.table(df_aupr)
 if( opt$noEB ){
 	df_aupr = df_aupr[!(df_aupr$method %in% c("dream (KR)", "dream")),]
 	df_aupr = droplevels(df_aupr)
+	levels(df_aupr$method)[levels(df_aupr$method)=='dream [std p]'] <- "dream"
+	levels(df_aupr$method)[levels(df_aupr$method)=='dream (KR) [std p]'] <- "dream (KR)"
 }
 
 # saveRDS(df_aupr, file=paste0(opt$folder,'/df_aupr.RDS'))
