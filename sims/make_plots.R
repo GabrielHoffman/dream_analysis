@@ -4,6 +4,7 @@ suppressPackageStartupMessages(library(getopt))
 
 a = matrix(c(
 	'folder', 		'f', 1, "character",
+	'noEB', 		'n', 0, "logical",
 	'nthreads', 	't', 1, "integer"
 	),nrow=4)
 
@@ -28,7 +29,6 @@ cat("# files: ", length(allFiles), "\n")
 cat("# prefix: ", length(prefixes), "\n")
 
 registerDoParallel( opt$nthreads )
-
 
 # define colors
 ################
@@ -98,7 +98,7 @@ col = df_plots$color[df_plots$method %in% levels(summTime$method)]
 
 file = paste0(folder,'/../figures/combine_time.pdf')
 pdf( file )
-ggplot(summTime, aes(n_donor,mean/60, color=method)) + geom_line() + geom_errorbar(aes(ymin = (mean-sd)/60, ymax = (mean+sd)/60)) + scale_y_log10() + theme_bw() + theme(aspect.ratio=1, legend.position="bottom")  + scale_color_manual(values=col) + facet_wrap(~n_reps) + xlab("# Donors") + ylab("Run time (minutes)")
+ggplot(summTime, aes(n_donor,mean/60, color=method)) + geom_line() + geom_errorbar(aes(ymin = (mean-sd)/60, ymax = (mean+sd)/60), width=1) + scale_y_log10() + theme_bw() + theme(aspect.ratio=1, legend.position="bottom")  + scale_color_manual(values=col) + facet_wrap(~n_reps) + xlab("# Donors") + ylab("Run time (minutes)")
 dev.off()
 
 
@@ -495,6 +495,12 @@ aupr = foreach(n_donor = donor_array, .combine=rbind) %do% {
 }
 aupr$method = factor(aupr$method, df_plots$method)
 
+# Drop dream-EB
+if( opt$noEB ){
+	aupr = aupr[!(aupr$method %in% c("dream (KR)", "dream")),]
+	aupr = droplevels(aupr)
+}
+
 col = df_plots$color[df_plots$method %in% levels(aupr$method)]
 
 fig = foreach(n_reps = 2:4) %do%{
@@ -511,6 +517,13 @@ power_fdr_5 = foreach(n_donor = donor_array, .combine=rbind) %do% {
 	}	
 }
 power_fdr_5$method = factor(power_fdr_5$method, df_plots$method)
+
+# Drop dream-EB
+if( opt$noEB ){
+	power_fdr_5 = power_fdr_5[!(power_fdr_5$method %in% c("dream (KR)", "dream")),]
+	power_fdr_5 = droplevels(power_fdr_5)
+}
+
 fig = foreach(n_reps = 2:4) %do%{
 ggplot(power_fdr_5[power_fdr_5$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_line() + scale_color_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, 1) + ylab("Power at FDR 5%")
 }
@@ -524,6 +537,13 @@ df_fpr = foreach(n_donor = donor_array, .combine=rbind) %do% {
 	}	
 }
 df_fpr$method = factor(df_fpr$method, df_plots$method)
+
+# Drop dream-EB
+if( opt$noEB ){
+	df_fpr = df_fpr[!(df_fpr$method %in% c("dream (KR)", "dream")),]
+	df_fpr = droplevels(df_fpr)
+}
+
 df_fpr = df_fpr[!((df_fpr$method == "macau2")&&(df_fpr$n_donor >14)&&(df_fpr$value == 0)),]
 
 fig = foreach(n_reps = 2:4) %do%{
@@ -540,6 +560,11 @@ df_fd = foreach(n_donor = donor_array, .combine=rbind) %do% {
 	}	
 }
 df_fd$method = factor(df_fd$method, df_plots$method)
+
+if( opt$noEB ){
+	df_fd = df_fd[!(df_fd$method %in% c("dream (KR)", "dream")),]
+	df_fd = droplevels(df_fd)
+}
 df_fd = df_fd[!((df_fd$method == "macau2")&&(df_fd$n_donor >14)&&(df_fd$value == 0)),]
 
 fig = foreach(n_reps = 2:4) %do%{
