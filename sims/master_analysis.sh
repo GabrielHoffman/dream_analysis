@@ -184,7 +184,7 @@ comm -23 <(sort all.lst) <(cat running.lst complete.lst | sort) | parallel -P1 l
 FOLDER=/sc/orga/projects/psychencode/gabriel/RNA_seq_sim/RNA_seq_sim_v3/
 cd $FOLDER
 
-/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/make_plots.R --folder $FOLDER/results --nthreads 32
+/hpc/users/hoffmg01/work/dev_dream/dream_analysis/sims/make_plots.R --folder $FOLDER/results --nthreads 32 --noEB
 
 
 
