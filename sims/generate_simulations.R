@@ -83,6 +83,10 @@ info$Batch = factor(sample(0:1, nrow(info), replace=TRUE))
 # sampling until design matrix is not singular
 idx = seq(1, nrow(info), by=table(info$Individual)[1])
 
+if( nlevels(info$Batch) < 2){
+	info$Batch = factor(sample(0:1, nrow(info), replace=TRUE))
+}
+
 while( min(svd(model.matrix(~Disease + Batch, info))$d) <=0 || min(svd(model.matrix(~Disease + Batch, info[idx,]))$d) <=0 || (nlevels(info$Batch) < 2) ){
 	info$Batch = factor(sample(0:1, nrow(info), replace=TRUE))
 }
