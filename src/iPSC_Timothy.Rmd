@@ -134,8 +134,6 @@ dreamList = foreach(ds = unique( info$differentiation_state) ) %do% {
   # new syntax
   form <- ~ genotype + (1|Donor)
   fitmm = dream( geneExpr[,idx], form, info[idx,])
-
-  fitmm = eBayes( fitmm )
   fitmm
 }  
 names(dreamList) = unique(info$differentiation_state) 
