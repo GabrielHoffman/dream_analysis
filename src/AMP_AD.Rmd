@@ -392,7 +392,7 @@ vp2 = with( vp, data.frame(Batch = LIMS + Run, Brain_region = Region, Individual
 vp2 = sortCols( vp2 )
 rownames(vp2) = rownames(vp)
 
-ensGene = rownames(topTable(fitDupCor))[1]
+ensGene = rownames(topTable(fitDupCor))[2]
 
 GE = data.frame( Expression = vobj$E[ensGene,], Indiv = metadata$individualIdentifier,  bbscore = metadata$bbscore)
      

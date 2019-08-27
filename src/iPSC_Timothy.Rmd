@@ -164,7 +164,7 @@ geneInfoBiomart = getBM(getAtt,filters="illumina_humanref_8_v3",values=rownames(
 ## DE versus eQTL
 ```{r DE.vs.eQTL, echo=FALSE, fig.height=20, fig.width=12}
 
-setwd('/sc/orga/projects/psychencode/gabriel/dream_analysis/src')
+# setwd('/sc/orga/projects/psychencode/gabriel/dream_analysis/src')
 
 suppressPackageStartupMessages(library(RcppRoll))
 suppressPackageStartupMessages(library(data.table))
