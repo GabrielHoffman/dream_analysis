@@ -393,7 +393,7 @@ vp2 = sortCols( vp2 )
 rownames(vp2) = rownames(vp)
 
 ensGene = rownames(topTable(fitDupCor))[2]
-
+   
 GE = data.frame( Expression = vobj$E[ensGene,], Indiv = metadata$individualIdentifier,  bbscore = metadata$bbscore)
      
 fig1 = plotStratify( Expression ~ Indiv, GE, colorBy = GE$bbscore, main= ensGene, legend=TRUE) + theme(aspect.ratio=1, legend.position="right") + scale_fill_continuous(name = "Braak stage", low = "lightyellow", high="red") + scale_color_continuous(name = "Braak stage", low = "lightyellow", high="red")
