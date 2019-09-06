@@ -361,7 +361,7 @@ get_enrich_order = function( res ){
   if( !is.null(res$z.std) ){
     stat = res$z.std
   }else if( !is.null(res$F.std) ){
-    stat = res$F.std)
+    stat = res$F.std
   }else if( !is.null(res$t) ){
     stat = res$t
   }else{
