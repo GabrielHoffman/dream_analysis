@@ -358,15 +358,22 @@ get_enrich_order = function( res ){
   res$gene = geneInfo$geneName[match(rownames(res), geneInfo$Geneid)]
   res$symbol = sub("^(ENSG.*)$", NA, res$gene)
 
-  tstat = res$t
-  names(tstat) = res$symbol
-  tstat = tstat[!is.na(names(tstat))]
+  if( !is.null(res$z.std) ){
+    stat = res$z.std
+  }else if( !is.null(res$F.std) ){
+    stat = res$F.std)
+  }else if( !is.null(res$t) ){
+    stat = res$t
+  }else{
+    stat = res$F
+  }
+  names(stat) = res$symbol
+  stat = stat[!is.na(names(stat))]
 
-  index = ids2indices(geneSetsCombined, names(tstat))
+  index = ids2indices(geneSetsCombined, names(stat))
 
-  cameraPR( tstat, index )
+  cameraPR( stat, index )
 }
-
 library(data.table)
 
 plot_compare_enrichment = function( res1, res2, gset, col=c("grey60", "royalblue1"),maxValue=30){
