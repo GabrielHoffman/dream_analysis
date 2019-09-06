@@ -152,23 +152,6 @@ figList = foreach( ds = names(dupCorList) ) %do% {
 do.call("grid.arrange", c(figList, ncol=2))
 ```
 
- # Compare p-values and make plot
-p1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
-p2 = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by="none")$P.Value
-
-j = which.max(abs(log(p1) - log(p2)))
-
-df = dreamList[[ds]]$df.residual[,2]
-
-library(lmerTest) 
-idx = info$differentiation_state == ds
-j = which.max(abs(log(p1) - log(p2)))
-y = t(t(geneExpr[j,idx]))
-fit = lmer( y  ~ genotype + (1|Donor), info[idx,])
-summary(fit)
-
-
-
 
 ```{r biomart, message=FALSE}
 library(biomaRt)
@@ -425,7 +408,7 @@ plot_compare_enrichment = function( res1, res2, gset, col=c("grey60", "royalblue
 
   res = res[order(res$name),]
 
-  ggplot(res, aes(name, -log10(FDR), fill=dataset)) + geom_bar(stat='identity', position=position_dodge()) + coord_flip() + theme_bw(12) + theme(aspect.ratio=2, plot.title = element_text(hjust = 0.5), legend.position="none") + ylab(bquote(-log[10]~FDR)) + xlab("Gene sets") + scale_fill_manual(values=col) + geom_hline(yintercept=-log10(0.05), linetype=2) + geom_hline(yintercept=-log10(0.01), linetype=3) + scale_y_continuous(expand = c(0, 0), lim=c(0, maxValue))
+  ggplot(res, aes(name, -log10(FDR), fill=dataset)) + geom_bar(stat='identity', position=position_dodge()) + coord_flip() + theme_bw(12) + theme(aspect.ratio=2, plot.title = element_text(hjust = 0.5), legend.position="none") + ylab(bquote(-log[10]~FDR)) + xlab("Gene sets") + scale_fill_manual(values=col) + geom_hline(yintercept=-log10(0.10), linetype=2) + geom_hline(yintercept=-log10(0.05), linetype=3) + scale_y_continuous(expand = c(0, 0), lim=c(0, maxValue))
 }
  
 maxValue1 = -log10(min(sapply(enrichList_dp_tstat, function(x) min(x$FDR))))
@@ -505,7 +488,7 @@ figList = foreach( ds = names(enrichList_dream_tstat) ) %do% {
                           enrichList_dream_tstat[[ds]], 
                           gset[[ds]], col, maxValue=maxValue) + ggtitle( ds )
   fig = fig + theme(aspect.ratio=length(gset[[ds]])/3)
-
+      
   ggplotGrob(fig)
 }
 
