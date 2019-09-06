@@ -399,7 +399,7 @@ plot_compare_enrichment = function( res1, res2, gset, col=c("grey60", "royalblue
 
   res = res[order(res$name),]
 
-  ggplot(res, aes(name, -log10(FDR), fill=dataset)) + geom_bar(stat='identity', position=position_dodge()) + coord_flip() + theme_bw(12) + theme(aspect.ratio=2, plot.title = element_text(hjust = 0.5), legend.position="none") + ylab(bquote(-log[10]~FDR)) + xlab("Gene sets") + scale_fill_manual(values=col) + geom_hline(yintercept=-log10(0.05), linetype=2) + geom_hline(yintercept=-log10(0.01), linetype=3) + scale_y_continuous(expand = c(0, 0), lim=c(0, maxValue))
+  ggplot(res, aes(name, -log10(FDR), fill=dataset)) + geom_bar(stat='identity', position=position_dodge()) + coord_flip() + theme_bw(12) + theme(aspect.ratio=2, plot.title = element_text(hjust = 0.5), legend.position="none") + ylab(bquote(-log[10]~FDR)) + xlab("Gene sets") + scale_fill_manual(values=col) + geom_hline(yintercept=-log10(0.10), linetype=2) + geom_hline(yintercept=-log10(0.05), linetype=3) + scale_y_continuous(expand = c(0, 0), lim=c(0, maxValue))
 }
 
 res = topTable(fit2, coef="SZNPC", number=Inf, sort.by="none")
