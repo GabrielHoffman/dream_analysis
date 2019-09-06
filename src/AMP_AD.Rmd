@@ -352,7 +352,7 @@ col = c('#00b6eb', '#a58affff')
 maxValue = -log10(min(c(min(res1$FDR), min(res2$FDR)))) * 1.03
 
 geneSetNames = unique(c(rownames(res1)[1:30], rownames(res2)[1:30]))
-plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)     
+plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)         
 ```
 
 ```{r save_enrichments}
@@ -385,7 +385,7 @@ gset = c(
 'GSE9988_LPS_VS_VEHICLE_TREATED_MONOCYTE_DN')
 
 fig = plot_compare_enrichment( res1, res2, gset, col, maxValue) 
-fig + theme(aspect.ratio=length(gset)/3)         
+fig + theme(aspect.ratio=length(gset)/3)                  
 ```
 
 
