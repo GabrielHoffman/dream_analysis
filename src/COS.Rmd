@@ -452,7 +452,7 @@ res2 = camera_dream_npc
 # plot_compare_enrichment( res1, res2, rownames(res2)[res2$FDR < 0.05][1:60], col, maxValue)   
 
 geneSetNames = unique(c(rownames(res1)[1:30], rownames(res2)[1:30]))
-plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue) 
+plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)         
 ```
 
 # Compare neuron
@@ -463,7 +463,7 @@ res2 = camera_dream_neuron
 # plot_compare_enrichment( res1, res2, rownames(res2)[res2$FDR < 0.05], col, maxValue)  
 
 geneSetNames = unique(c(rownames(res1)[1:30], rownames(res2)[1:30]))
-plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue) 
+plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)       
 ```
 
 ```{r save_enrichments}
@@ -509,7 +509,7 @@ res1 = camera_dupCor_NPC
 res2 = camera_dream_npc    
 fig1 = plot_compare_enrichment( res1, res2, gset[['NPC']], col, maxValue)
 fig1 = fig1 + theme(aspect.ratio=length(gset[['NPC']])/3) + ggtitle('NPC')
-
+      
 res1 = camera_dupCor_neuron 
 res2 = camera_dream_neuron      
 fig2 = plot_compare_enrichment( res1, res2, gset[['neuron']], col, maxValue)
