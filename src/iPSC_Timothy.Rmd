@@ -144,13 +144,30 @@ names(dreamList) = unique(info$differentiation_state)
 figList = foreach( ds = names(dupCorList) ) %do% {
 
   # Compare p-values and make plot
-  t1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
-  t2 = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by="none")$P.Value
+  p1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
+  p2 = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by="none")$P.Value
 
-  plotCompareP( t1, t2, with(vpList[[ds]], Donor + genotype), dupCorList[[ds]]$consensus) + ggtitle( ds )
+  plotCompareP( p1, p2, with(vpList[[ds]], Donor + genotype), dupCorList[[ds]]$consensus) + ggtitle( ds )
 }
 do.call("grid.arrange", c(figList, ncol=2))
 ```
+
+ # Compare p-values and make plot
+p1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
+p2 = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by="none")$P.Value
+
+j = which.max(abs(log(p1) - log(p2)))
+
+df = dreamList[[ds]]$df.residual[,2]
+
+library(lmerTest) 
+idx = info$differentiation_state == ds
+j = which.max(abs(log(p1) - log(p2)))
+y = t(t(geneExpr[j,idx]))
+fit = lmer( y  ~ genotype + (1|Donor), info[idx,])
+summary(fit)
+
+
 
 
 ```{r biomart, message=FALSE}
@@ -260,18 +277,26 @@ get_enrich_order = function( res ){
   res$gene = geneInfo$geneName[match(rownames(res), geneInfo$Geneid)]
   res$symbol = sub("^(ENSG.*)$", NA, res$gene)
 
-  tstat = res$t
-  names(tstat) = res$symbol
-  tstat = tstat[!is.na(names(tstat))]
+  if( !is.null(res$z.std) ){
+    stat = res$z.std
+  }else if( !is.null(res$F.std) ){
+    stat = res$F.std)
+  }else if( !is.null(res$t) ){
+    stat = res$t
+  }else{
+    stat = res$F
+  }
+  names(stat) = res$symbol
+  stat = stat[!is.na(names(stat))]
 
-  index = ids2indices(geneSetsCombined, names(tstat))
+  index = ids2indices(geneSetsCombined, names(stat))
 
-  cameraPR( tstat, index)
+  cameraPR( stat, index )
 }
 
 enrichList_dream_tstat = foreach( ds = names(dreamList) ) %do% {
 
-  tab = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf )
+  tab = topTable_stdt( dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by='none' )
   tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
   tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
   tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
@@ -299,7 +324,7 @@ names(enrichList_dp_tstat) = names(dreamList)
 ```{r}
 de_dream = foreach( ds = names(dreamList) ) %do% {
 
-  tab = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf )
+  tab = topTable_stdt(dreamList[[ds]], coef="genotypeTS", number=Inf )
   tab2 = merge(tab, geneInfoBiomart, by.x="row.names", by.y='illumina_humanref_8_v3')
   tab2 = tab2[with(tab2, order(ensembl_gene_id, AveExpr, decreasing=TRUE)),]
   tab2 = tab2[!duplicated(tab2$ensembl_gene_id),]
