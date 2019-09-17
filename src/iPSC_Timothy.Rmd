@@ -147,7 +147,7 @@ figList = foreach( ds = names(dupCorList) ) %do% {
   p1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
   p2 = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by="none")$P.Value
        
-  plotCompareP( p1, p2, with(vpList[[ds]], Donor + genotype), dupCorList[[ds]]$consensus) + ggtitle( ds )
+  plotCompareP( p1, p2, with(vpList[[ds]], Donor, dupCorList[[ds]]$consensus) + ggtitle( ds )
 }
 do.call("grid.arrange", c(figList, ncol=2))
 ```
