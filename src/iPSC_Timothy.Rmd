@@ -153,7 +153,7 @@ do.call("grid.arrange", c(figList, ncol=2))
 ```
 
 # Examine top difference between methods
-```{r method.diff, echo=TRUE, message=TRUE, results="rmarkup"}
+```{r method.diff, echo=TRUE, message=TRUE,results='asis'}
 library(lmerTest)
 ds = names(dupCorList)[4]
          
@@ -161,22 +161,37 @@ ds = names(dupCorList)[4]
 p1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
 p2 = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by="none")$P.Value
 j = which.max(abs(-log10(p1) + log10(p2)))
-     
+
+pvals = list()
+
 # dream p-values
-topTable(dreamList[[ds]], number=Inf, sort.by="none")[j,]
+pvals[['dream']] = topTable(dreamList[[ds]], number=Inf, sort.by="none")[j,]$P.Value
 
 # duplicateCorrelation results
-topTable(dupCorList[[ds]]$fitDupCor, number=Inf, sort.by="none")[j,]
+pvals[['duplicateCorrelation']] = topTable(dupCorList[[ds]]$fitDupCor, number=Inf, sort.by="none")[j,]$P.Value
 
 # p-value from lmer
 idx = info$differentiation_state == ds
 y = t(geneExpr[j,idx,drop=FALSE])
 fitm = lmer( y ~ genotype + (1|Donor), info[idx,], REML=TRUE  )
 coef(summary(fitm))
+pvals[['lmer()']] = coef(summary(fitm))[2,5]
+
 
 # p-value from linear model
 fit = lm( y ~ genotype, info[idx,]  )
 coef(summary(fit))
+pvals[['lm()']] = coef(summary(fit))[2,4]
+
+# linear model on individual averages
+GE = data.table( Expression = as.numeric(y), Indiv =  info[idx,]$Donor, Genotype =  info[idx,]$genotype)
+data = GE[,data.frame(Expression=mean(Expression)), by="Indiv"]
+data = merge(data, unique(GE[,2:3]), by="Indiv", all.x=TRUE, all=FALSE)
+
+pvals[['lm on Individual averages']] = coef(summary(lm( Expression ~ Genotype, data)))[2,4]
+
+library(knitr)
+kable(data.frame( p.value = sapply(pvals, function(x) format(x, digits=2, scientific=3))))
 ```
 
 
