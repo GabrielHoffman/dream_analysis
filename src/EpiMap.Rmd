@@ -109,7 +109,13 @@ countObj = calcNormFactors( countObj )
 design = model.matrix( ~ CellType + BrainRegion, metadata)
 vobj = voom( countObj, design, plot=TRUE)
 
-identical(peakLocs2$names, rownames(vobj))
+# identical(peakLocs2$names, rownames(vobj))
+```
+
+```{r voomWithDreamWeights}
+# run voom using a linear mixed model in dream
+form = ~ (1|CellType) + (1|BrainRegion)
+vobjMM = voomWithDreamWeights( countObj, form, metadata, plot=TRUE)
 ```
 
 
@@ -132,13 +138,9 @@ do.call("grid.arrange", c(figList, ncol=2))
 
 ```{r dream2}
 fitDream = foreach( ct = ctArray ) %do% {
-  # form = ~ 0 + BrainRegion + Sex + (1|Individual_ID)
-  # L = getContrast( vobj[,idx], form, metadata[idx,], c('BrainRegionDLPFC', 'BrainRegionACC'))
-  # idx = which(metadata$CellType == ct)
-  # fit = dream( vobj[,idx], form, metadata[idx,], L)  
   form = ~ BrainRegion + Sex + (1|Individual_ID)
   idx = which(metadata$CellType == ct)
-  dream( vobj[,idx], form, metadata[idx,]) 
+  dream( vobjMM[,idx], form, metadata[idx,]) 
 }
 names(fitDream) = ctArray
 ```

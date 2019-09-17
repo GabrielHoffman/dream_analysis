@@ -149,7 +149,12 @@ dupcor_init <- duplicateCorrelation(vobj_tmp, design, block=metadata$Donor)
 vobj = voom(genes, design, block = metadata$Donor, correlation=dupcor_init$consensus)
 
 dupcor <- duplicateCorrelation(vobj, design, block=metadata$Donor)
+```
 
+```{r voomWithDreamWeights}
+# run voom using a linear mixed model in dream
+form = ~ (1|Cell.Type) + (1|Sex) + (1|Donor)
+vobjMM = voomWithDreamWeights( genes, form, metadata, plot=TRUE)
 ```
 
 ```{r vp, echo=TRUE}
@@ -192,9 +197,9 @@ L_npc['InteractionCT_NPC'] = -1
 L_neuron = getContrast( vobj, form, metadata2, "InteractionSZ_6_wk_FB_neuron")
 L_neuron['InteractionCT_6_wk_FB_neuron'] = -1 
 
-fitDream_npc = dream( vobj, form, metadata2, L_npc) 
+fitDream_npc = dream( vobjMM, form, metadata2, L_npc) 
    
-fitDream_neuron = dream( vobj, form, metadata2, L_neuron) 
+fitDream_neuron = dream( vobjMM, form, metadata2, L_neuron) 
 ```
 
 # Analysis of neuron

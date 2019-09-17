@@ -141,8 +141,14 @@ dupcor <- duplicateCorrelation(vobj_tmp,design,block=metadata$individualIdentifi
 # run voom considering the duplicateCorrelation results
 # in order to compute more accurate precision weights
 # Otherwise, use the results from the first voom run
-vobj = voom( genes, design, plot=FALSE, block=metadata$individualIdentifier, correlation=dupcor$consensus)
+vobj = voom( genes, design, plot=TRUE, block=metadata$individualIdentifier, correlation=dupcor$consensus)
+
+# run voom using a linear mixed model in dream
+form = ~ (1|Region) + (1|LIMS) + (1|individualIdentifier)
+vobjMM = voomWithDreamWeights( genes, form, plot=TRUE)
 ```
+
+
 
 ```{r define}
 # load("enrich.RDATA")
@@ -271,7 +277,7 @@ L['RegionBM36:bbscore'] = 1
 # Fit the dream model on each gene
 # Apply the contrast matrix L for the hypothesis test  
 # By default, uses the Satterthwaite approximation for the hypothesis test
-fitmm = dream( vobj[,idx], form, metadata[idx,], L)
+fitmm = dream( vobjMM[,idx], form, metadata[idx,], L)
 ```
 
 # Compare -log10 p from dream and duplicateCorrelation
