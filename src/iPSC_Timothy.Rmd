@@ -188,7 +188,7 @@ GE = data.table( Expression = as.numeric(y), Indiv =  info[idx,]$Donor, Genotype
 data = GE[,data.frame(Expression=mean(Expression)), by="Indiv"]
 data = merge(data, unique(GE[,2:3]), by="Indiv", all.x=TRUE, all=FALSE)
 
-pvals[['lm on Individual averages']] = coef(summary(lm( Expression ~ Genotype, data)))[2,4]
+pvals[['lm() on Individual averages (n=4)']] = coef(summary(lm( Expression ~ Genotype, data)))[2,4]
 
 library(knitr)
 kable(data.frame( p.value = sapply(pvals, function(x) format(x, digits=2, scientific=3))))
