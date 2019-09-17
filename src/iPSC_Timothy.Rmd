@@ -147,10 +147,38 @@ figList = foreach( ds = names(dupCorList) ) %do% {
   p1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
   p2 = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by="none")$P.Value
        
-  plotCompareP( p1, p2, with(vpList[[ds]], Donor, dupCorList[[ds]]$consensus) + ggtitle( ds )
+  plotCompareP( p1, p2, with(vpList[[ds]], Donor), dupCorList[[ds]]$consensus) + ggtitle( ds )
 }
 do.call("grid.arrange", c(figList, ncol=2))
 ```
+
+# Examine top difference between methods
+```{r method.diff}
+library(lmerTest)
+ds = names(dupCorList)[4]
+
+# Find gene with greatest difference in -log10(p)
+p1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
+p2 = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by="none")$P.Value
+j = which.max(abs(-log10(p1) + log10(p2)))
+
+# dream p-values
+topTable(dreamList[[ds]], number=Inf, sort.by="none")[j,]
+
+# duplicateCorrelation results
+topTable(dupCorList[[ds]]$fitDupCor, number=Inf, sort.by="none")[j,]
+
+# p-value from lmer
+idx = info$differentiation_state == ds
+y = t(geneExpr[j,idx,drop=FALSE])
+fitm = lmer( y ~ genotype + (1|Donor), info[idx,], REML=TRUE  )
+coef(summary(fitm))
+
+# p-value from linear model
+fit = lm( y ~ genotype, info[idx,]  )
+coef(summary(fit))
+```
+
 
 
 ```{r biomart, message=FALSE}
