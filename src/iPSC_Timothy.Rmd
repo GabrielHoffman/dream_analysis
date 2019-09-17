@@ -153,7 +153,7 @@ do.call("grid.arrange", c(figList, ncol=2))
 ```
 
 # Examine top difference between methods
-```{r method.diff, echo=TRUE, message=TRUE}
+```{r method.diff, echo=TRUE, message=TRUE, results="asis"}
 library(lmerTest)
 ds = names(dupCorList)[3]
      
