@@ -174,13 +174,13 @@ pvals[['duplicateCorrelation']] = topTable(dupCorList[[ds]]$fitDupCor, number=In
 idx = info$differentiation_state == ds
 y = t(geneExpr[j,idx,drop=FALSE])
 fitm = lmer( y ~ genotype + (1|Donor), info[idx,], REML=TRUE  )
-coef(summary(fitm))
+# coef(summary(fitm))
 pvals[['lmer()']] = coef(summary(fitm))[2,5]
 
 
 # p-value from linear model
 fit = lm( y ~ genotype, info[idx,]  )
-coef(summary(fit))
+# coef(summary(fit))
 pvals[['lm()']] = coef(summary(fit))[2,4]
 
 # linear model on individual averages
