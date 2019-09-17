@@ -153,9 +153,9 @@ do.call("grid.arrange", c(figList, ncol=2))
 ```
 
 # Examine top difference between methods
-```{r method.diff, echo=TRUE, message=TRUE, results="markup"}
+```{r method.diff, echo=TRUE, message=TRUE}
 library(lmerTest)
-ds = names(dupCorList)[4]
+ds = names(dupCorList)[3]
      
 # Find gene with greatest difference in -log10(p)
 p1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
