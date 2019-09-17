@@ -156,12 +156,12 @@ do.call("grid.arrange", c(figList, ncol=2))
 ```{r method.diff, echo=TRUE, message=TRUE, results="markup"}
 library(lmerTest)
 ds = names(dupCorList)[4]
-
+     
 # Find gene with greatest difference in -log10(p)
 p1 = topTable(dupCorList[[ds]]$fitDupCor, coef="genotypeTS", number=Inf, sort.by="none")$P.Value
 p2 = topTable(dreamList[[ds]], coef="genotypeTS", number=Inf, sort.by="none")$P.Value
 j = which.max(abs(-log10(p1) + log10(p2)))
-
+     
 # dream p-values
 topTable(dreamList[[ds]], number=Inf, sort.by="none")[j,]
 
