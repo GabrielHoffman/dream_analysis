@@ -191,9 +191,10 @@ data = merge(data, unique(GE[,2:3]), by="Indiv", all.x=TRUE, all=FALSE)
 pvals[['lm() on Individual averages (n=4)']] = coef(summary(lm( Expression ~ Genotype, data)))[2,4]
 
 library(knitr)
-kable(data.frame( p.value = sapply(pvals, function(x) format(x, digits=2, scientific=3))))
+kable(data.frame( p.value = sapply(pvals, function(x) format(x, digits=3, scientific=3))))
 ```
 
+We see that duplicateCorrelation and a simple linear model give very significant p-values for this probe (ILMN_2209027).  However, dream, lmer() give this probe much larger p-values.  Indeed, summarizing the data at the individual level and applying a linear model on the mean expression per individual for 4 individuals, gives a p-value more similar to dream/lmer.  Thus, the dream/lmer method is approviately conservative and duplicateCorrelation/lm gives a very liberal p-value in this case.
 
 
 ```{r biomart, message=FALSE}
