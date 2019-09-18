@@ -145,7 +145,7 @@ vobj = voom( genes, design, plot=TRUE, block=metadata$individualIdentifier, corr
 
 # run voom using a linear mixed model in dream
 form = ~ (1|Region) + (1|LIMS) + (1|individualIdentifier)
-vobjMM = voomWithDreamWeights( genes, form, metadata, plot=TRUE)
+vobjMM = voomWithDreamWeights( genes, form, metadata,plot=TRUE)
 ```
 
 
@@ -389,6 +389,8 @@ gset = c(
 'c7.GSE9988_ANTI_TREM1_AND_LPS_VS_CTRL_TREATED_MONOCYTES_DN',
 'h.HALLMARK_TNFA_SIGNALING_VIA_NFKB',
 'GSE9988_LPS_VS_VEHICLE_TREATED_MONOCYTE_DN')
+
+maxValue = 3.5
 
 fig = plot_compare_enrichment( res1, res2, gset, col, maxValue) 
 fig + theme(aspect.ratio=length(gset)/3)                  
