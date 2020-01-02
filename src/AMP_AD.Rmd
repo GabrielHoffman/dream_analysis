@@ -245,7 +245,8 @@ n_samples = table(metadata$individualIdentifier)
 # idx = with(metadata, !is.na(DiseaseClass) & (!is.na(Apo1)) &(!is.na(bbscore)) &(individualIdentifier %in%  names(n_samples[n_samples==4])) )
 idx = rep(TRUE, nrow(metadata))
 
-design = model.matrix( ~ 0 + Region + Region:bbscore + Run + LIMS + `Sex (final)` + RIN + PMI + Age + Apo1  + Apo2, metadata[idx,])
+# Cannot include Run or other covariates with out making the model singlar
+design = model.matrix( ~ 0 + Region + Region:bbscore + LIMS  + `Sex (final)` + RIN + PMI + Age + Apo1  + Apo2, metadata[idx,]) #+ Run
  # + rRNA.rate
 
 # Estimate linear mixed model with a single variance component
@@ -284,13 +285,13 @@ AD_interaction = c( "RegionBM44:bbscore", 'RegionBM10:bbscore', 'RegionBM22:bbsc
 # # Fit the dream model on each gene
 # # Apply the contrast matrix L for the hypothesis test  
 # # By default, uses the Satterthwaite approximation for the hypothesis test
-fitmm = dream( vobjMM[1:4,idx], form, metadata[idx,])
+fitmm = dream( vobjMM[,idx], form, metadata[idx,])
 ```
 
 # Compare -log10 p from dream and duplicateCorrelation
 ```{r compare_braak}
-p1 = topTable(fitDupCor, coef=AD_interaction, number=Inf, sort.by="none")$P.Value
-p2 = topTable(fitmm, AD_interaction, coef='L1', number=Inf, sort.by="none")$P.Value
+p1 = topTable(fitDupCor, AD_interaction, number=Inf, sort.by="none")$P.Value
+p2 = topTable(fitmm, AD_interaction, number=Inf, sort.by="none")$P.Value
       
 plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
 ```
