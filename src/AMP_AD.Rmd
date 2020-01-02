@@ -290,8 +290,8 @@ fitmm = dream( vobjMM[,idx], form, metadata[idx,])
 
 # Compare -log10 p from dream and duplicateCorrelation
 ```{r compare_braak}
-p1 = topTable(fitDupCor, AD_interaction, number=Inf, sort.by="none")$P.Value
-p2 = topTable(fitmm, AD_interaction, number=Inf, sort.by="none")$P.Value
+p1 = topTable(fitDupCor, coef=AD_interaction, number=Inf, sort.by="none")$P.Value
+p2 = topTable(fitmm, coef=AD_interaction, number=Inf, sort.by="none")$P.Value
       
 plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
 ```
@@ -398,7 +398,7 @@ gset = c(
 'h.HALLMARK_TNFA_SIGNALING_VIA_NFKB',
 'GSE9988_LPS_VS_VEHICLE_TREATED_MONOCYTE_DN')
 
-maxValue = 3.5
+maxValue = 4
 
 fig = plot_compare_enrichment( res1, res2, gset, col, maxValue) 
 fig + theme(aspect.ratio=length(gset)/3)                  
