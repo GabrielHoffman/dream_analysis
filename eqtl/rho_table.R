@@ -11,8 +11,8 @@ ensembl = useMart(biomart="ENSEMBL_MART_ENSEMBL", host="grch37.ensembl.org", pat
 getAtt = c("ensembl_gene_id","hgnc_symbol")
 
 # identify PrediXcan databases
-files = c(CMC = '/sc/orga/projects/psychgen/resources/predixcan/CMC/CMC_DLPFC-PrediXcan_Models/DLPFC_newMetax.db',
-	DGN = '/sc/orga/projects/psychgen/resources/predixcan/DGN/predb00000059.db'	)
+files = c(CMC = '/sc/hydra/projects/psychgen/resources/predixcan/CMC/CMC_DLPFC-PrediXcan_Models/DLPFC_newMetax.db',
+	DGN = '/sc/hydra/projects/psychgen/resources/predixcan/DGN/predb00000059.db'	)
 
 # read CMC R2
 #############
@@ -59,7 +59,7 @@ df_eqtl2 = df_eqtl2[,c('ensembl_gene_id', 'hgnc_symbol', colnames(df_eqtl2)[-c(1
 file = "eqtl_r2.tsv"
 write.table(df_eqtl2, file=file, row.names=FALSE, sep="\t", quote=FALSE)
 
-system('module load py_packages; synapse add --parentid syn16816470 eqtl_r2.tsv')
+system('module load python; synapse add --parentid syn16816470 eqtl_r2.tsv')
 file.remove(file)
 
 
@@ -74,7 +74,8 @@ library(reshape2)
 library(gridExtra)
 library(grid)
 
-df = read.xlsx('/Users/gabrielhoffman/Dropbox/dream/dream_GenBio_v2/table.xlsx')
+# df = read.xlsx('/Users/gabrielhoffman/Dropbox/dream/dream_GenBio_v2/table.xlsx')
+df = read.xlsx('/Users/gabrielhoffman/Dropbox/dream/dream_GenBiol_v4/eQTL_table.xlsx')
 df$i = rev(1:nrow(df))
 df$label = with(df, paste(Dataset, Trait, Tissue))
 df$label = factor(df$label, rev(df$label))
@@ -91,6 +92,9 @@ fig = ggplot(df2, aes(label, value, fill=variable)) + geom_bar(stat='identity', 
 gr  = tableGrob(df[,c("Dataset", "Trait", "Tissue", "CMC_pValue", 'DGN_pValue')])
 
 fig2 = arrangeGrob(gr, fig, ncol=2,  as.table=TRUE)
+
+
+
 
 file = '/Users/gabrielhoffman/Dropbox/dream/dream_GenBio_v2/Figure_full/orig/barplot.pdf'
 ggsave(file, fig2, width=20)
