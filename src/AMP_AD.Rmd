@@ -255,11 +255,11 @@ dupcor <- duplicateCorrelation(vobj[,idx],design,block=metadata$individualIdenti
 # But this step uses only the genome-wide average for the random effect
 fitDupCor <- lmFit(vobj[,idx], design, block=metadata$individualIdentifier[idx], correlation=dupcor$consensus)
 
-Lc = matrix(0, ncol=ncol(design)) 
-colnames(Lc) = colnames(design)
-Lc[length(Lc):(length(Lc)-3)] = 1
+# Lc = matrix(0, ncol=ncol(design)) 
+# colnames(Lc) = colnames(design)
+# Lc[length(Lc):(length(Lc)-3)] = 1
 
-fitDupCor = contrasts.fit( fitDupCor, t(Lc))
+# fitDupCor = contrasts.fit( fitDupCor, t(Lc))
  
 # Fit Empirical Bayes for moderated t-statistics
 fitDupCor <- eBayes( fitDupCor )
@@ -269,21 +269,28 @@ fitDupCor <- eBayes( fitDupCor )
 form = ~ 0 + Region + Region:bbscore + (1|individualIdentifier) + (1|Run) + (1|LIMS)  + `Sex (final)` + scale(RIN) + scale(rRNA.rate) + scale(PMI) + scale(Age) + scale(mappingRate) + Apo1  + Apo2 
  
 # Get the contrast matrix for the hypothesis test
-L = getContrast( vobj[,idx], form, metadata[idx,], "RegionBM44:bbscore")
-L['RegionBM10:bbscore'] = 1
-L['RegionBM22:bbscore'] = 1 
-L['RegionBM36:bbscore'] = 1 
+# L = getContrast( vobj[,idx], form, metadata[idx,], "RegionBM44:bbscore")
+# L['RegionBM10:bbscore'] = 1
+# L['RegionBM22:bbscore'] = 1 
+# L['RegionBM36:bbscore'] = 1 
 
-# Fit the dream model on each gene
-# Apply the contrast matrix L for the hypothesis test  
-# By default, uses the Satterthwaite approximation for the hypothesis test
-fitmm = dream( vobjMM[,idx], form, metadata[idx,], L)
+# # Fit the dream model on each gene
+# # Apply the contrast matrix L for the hypothesis test  
+# # By default, uses the Satterthwaite approximation for the hypothesis test
+# fitmm = dream( vobjMM[,idx], form, metadata[idx,], L)
+
+AD_interaction = c( "RegionBM44:bbscore", 'RegionBM10:bbscore', 'RegionBM22:bbscore', 'RegionBM36:bbscore')
+
+# # Fit the dream model on each gene
+# # Apply the contrast matrix L for the hypothesis test  
+# # By default, uses the Satterthwaite approximation for the hypothesis test
+fitmm = dream( vobjMM[1:4,idx], form, metadata[idx,])
 ```
 
 # Compare -log10 p from dream and duplicateCorrelation
 ```{r compare_braak}
-p1 = topTable(fitDupCor, number=Inf, sort.by="none")$P.Value
-p2 = topTable(fitmm, coef='L1', number=Inf, sort.by="none")$P.Value
+p1 = topTable(fitDupCor, coef=AD_interaction, number=Inf, sort.by="none")$P.Value
+p2 = topTable(fitmm, AD_interaction, coef='L1', number=Inf, sort.by="none")$P.Value
       
 plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
 ```
@@ -341,10 +348,10 @@ ggplot(dfroll, aes(delta, DGN_R2_mu)) +  geom_point() + theme_bw(19) + theme(asp
 
 # Top categories from each analysis
 ```{r camera_enrich_braak}
-res = topTable(fitDupCor, number=Inf) 
+res = topTable(fitDupCor, coef=AD_interaction, number=Inf) 
 enrich_dupCor_camera = get_enrich_order( res ) 
    
-res = topTable(fitmm, coef="L1", number=Inf)  
+res = topTable(fitmm, coef=AD_interaction, number=Inf)  
 enrich_dream_camera = get_enrich_order( res )   
 ```
  
@@ -365,10 +372,10 @@ plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)
 setwd('/sc/orga/projects/psychencode/gabriel/dream_analysis/src')
 
 file = "./AMP_AD_DupCor.tsv"
-write.table(topTable(fitDupCor, number=Inf), file=file, sep="\t", quote=FALSE)
+write.table(topTable(fitDupCor, coef=AD_interaction, number=Inf), file=file, sep="\t", quote=FALSE)
 
 file = "./AMP_AD_dream.tsv"
-write.table(topTable(fitmm, coef="L1", number=Inf), file=file, sep="\t", quote=FALSE)
+write.table(topTable(fitmm, coef=AD_interaction, number=Inf), file=file, sep="\t", quote=FALSE)
 
 file = "./AMP_AD_DupCor_enrichment.tsv"
 write.table(enrich_dupCor_camera, file=file, sep="\t", quote=FALSE)
@@ -404,10 +411,10 @@ vp2 = with( vp, data.frame(Batch = LIMS + Run, Brain_region = Region, Individual
 vp2 = sortCols( vp2 )
 rownames(vp2) = rownames(vp)
 
-ensGene = rownames(topTable(fitDupCor))[2]
+ensGene = rownames(topTable(fitDupCor, coef=AD_interaction))[2]
 
-topTable(fitDupCor)[ensGene,]
-topTable(fitmm, coef='L1', number=Inf)[ensGene,]
+topTable(fitDupCor, coef=AD_interaction)[ensGene,]
+topTable(fitmm, , coef=AD_interaction, number=Inf)[ensGene,]
 
    
 GE = data.frame( Expression = vobj$E[ensGene,], Indiv = metadata$individualIdentifier,  bbscore = metadata$bbscore)
