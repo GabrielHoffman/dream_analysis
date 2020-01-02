@@ -14,7 +14,7 @@ See code in [sims/master_analysis.sh](https://github.com/GabrielHoffman/dream_an
 
 ### Data analysis
 
-Data and annotation are stored on [Synapse](https://www.synapse.org).  In order to run these scripts, you will need the [Synapse client for R](https://docs.synapse.org/articles/getting_started.html) and a [Synapse account](https://www.synapse.org/#!RegisterAccount:0).
+Data and annotation are stored on [Synapse](https://www.synapse.org).  In order to run these scripts, you will need the [Synapse client for R](https://r-docs.synapse.org/) and a [Synapse account](https://www.synapse.org/#!RegisterAccount:0).
 
 Links point to original publication, public data, html files from current analysis, and text files from differential expression analysis. `rmarkdown::render` code snippet will regenerate results and html files. 
 
@@ -73,9 +73,9 @@ packages = c(
 # 	http://bioconductor.org/install
 BiocManager::install( packages )
 
-# Install SynapseClient developed by Sage Bionetworks
-# 	https://github.com/Sage-Bionetworks/rSynapseClient
-devtools::install_github('Sage-Bionetworks/rSynapseClient')
+# Install synapser developed by Sage Bionetworks
+# 	https://r-docs.synapse.org/
+install.packages("synapser", repos=c("http://ran.synapse.org", "http://cran.fhcrc.org"))
 ```
 
 <!---
