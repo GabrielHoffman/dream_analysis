@@ -414,8 +414,8 @@ rownames(vp2) = rownames(vp)
 
 ensGene = rownames(topTable(fitDupCor, coef=AD_interaction))[2]
 
-topTable(fitDupCor, coef=AD_interaction)[ensGene,]
-topTable(fitmm, , coef=AD_interaction, number=Inf)[ensGene,]
+# topTable(fitDupCor, coef=AD_interaction)[ensGene,]
+# topTable(fitmm, , coef=AD_interaction, number=Inf)[ensGene,]
 
    
 GE = data.frame( Expression = vobj$E[ensGene,], Indiv = metadata$individualIdentifier,  bbscore = metadata$bbscore)
