@@ -245,8 +245,7 @@ n_samples = table(metadata$individualIdentifier)
 # idx = with(metadata, !is.na(DiseaseClass) & (!is.na(Apo1)) &(!is.na(bbscore)) &(individualIdentifier %in%  names(n_samples[n_samples==4])) )
 idx = rep(TRUE, nrow(metadata))
 
-# Cannot include Run or other covariates with out making the model singlar
-design = model.matrix( ~ 0 + Region + Region:bbscore + LIMS  + `Sex (final)` + RIN + PMI + Age + Apo1  + Apo2, metadata[idx,]) #+ Run
+design = model.matrix( ~ 0 + Region + Region:bbscore + Run + LIMS + `Sex (final)` + RIN + PMI + Age + Apo1  + Apo2, metadata[idx,])
  # + rRNA.rate
 
 # Estimate linear mixed model with a single variance component
@@ -256,11 +255,11 @@ dupcor <- duplicateCorrelation(vobj[,idx],design,block=metadata$individualIdenti
 # But this step uses only the genome-wide average for the random effect
 fitDupCor <- lmFit(vobj[,idx], design, block=metadata$individualIdentifier[idx], correlation=dupcor$consensus)
 
-# Lc = matrix(0, ncol=ncol(design)) 
-# colnames(Lc) = colnames(design)
-# Lc[length(Lc):(length(Lc)-3)] = 1
+Lc = matrix(0, ncol=ncol(design)) 
+colnames(Lc) = colnames(design)
+Lc[length(Lc):(length(Lc)-3)] = 1
 
-# fitDupCor = contrasts.fit( fitDupCor, t(Lc))
+fitDupCor = contrasts.fit( fitDupCor, t(Lc))
  
 # Fit Empirical Bayes for moderated t-statistics
 fitDupCor <- eBayes( fitDupCor )
@@ -270,42 +269,24 @@ fitDupCor <- eBayes( fitDupCor )
 form = ~ 0 + Region + Region:bbscore + (1|individualIdentifier) + (1|Run) + (1|LIMS)  + `Sex (final)` + scale(RIN) + scale(rRNA.rate) + scale(PMI) + scale(Age) + scale(mappingRate) + Apo1  + Apo2 
  
 # Get the contrast matrix for the hypothesis test
-# L = getContrast( vobj[,idx], form, metadata[idx,], "RegionBM44:bbscore")
-# L['RegionBM10:bbscore'] = 1
-# L['RegionBM22:bbscore'] = 1 
-# L['RegionBM36:bbscore'] = 1 
+L = getContrast( vobj[,idx], form, metadata[idx,], "RegionBM44:bbscore")
+L['RegionBM10:bbscore'] = 1
+L['RegionBM22:bbscore'] = 1 
+L['RegionBM36:bbscore'] = 1 
 
-# # Fit the dream model on each gene
-# # Apply the contrast matrix L for the hypothesis test  
-# # By default, uses the Satterthwaite approximation for the hypothesis test
-# fitmm = dream( vobjMM[,idx], form, metadata[idx,], L)
-
-AD_interaction = c( "RegionBM44:bbscore", 'RegionBM10:bbscore', 'RegionBM22:bbscore', 'RegionBM36:bbscore')
-
-# # Fit the dream model on each gene
-# # Apply the contrast matrix L for the hypothesis test  
-# # By default, uses the Satterthwaite approximation for the hypothesis test
-fitmm = dream( vobjMM[,idx], form, metadata[idx,])
+# Fit the dream model on each gene
+# Apply the contrast matrix L for the hypothesis test  
+# By default, uses the Satterthwaite approximation for the hypothesis test
+fitmm = dream( vobjMM[,idx], form, metadata[idx,], L)
 ```
 
 # Compare -log10 p from dream and duplicateCorrelation
 ```{r compare_braak}
-p1 = topTable(fitDupCor, coef=AD_interaction, number=Inf, sort.by="none")$P.Value
-p2 = topTable(fitmm, coef=AD_interaction, number=Inf, sort.by="none")$P.Value
+p1 = topTable(fitDupCor, number=Inf, sort.by="none")$P.Value
+p2 = topTable(fitmm, coef='L1', number=Inf, sort.by="none")$P.Value
       
-png("test.png")      
 plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
-dev.off()
 ```
-
-a = topTable(fitDupCor, coef=AD_interaction, number=Inf, sort.by="none")['ENSG00000137285','P.Value']
-b = topTable(fitmm, coef=AD_interaction, number=Inf, sort.by="none")['ENSG00000137285','P.Value']
-
-fig = plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
-png("test.png")      
-fig + geom_point(aes(x=-log10(a), y= -log10(b)), size=2, color="red")
-dev.off()
-
 
 # compare to eQTL
 ```{r eqtl}
@@ -360,10 +341,10 @@ ggplot(dfroll, aes(delta, DGN_R2_mu)) +  geom_point() + theme_bw(19) + theme(asp
 
 # Top categories from each analysis
 ```{r camera_enrich_braak}
-res = topTable(fitDupCor, coef=AD_interaction, number=Inf) 
+res = topTable(fitDupCor, number=Inf) 
 enrich_dupCor_camera = get_enrich_order( res ) 
    
-res = topTable(fitmm, coef=AD_interaction, number=Inf)  
+res = topTable(fitmm, coef="L1", number=Inf)  
 enrich_dream_camera = get_enrich_order( res )   
 ```
  
@@ -384,10 +365,10 @@ plot_compare_enrichment( res1, res2, geneSetNames, col, maxValue)
 setwd('/sc/orga/projects/psychencode/gabriel/dream_analysis/src')
 
 file = "./AMP_AD_DupCor.tsv"
-write.table(topTable(fitDupCor, coef=AD_interaction, number=Inf), file=file, sep="\t", quote=FALSE)
+write.table(topTable(fitDupCor, number=Inf), file=file, sep="\t", quote=FALSE)
 
 file = "./AMP_AD_dream.tsv"
-write.table(topTable(fitmm, coef=AD_interaction, number=Inf), file=file, sep="\t", quote=FALSE)
+write.table(topTable(fitmm, coef="L1", number=Inf), file=file, sep="\t", quote=FALSE)
 
 file = "./AMP_AD_DupCor_enrichment.tsv"
 write.table(enrich_dupCor_camera, file=file, sep="\t", quote=FALSE)
@@ -409,7 +390,7 @@ gset = c(
 'h.HALLMARK_TNFA_SIGNALING_VIA_NFKB',
 'GSE9988_LPS_VS_VEHICLE_TREATED_MONOCYTE_DN')
 
-maxValue = 4
+maxValue = 3.5
 
 fig = plot_compare_enrichment( res1, res2, gset, col, maxValue) 
 fig + theme(aspect.ratio=length(gset)/3)                  
@@ -423,10 +404,10 @@ vp2 = with( vp, data.frame(Batch = LIMS + Run, Brain_region = Region, Individual
 vp2 = sortCols( vp2 )
 rownames(vp2) = rownames(vp)
 
-# ensGene = rownames(topTable(fitDupCor, coef=AD_interaction))[2]
-ensGene = 'ENSG00000137285'
-# topTable(fitDupCor, coef=AD_interaction)[ensGene,]
-# topTable(fitmm, , coef=AD_interaction, number=Inf)[ensGene,]
+ensGene = rownames(topTable(fitDupCor))[2]
+
+topTable(fitDupCor)[ensGene,]
+topTable(fitmm, coef='L1', number=Inf)[ensGene,]
 
    
 GE = data.frame( Expression = vobj$E[ensGene,], Indiv = metadata$individualIdentifier,  bbscore = metadata$bbscore)
