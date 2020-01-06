@@ -412,8 +412,8 @@ vp2 = with( vp, data.frame(Batch = LIMS + Run, Brain_region = Region, Individual
 vp2 = sortCols( vp2 )
 rownames(vp2) = rownames(vp)
 
-ensGene = rownames(topTable(fitDupCor, coef=AD_interaction))[2]
-
+# ensGene = rownames(topTable(fitDupCor, coef=AD_interaction))[2]
+ensGene = 'ENSG00000137285'
 # topTable(fitDupCor, coef=AD_interaction)[ensGene,]
 # topTable(fitmm, , coef=AD_interaction, number=Inf)[ensGene,]
 
