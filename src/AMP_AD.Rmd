@@ -293,8 +293,19 @@ fitmm = dream( vobjMM[,idx], form, metadata[idx,])
 p1 = topTable(fitDupCor, coef=AD_interaction, number=Inf, sort.by="none")$P.Value
 p2 = topTable(fitmm, coef=AD_interaction, number=Inf, sort.by="none")$P.Value
       
+png("test.png")      
 plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
+dev.off()
 ```
+
+a = topTable(fitDupCor, coef=AD_interaction, number=Inf, sort.by="none")['ENSG00000137285','P.Value']
+b = topTable(fitmm, coef=AD_interaction, number=Inf, sort.by="none")['ENSG00000137285','P.Value']
+
+fig = plotCompareP( p1, p2, vp$individualIdentifier, dupcor$consensus)
+png("test.png")      
+fig + geom_point(aes(x=-log10(a), y= -log10(b)), size=2, color="red")
+dev.off()
+
 
 # compare to eQTL
 ```{r eqtl}
