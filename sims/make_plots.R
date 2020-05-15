@@ -57,6 +57,25 @@ if( opt$noEB ){
 	df_plots$color[df_plots$method == 'dream (KR)'] = '#CAB2D6'
 }
 
+# Confidence intervals for AUPR
+# https://github.com/kboyd/raucpr/blob/master/precision_recall.r
+aucpr.conf.int.expit <- function(estimate, num.pos, num.neg,conf.level=0.95) {
+  ## Calculates confidence interval for an AUCPR estimate using expit.
+  
+  ## convert to logit scale
+  est.logit = log(estimate/(1-estimate))
+  ## standard error (from Kevin Eng)
+  se.logit = sqrt(estimate*(1-estimate)/num.pos)*(1/estimate + 1/(1-estimate))
+  ## confidence interval in logit
+  ci.logit = est.logit+qnorm(c((1-conf.level)/2,(1+conf.level)/2))*se.logit
+
+  ## back to original scale
+  ci = exp(ci.logit)/(1+exp(ci.logit))
+  attr(ci,"conf.level") = conf.level
+  attr(ci,"method") = "expit"
+  return(ci)
+}
+
 #################
 # Plot run time #
 #################
@@ -206,6 +225,11 @@ resList = foreach( prefix = prefixes ) %dopar% {
 			value = pr.curve(scores.class0 = -log10(de_res[de_res$true==1,method]), 
 						scores.class1 = -log10(de_res[de_res$true==0,method]), 
 						curve=TRUE, rand.compute = TRUE)
+
+			# compute AUPR confidence interval
+			n_pos = sum(de_res$true==1)
+			n_neg = sum(de_res$true==0)
+			value$ci = aucpr.conf.int.expit( value$auc.integral, n_pos, n_neg)
 		}
 		value
 	}
@@ -214,17 +238,27 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	# remove empty entry
 	prList[sapply(prList, function(x) all(is.na(x)))] = c()
 
-	aupr = data.frame(method = names(prList) )
-	aupr$value = foreach( method = names(prList), .combine=c ) %do% {
-		prList[[method]]$auc.integral
-	}
+	aupr = lapply( names(prList), function(method){
+		 data.frame(method 	= method,
+		 			n_donor = n_donor,
+		 			n_reps 	= n_reps,
+		 			value 	= prList[[method]]$auc.integral,
+		 			low 	= prList[[method]]$ci[1],
+		 			high 	= prList[[method]]$ci[2] )
+		})
+	aupr = do.call(rbind, aupr)
+
+	# aupr = data.frame(method = names(prList) )
+	# aupr$value = foreach( method = names(prList), .combine=c ) %do% {
+	# 	prList[[method]]$auc.integral
+	# }
 	aupr$method = factor(aupr$method, df_plots$method)
-	aupr$n_donor = n_donor
-	aupr$n_reps = n_reps
+	# aupr$n_donor = n_donor
+	# aupr$n_reps = n_reps
 	aupr.rand.score = prList[[method]]$rand$auc.integral	
 	col = df_plots$color[df_plots$method %in% levels(aupr$method)]
 
-	fig_aupr = ggplot(aupr, aes(method, value, fill=method)) + geom_bar(stat="identity") + coord_flip() + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("AUPR") + geom_hline(yintercept=aupr.rand.score, linetype=2) 
+	fig_aupr = ggplot(aupr, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_errorbar(aes(method, ymin=low, ymax=high), width=.2) + coord_flip() + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("AUPR") + geom_hline(yintercept=aupr.rand.score, linetype=2) 
 
 	# Plot PR
 	#========
