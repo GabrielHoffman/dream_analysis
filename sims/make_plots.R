@@ -28,7 +28,7 @@ prefixes = sort(unique(gsub("_(\\d+)_p.RDS", "", allFiles)))
 cat("# files: ", length(allFiles), "\n")
 cat("# prefix: ", length(prefixes), "\n")
 
-registerDoParallel( opt$nthreads )
+# registerDoParallel( opt$nthreads )
 
 # define colors
 ################
