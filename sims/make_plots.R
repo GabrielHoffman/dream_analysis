@@ -622,18 +622,18 @@ if( opt$noEB ){
 
 file = paste0(folder,'/../figures/','combine_aupr', ".pdf")
 pdf( file, width=15, height=20)
-maxValue = max(df_aupr[(n_donor <= 14),value])
+maxValue = max(df_aupr[(n_donor <= 14),high])
 
 df_a = df_aupr[(n_donor <= 14),]
 df_a$method = droplevels(df_a$method)
 col = df_plots$color[df_plots$method %in% levels(df_a$method)]
-fig1 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
+fig1 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + geom_errorbar(aes(method, ymin=low, ymax=high), width=.2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
 
 df_a = df_aupr[(n_donor > 14),]
 if( nrow(df_a) > 0 ){
 	df_a$method = droplevels(df_a$method)
 	col = df_plots$color[df_plots$method %in% levels(df_a$method)]
-	fig2 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, 1)
+	fig2 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + geom_errorbar(aes(method, ymin=low, ymax=high), width=.2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, 1)
 	grid.arrange(fig1, fig2, ncol=2)
 }else{
 	fig1
