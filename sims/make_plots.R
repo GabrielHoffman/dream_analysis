@@ -587,7 +587,7 @@ if( opt$noEB ){
 
 file = paste0(folder,'/../figures/','combine_fpr', ".pdf")
 pdf( file, width=15, height=20)
-maxValue = max(df_fpr$value)
+maxValue = max(df_fpr$upper)
 
 df_a = df_fpr[(n_donor <= 14),]
 df_a$method = droplevels(df_a$method)
@@ -632,7 +632,7 @@ if( opt$noEB ){
 
 file = paste0(folder,'/../figures/','combine_aupr', ".pdf")
 pdf( file, width=15, height=20)
-maxValue = max(df_aupr[(n_donor <= 14),high])
+maxValue = max(df_aupr[(n_donor <= 14),upper])
 
 df_a = df_aupr[(n_donor <= 14),]
 df_a$method = droplevels(df_a$method)
