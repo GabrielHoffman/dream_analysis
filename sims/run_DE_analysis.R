@@ -401,7 +401,7 @@ de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # FMT.ws
 df = data.frame(EnsID = rownames(fit_FMT.ws), 
-	FMT.vc = topTable(fit_FMT.ws, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+	FMT.ws = topTable(fit_FMT.ws, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
 de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmm_KR
