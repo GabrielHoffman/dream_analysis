@@ -44,12 +44,12 @@ colarray = c("Single replicate (limma/voom)", "#A6CEE3",
 "Full data, ignore corr (DESeq2)", "#E31A1C",
 "macau2", "gold",
 "duplicateCorrelation with limma/voom", "#B15928",
+"dream + FMT.vc",  "orange",
+"dream + FMT.ws",  "orange3",
 "dream (KR)", "#FDBF6F",
 "dream",  "#FF7F00",
 "dream (KR) [std p]", "#CAB2D6",
-"dream [std p]",  "#6A3D9A",
-"dream + FMT.vc",  "orange",
-"dream + FMT.ws",  "orange3")
+"dream [std p]",  "#6A3D9A")
 df_plots = data.frame(matrix( colarray, ncol=2, byrow=TRUE), stringsAsFactors=FALSE)
 df_plots$X1 = factor(df_plots$X1, df_plots$X1)
 colnames(df_plots) = c("method", "color")
@@ -405,17 +405,17 @@ aupr = foreach(n_donor = donor_array, .combine=rbind) %do% {
 		}
 	}	
 }
-aupr$method = factor(aupr$method, df_plots$method)
+aupr$method = droplevels(factor(aupr$method, df_plots$method))
 
 # Drop dream-EB
-if( opt$noEB ){
-	aupr = aupr[!(aupr$method %in% c("dream (KR)", "dream")),]
-	aupr = droplevels(aupr)	
-	levels(aupr$method)[levels(aupr$method)=='dream [std p]'] <- "dream"
-	levels(aupr$method)[levels(aupr$method)=='dream (KR) [std p]'] <- "dream (KR)"
-}
+# if( opt$noEB ){
+# 	aupr = aupr[!(aupr$method %in% c("dream (KR)", "dream")),]
+# 	aupr = droplevels(aupr)	
+# 	levels(aupr$method)[levels(aupr$method)=='dream [std p]'] <- "dream"
+# 	levels(aupr$method)[levels(aupr$method)=='dream (KR) [std p]'] <- "dream (KR)"
+# }
 
-col = df_plots$color[df_plots$method %in% levels(aupr$method)]
+col = df_plots$color[match(levels(aupr$method), as.character(df_plots$method))]
 
 fig = foreach(n_reps = 2:4) %do%{
 ggplot(aupr[aupr$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_line() + scale_color_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, 1) + ylab("AUPR")
@@ -430,15 +430,15 @@ power_fdr_5 = foreach(n_donor = donor_array, .combine=rbind) %do% {
 		}
 	}	
 }
-power_fdr_5$method = factor(power_fdr_5$method, df_plots$method)
+power_fdr_5$method = droplevels(factor(power_fdr_5$method, df_plots$method))
 
 # Drop dream-EB
-if( opt$noEB ){
-	power_fdr_5 = power_fdr_5[!(power_fdr_5$method %in% c("dream (KR)", "dream")),]
-	power_fdr_5 = droplevels(power_fdr_5)	
-	levels(power_fdr_5$method)[levels(power_fdr_5$method)=='dream [std p]'] <- "dream"
-	levels(power_fdr_5$method)[levels(power_fdr_5$method)=='dream (KR) [std p]'] <- "dream (KR)"
-}
+# if( opt$noEB ){
+# 	power_fdr_5 = power_fdr_5[!(power_fdr_5$method %in% c("dream (KR)", "dream")),]
+# 	power_fdr_5 = droplevels(power_fdr_5)	
+# 	levels(power_fdr_5$method)[levels(power_fdr_5$method)=='dream [std p]'] <- "dream"
+# 	levels(power_fdr_5$method)[levels(power_fdr_5$method)=='dream (KR) [std p]'] <- "dream (KR)"
+# }
 
 fig = foreach(n_reps = 2:4) %do%{
 ggplot(power_fdr_5[power_fdr_5$n_reps==n_reps,], aes(n_donor, value, color=method)) + geom_line() + scale_color_manual(values=col) + theme_bw(12) + theme(aspect.ratio=1, legend.position="none", plot.title = element_text(hjust = 0.5)) + xlim(0, max(donor_array)) + ylim(0, 1) + ylab("Power at FDR 5%")
@@ -452,15 +452,15 @@ df_fpr = foreach(n_donor = donor_array, .combine=rbind) %do% {
 		}
 	}	
 }
-df_fpr$method = factor(df_fpr$method, df_plots$method)
+df_fpr$method = droplevels(factor(df_fpr$method, df_plots$method))
 
 # Drop dream-EB
-if( opt$noEB ){
-	df_fpr = df_fpr[!(df_fpr$method %in% c("dream (KR)", "dream")),]
-	df_fpr = droplevels(df_fpr)
-	levels(df_fpr$method)[levels(df_fpr$method)=='dream [std p]'] <- "dream"
-	levels(df_fpr$method)[levels(df_fpr$method)=='dream (KR) [std p]'] <- "dream (KR)"
-}
+# if( opt$noEB ){
+# 	df_fpr = df_fpr[!(df_fpr$method %in% c("dream (KR)", "dream")),]
+# 	df_fpr = droplevels(df_fpr)
+# 	levels(df_fpr$method)[levels(df_fpr$method)=='dream [std p]'] <- "dream"
+# 	levels(df_fpr$method)[levels(df_fpr$method)=='dream (KR) [std p]'] <- "dream (KR)"
+# }
 
 df_fpr = df_fpr[!((df_fpr$method == "macau2")&&(df_fpr$n_donor >14)&&(df_fpr$value == 0)),]
 
@@ -477,14 +477,14 @@ df_fd = foreach(n_donor = donor_array, .combine=rbind) %do% {
 		}
 	}	
 }
-df_fd$method = factor(df_fd$method, df_plots$method)
+df_fd$method = droplevels(factor(df_fd$method, df_plots$method))
 
-if( opt$noEB ){
-	df_fd = df_fd[!(df_fd$method %in% c("dream (KR)", "dream")),]
-	df_fd = droplevels(df_fd)
-	levels(df_fd$method)[levels(df_fd$method)=='dream [std p]'] <- "dream"
-	levels(df_fd$method)[levels(df_fd$method)=='dream (KR) [std p]'] <- "dream (KR)"
-}
+# if( opt$noEB ){
+# 	df_fd = df_fd[!(df_fd$method %in% c("dream (KR)", "dream")),]
+# 	df_fd = droplevels(df_fd)
+# 	levels(df_fd$method)[levels(df_fd$method)=='dream [std p]'] <- "dream"
+# 	levels(df_fd$method)[levels(df_fd$method)=='dream (KR) [std p]'] <- "dream (KR)"
+# }
 df_fd = df_fd[!((df_fd$method == "macau2")&&(df_fd$n_donor >14)&&(df_fd$value == 0)),]
 
 fig = foreach(n_reps = 2:4) %do%{
@@ -530,18 +530,18 @@ dev.off()
 df = do.call("rbind", lapply(resList, function(x) x$df))
 df = data.table(df)
 
-if( opt$noEB ){
-	df = df[!(df$key %in% c("dream (KR)", "dream")),]
-	df = droplevels(df)
-	levels(df$key)[levels(df$key)=='dream [std p]'] <- "dream"
-	levels(df$key)[levels(df$key)=='dream (KR) [std p]'] <- "dream (KR)"
-}
+# if( opt$noEB ){
+# 	df = df[!(df$key %in% c("dream (KR)", "dream")),]
+# 	df = droplevels(df)
+# 	levels(df$key)[levels(df$key)=='dream [std p]'] <- "dream"
+# 	levels(df$key)[levels(df$key)=='dream (KR) [std p]'] <- "dream (KR)"
+# }
 
 # saveRDS(df, file=paste0(opt$folder,'/df.RDS'))
 # df = readRDS(paste0(opt$folder,'/df.RDS'))
 
 # col = ggColorHue(length(table(df$key)))
-col = df_plots$color[df_plots$method %in% levels(df$key)]
+col = df_plots$color[match( levels(df$key), df_plots$method)]
 
 file = paste0(folder,'/../figures/','combine_choose', ".pdf")
 pdf( file, width=7, height=20)
@@ -560,18 +560,18 @@ dev.off()
 dfpr = do.call("rbind", lapply(resList, function(x) x$dfpr))
 dfpr = data.table(dfpr)
 
-if( opt$noEB ){
-	dfpr = dfpr[!(dfpr$method %in% c("dream (KR)", "dream")),]
-	dfpr = droplevels(dfpr)
-	levels(dfpr$method)[levels(dfpr$method)=='dream [std p]'] <- "dream"
-	levels(dfpr$method)[levels(dfpr$method)=='dream (KR) [std p]'] <- "dream (KR)"
-}
+# if( opt$noEB ){
+# 	dfpr = dfpr[!(dfpr$method %in% c("dream (KR)", "dream")),]
+# 	dfpr = droplevels(dfpr)
+# 	levels(dfpr$method)[levels(dfpr$method)=='dream [std p]'] <- "dream"
+# 	levels(dfpr$method)[levels(dfpr$method)=='dream (KR) [std p]'] <- "dream (KR)"
+# }
 
 # saveRDS(dfpr, file=paste0(opt$folder,'/dfpr.RDS'))
 # dfpr = readRDS(paste0(opt$folder,'/dfpr.RDS'))
 
 # col = ggColorHue(length(table(df$key)))
-col = df_plots$color[df_plots$method %in% levels(dfpr$method)]
+col = df_plots$color[match(levels(dfpr$method), df_plots$method)]
 randCurve = dfpr[,unique(rnd.value)]
 
 file = paste0(folder,'/../figures/','combine_pr2', ".pdf")
@@ -591,12 +591,12 @@ dev.off()
 df_fpr = do.call("rbind", lapply(resList, function(x) x$df_fpr))
 df_fpr = data.table(df_fpr)
 
-if( opt$noEB ){
-	df_fpr = df_fpr[!(df_fpr$method %in% c("dream (KR)", "dream")),]
-	df_fpr = droplevels(df_fpr)
-	levels(df_fpr$method)[levels(df_fpr$method)=='dream [std p]'] <- "dream"
-	levels(df_fpr$method)[levels(df_fpr$method)=='dream (KR) [std p]'] <- "dream (KR)"
-}
+# if( opt$noEB ){
+# 	df_fpr = df_fpr[!(df_fpr$method %in% c("dream (KR)", "dream")),]
+# 	df_fpr = droplevels(df_fpr)
+# 	levels(df_fpr$method)[levels(df_fpr$method)=='dream [std p]'] <- "dream"
+# 	levels(df_fpr$method)[levels(df_fpr$method)=='dream (KR) [std p]'] <- "dream (KR)"
+# }
 
 # saveRDS(df_fpr, file=paste0(opt$folder,'/df_fpr.RDS'))
 # df_fpr = readRDS(paste0(opt$folder,'/df_fpr.RDS'))
@@ -608,7 +608,7 @@ maxValue = max(df_fpr$upper)
 
 df_a = df_fpr[(n_donor <= 14),]
 df_a$method = droplevels(df_a$method)
-col = df_plots$color[df_plots$method %in% levels(df_a$method)]
+col = df_plots$color[match(levels(df_a$method), df_plots$method)]
 
 fig1 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + geom_errorbar(aes(method, ymin=lower, ymax=upper), width=.2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("False positive rate at p<0.05") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
 
@@ -619,7 +619,7 @@ if( nrow(df_a) > 0 ){
 # 	df_a = df_a[method!="macau2",]
 # }
 	df_a$method = droplevels(df_a$method)
-	col = df_plots$color[df_plots$method %in% levels(df_a$method)]
+	col = df_plots$color[match(levels(df_a$method), df_plots$method)]
 
 	fig2 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2)  + geom_errorbar(aes(method, ymin=lower, ymax=upper), width=.2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("False positive rate at p<0.05") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
 	grid.arrange(fig1, fig2, ncol=2)
@@ -635,12 +635,12 @@ dev.off()
 df_aupr = do.call("rbind", lapply(resList, function(x) x$aupr))
 df_aupr = data.table(df_aupr)
 
-if( opt$noEB ){
-	df_aupr = df_aupr[!(df_aupr$method %in% c("dream (KR)", "dream")),]
-	df_aupr = droplevels(df_aupr)
-	levels(df_aupr$method)[levels(df_aupr$method)=='dream [std p]'] <- "dream"
-	levels(df_aupr$method)[levels(df_aupr$method)=='dream (KR) [std p]'] <- "dream (KR)"
-}
+# if( opt$noEB ){
+# 	df_aupr = df_aupr[!(df_aupr$method %in% c("dream (KR)", "dream")),]
+# 	df_aupr = droplevels(df_aupr)
+# 	levels(df_aupr$method)[levels(df_aupr$method)=='dream [std p]'] <- "dream"
+# 	levels(df_aupr$method)[levels(df_aupr$method)=='dream (KR) [std p]'] <- "dream (KR)"
+# }
 
 # saveRDS(df_aupr, file=paste0(opt$folder,'/df_aupr.RDS'))
 # df_aupr = readRDS(paste0(opt$folder,'/df_aupr.RDS'))
@@ -653,13 +653,13 @@ maxValue = max(df_aupr[(n_donor <= 14),upper])
 
 df_a = df_aupr[(n_donor <= 14),]
 df_a$method = droplevels(df_a$method)
-col = df_plots$color[df_plots$method %in% levels(df_a$method)]
+col = df_plots$color[match(levels(df_a$method), df_plots$method)]
 fig1 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + geom_errorbar(aes(method, ymin=lower, ymax=upper), width=.2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, maxValue)
 
 df_a = df_aupr[(n_donor > 14),]
 if( nrow(df_a) > 0 ){
 	df_a$method = droplevels(df_a$method)
-	col = df_plots$color[df_plots$method %in% levels(df_a$method)]
+	col = df_plots$color[match(levels(df_a$method), df_plots$method)]
 	fig2 = ggplot(df_a, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + geom_errorbar(aes(method, ymin=lower, ymax=upper), width=.2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5), legend.position="none", axis.text.x=element_text(size=8)) + scale_fill_manual(values=col) + ylab("AUPR") + coord_flip()  + facet_grid( n_donor ~ n_reps) + ylim(0, 1)
 	grid.arrange(fig1, fig2, ncol=2)
 }else{
