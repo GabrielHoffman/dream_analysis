@@ -47,7 +47,9 @@ colarray = c("Single replicate (limma/voom)", "#A6CEE3",
 "dream (KR)", "#FDBF6F",
 "dream",  "#FF7F00",
 "dream (KR) [std p]", "#CAB2D6",
-"dream [std p]",  "#6A3D9A")
+"dream [std p]",  "#6A3D9A",
+"dream + FMT.vc",  'FMT.vc', "black",
+"dream + FMT.ws",  'FMT.ws', "grey"))
 df_plots = data.frame(matrix( colarray, ncol=2, byrow=TRUE), stringsAsFactors=FALSE)
 df_plots$X1 = factor(df_plots$X1, df_plots$X1)
 colnames(df_plots) = c("method", "color")

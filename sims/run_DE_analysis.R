@@ -172,6 +172,15 @@ fitSat = dream( vobjDream, form, info)
 fitSatEB = eBayes( fitSat )
 })
 
+fit_FMT.vc = eBayesFMT( fitSat, info, "Individual", "VC" )
+fit_FMT.ws = eBayesFMT( fitSat, info, "Individual", "WS" )
+
+
+
+
+
+
+
 # plot(-log10(fitSat$p.value), -log10(fitSatEB$p.value))
 # abline(0,1, col="red")
 
@@ -303,6 +312,17 @@ df = data.frame(EnsID = rownames(fitSatEB),
 	lmm_Sat_eBayes = topTable(fitSatEB, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
 de_res = merge( de_res, df, by="EnsID", all=TRUE )
 
+# FMT.vc
+df = data.frame(EnsID = rownames(fit_FMT.vc), 
+	FMT.vc = topTable(fit_FMT.vc, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+# FMT.ws
+df = data.frame(EnsID = rownames(fit_FMT.ws), 
+	FMT.ws = topTable(fit_FMT.ws, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
+de_res = merge( de_res, df, by="EnsID", all=TRUE )
+
+
 # lmm_KR
 df = data.frame(EnsID = rownames(fit2KR), 
 	lmm_KR = topTable(fit2KR, coef='Disease1', sort.by="none", number=Inf)$adj.P.Val, stringsAsFactors=FALSE)
@@ -372,6 +392,16 @@ de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 # lmm_Sat_eBayes
 df = data.frame(EnsID = rownames(fitSatEB), 
 	lmm_Sat_eBayes = topTable(fitSatEB, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# FMT.vc
+df = data.frame(EnsID = rownames(fit_FMT.vc), 
+	FMT.vc = topTable(fit_FMT.vc, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
+de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+# FMT.ws
+df = data.frame(EnsID = rownames(fit_FMT.ws), 
+	FMT.vc = topTable(fit_FMT.ws, coef='Disease1', sort.by="none", number=Inf)$P.Value, stringsAsFactors=FALSE)
 de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
 # lmm_KR
