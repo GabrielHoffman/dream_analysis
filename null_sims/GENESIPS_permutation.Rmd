@@ -1,0 +1,520 @@
+---
+title: "Analysis of GENESIPS with dream"
+subtitle: 'Data from [Carcamo-Orive, et al.](https://www.cell.com/cell-stem-cell/abstract/S1934-5909%2816%2930401-5)'
+author: "Developed by [Gabriel Hoffman](http://gabrielhoffman.github.io/)"
+date: "Run on `r format(Sys.time(), '%a %b %d %X %Y')`"
+documentclass: article
+output: 
+  html_document:
+  toc: true
+  smart: false
+---
+
+<!--- 
+# run analysis
+cd /Users/gabrielhoffman/workspace/scripts/dream
+rmarkdown::render("GENESIPS_permutation.Rmd", output_dir='./', intermediates_dir='./')
+
+cd /hpc/users/hoffmg01/work/dev_dream/dream_analysis/null_sims
+ml git pandoc
+git pull
+R
+rmarkdown::render("GENESIPS_permutation.Rmd", output_dir='./', intermediates_dir='./')
+
+--->
+
+
+```{r load.always, cache=FALSE, echo=FALSE, message=FALSE, results='hide'}
+suppressPackageStartupMessages(library(BiocParallel))
+register(SnowParam(8, "SOCK", progressbar=TRUE))
+```
+
+```{r load.packages, echo=FALSE, message=FALSE, results='hide'}
+suppressPackageStartupMessages({
+  library(scales)
+  library(limma)
+  library(knitr)
+  library(edgeR)
+  library(gridExtra)
+  library(variancePartition)
+  library(ggplot2)
+  library(data.table)
+  library(DESeq2)
+  library(binom)
+  library(poolr) # remotes::install_github("ozancinar/poolR")
+  library(MACAU2)
+  library(GEOquery)
+})
+
+options(xtable.type="html")
+
+knitr::opts_chunk$set(
+  echo=FALSE,
+  warning=FALSE,
+  message=FALSE,
+  error = FALSE,
+  tidy = FALSE,
+  cache = TRUE,
+  dev = c("png", "pdf"), 
+  fig.width=7, fig.height=7)
+
+options(markdown.HTML.stylesheet = 'css/custom.css')
+
+```
+
+
+```{r define.functions}
+# QQ plot p-values
+qqplot = function( pvals, main, colors, showPoints=TRUE ){
+
+  library(reshape2)
+
+  if( ! is(pvals, 'data.frame') ){
+    pvals = data.frame(p.value = pvals )
+  }
+
+  # combine results and confidence in data.frame
+  N = nrow(pvals)
+  ci = 0.95
+  df_ci = data.frame( x       = ppoints(N),
+                      lower   = qbeta(p = (1 - ci) / 2, shape1 = 1:N, shape2 = N:1, lower.tail=FALSE),
+                      upper   = qbeta(p = (1 + ci) / 2, shape1 = 1:N, shape2 = N:1, lower.tail=FALSE))
+
+  # combine with emprical p-values, sorted for each method
+  dfp_sort = lapply( names(pvals), function(key){
+    pv = pvals[[key]]
+    data.frame(x=ppoints(length(pv)), method=key, pvalue = pv[order(pv)])
+    })
+  dfp_sort_melt = do.call(rbind, dfp_sort)
+
+  # plot confidence intervals
+  fig = ggplot() + geom_ribbon( data  = df_ci, mapping = aes( x=-log10(x), ymin = -log10(lower), ymax = -log10(upper)), fill = "grey90", color="grey90") 
+
+  # plot 1-1 line
+  fig = fig + geom_abline(color="black")
+
+
+  if( ! missing(colors) ){
+    # dfp_sort_melt = data.table(merge(dfp_sort_melt, df_plots, by="method"))
+    # col = df_plots$color[df_plots$method %in% levels(dfp_sort_melt$method)]
+    # dfp_sort_melt[,method:=method.fancy]
+    col = colors[names(colors) %in% levels(dfp_sort_melt$method)]
+  }else{
+    col = ggColorHue( ncol(pvals) )
+  }
+
+  if( showPoints ){
+    # plot points
+    fig = fig + geom_point(data=dfp_sort_melt, aes(-log10(x), -log10(pvalue), color=method),size=.5) + scale_color_manual(values=col, name="Method")
+  }else{
+    # plot lines instead for faster plotting
+    fig = fig + geom_line(data=dfp_sort_melt, aes(-log10(x), -log10(pvalue), color=method),size=.5) + scale_color_manual(values=col, name="Method")
+  }
+
+  # add titles
+  fig = fig + xlab(bquote(Expected~-log[10]~P)) + ylab(bquote(Observed~-log[10]~P)) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + xlim(0,NA) + ylim(0,NA) 
+
+  if( ! missing(main) ){
+    fig = fig + ggtitle(main)
+  }
+
+  fig
+}
+```
+
+```{r define.colors}
+colarray = c("Single replicate (limma/voom)", "lmFit", "#A6CEE3",
+"Single replicate (DESeq2)", 'DESeq2_single', "#1F78B4",
+"Sum reads (limma/voom)", 'lmFit_sum', "#B2DF8A",
+"Sum reads (DESeq2)", 'DESeq2_sum', "#33A02C",
+"Full data, ignore corr (limma/voom)",  'lmFit2', "#FB9A99",
+"Full data, ignore corr (DESeq2)", 'DESeq2', "#E31A1C",
+"macau2", 'macau2', "gold",
+"duplicateCorrelation with limma/voom", 'lmFit_dupCor', "#B15928",
+"dream (KR)", 'lmm_KR', "#CAB2D6",
+"dream",  'lmm_Sat', "#6A3D9A",
+"dream + FMT.vc",  'FMT.vc', "black",
+"dream + FMT.ws",  'FMT.ws', "grey")
+df_plots = data.frame(matrix( colarray, ncol=3, byrow=TRUE), stringsAsFactors=FALSE)
+df_plots$X1 = factor(df_plots$X1, df_plots$X1)
+colnames(df_plots) = c("method.fancy", "method", "color")
+df_plots$color[df_plots$method == 'dream'] = '#6A3D9A'
+df_plots$color[df_plots$method == 'dream (KR)'] = '#CAB2D6'
+
+colors = df_plots$color
+names(colors) = df_plots$method.fancy
+```
+
+```{r load.data}
+
+# Download metadata
+gds = getGEO("GSE79636")
+metadata = phenoData(gds$GSE79636_series_matrix.txt.gz)@data
+colnames(metadata) = gsub(' ', '_', gsub(":ch1", '', colnames(metadata)))
+
+tab = apply(metadata, 2, function(x) length(unique(x)))
+info = metadata[,names(tab[tab > 1])]
+
+# read in count data from FTP
+files = as.character( info$supplementary_file_1)
+
+countList = lapply( files, function(file){
+  message(match(file, files))
+  # read gz file from FTP
+  con <- gzcon(url(file))
+  txt <- readLines(con)
+  raw = textConnection(txt)
+  data = read.table( raw )
+  close(con)
+  close(raw)
+
+  # format data
+  rownames(data) = data$V1
+  data = data[,-1, drop=FALSE]
+  colnames(data) = gsub("_counts.txt.gz", "", basename(file))
+  data
+  })
+countMatrix = do.call(cbind, countList)
+
+# label for each sample
+info$Experiment = colnames(countMatrix)
+rownames(info) = info$Experiment
+```
+
+```{r pca, fig.width=5, fig.height=5}
+
+isexpr = rowSums(cpm(countMatrix )>1) >= 0.5*ncol(countMatrix )
+geneExpr = DGEList(countMatrix[isexpr,])
+geneExpr = calcNormFactors(geneExpr)
+geneExpr = cpm(geneExpr, log=TRUE)
+
+dcmp = prcomp(t(scale(t(geneExpr))))
+
+info = cbind(info, dcmp$rotation[,1:20] )
+
+varFrac = dcmp$sdev^2 / sum(dcmp$sdev^2)
+df = as.data.frame(dcmp$rotation)
+ggplot(df, aes(PC1, PC2)) + geom_point() + theme_bw() + theme(aspect.ratio=1) + xlab(paste0('PC1 (', format(varFrac[1]*100, digits=3), "%)")) + xlab(paste0('PC2 (', format(varFrac[2]*100, digits=3), "%)"))
+```
+
+
+```{r}
+# countMatrix = countMatrix[1:1000,]
+```
+
+```{r run.permutations}
+simResultsList = lapply(1:5, function(iter){
+
+  set.seed(iter)
+
+  # simulate phenotype so replicates from an individual have same value
+  y_pheno = rnorm(length(unique(info$indiv)))
+  names(y_pheno) = unique(info$indiv)
+  info$phenotype = NA
+
+  for( id in names(y_pheno)){
+    info$phenotype[info$indiv == id] = y_pheno[id]
+  }
+
+  res = lapply( 2:3, function(n_reps){
+
+    # res = lapply( c(5, 10, 20, 40, 60, 90), function(n_indivs_total){ 
+    res = lapply( c(5, 10, 40, 60), function(n_indivs_total){ 
+      
+      message(iter, " ", n_reps, " ", n_indivs_total)
+
+      # create dataset with given number of replicates per individual
+      tab = table(info$indiv) >= n_reps
+      idx = sapply( names(tab[tab])[1:n_indivs_total], function(ID){
+        i = which(info$indiv == ID)
+        sample(i, min(length(i), n_reps), replace=FALSE)
+        })
+      idx = unlist(idx)
+      countMatrix.tmp = countMatrix[,idx]
+      info.tmp        = info[idx,]
+
+      # filter genes
+      isexpr = rowSums(cpm(countMatrix.tmp )>1) >= 0.5*ncol(countMatrix.tmp )
+      table(isexpr)
+
+      # METHODS
+      #########
+
+      timeMethods = list()
+
+      # voom single replicate
+      idx = seq(1, nrow(info.tmp), by=table(info.tmp$indiv)[1])
+      genes = DGEList( countMatrix.tmp[isexpr,idx] )
+      genes = calcNormFactors( genes )
+
+      nPC = floor(sqrt(length(idx))) - 1 
+      form = as.formula(paste('~ phenotype +',paste0('PC', 1:max(nPC,1), collapse=' + ')))
+      design = model.matrix( form, info.tmp[idx,])
+
+      timeMethods$fit_lmFit = system.time({
+        vobj = voom( genes, design, plot=FALSE)
+        design = model.matrix( form, info.tmp[idx,])
+        fit_lmFit = lmFit(vobj, design)
+        fit_lmFit = eBayes(fit_lmFit)
+      })
+
+      # DESeq2 one sample
+      # DESeq2 get full count matrix, no filtering
+      timeMethods$dds_single = system.time({
+        dds_single <- DESeqDataSetFromMatrix(countData = countMatrix.tmp[,idx],
+                                      colData = info.tmp[idx,],
+                                      design = form )
+        dds_single = DESeq(dds_single, quiet=TRUE)
+      })
+
+      # Create VOBJ
+      timeMethods$fit_lmFit2 = system.time({
+        genes = DGEList( countMatrix.tmp[isexpr,] )
+        genes = calcNormFactors( genes )
+        design = model.matrix( form, info.tmp)
+        vobj_tmp = voom( genes, design, plot=FALSE)
+        dupcor <- duplicateCorrelation(vobj_tmp,design,block=info.tmp$indiv)
+        vobj = voom( genes, design, plot=FALSE,block=info.tmp$indiv,correlation=dupcor$consensus)
+
+        # include both replicates, don't account
+        fit_lmFit2 = lmFit(vobj, design)
+        fit_lmFit2 = eBayes(fit_lmFit2)
+      })
+
+      # DESeq2 all samples
+      timeMethods$DESeq2 = system.time({
+        dds <- DESeqDataSetFromMatrix(countData = countMatrix.tmp,
+                                      colData = info.tmp,
+                                      design=  form)
+        dds <- DESeq(dds, quiet=TRUE)
+      })
+
+      # DESeq2 
+      # Sum reads by sample
+      timeMethods$DESeq2_sum = system.time({
+        countMatrix_sum = lapply( unique(info.tmp$indiv), function(ID){
+          rowSums(countMatrix.tmp[,info.tmp$Experiment[info.tmp$indiv == ID],drop=FALSE])
+          } )
+        countMatrix_sum2 = do.call("cbind", countMatrix_sum)
+        colnames(countMatrix_sum2) = info.tmp$Experiment[idx]
+
+        dds_sum <- DESeqDataSetFromMatrix(countData = countMatrix_sum2,
+                                      colData = info.tmp[idx,],
+                                      design = form)
+        dds_sum = DESeq(dds_sum, quiet=TRUE)
+      })
+
+      # limma
+      timeMethods$limma_sum = system.time({
+        genes_sum = DGEList( countMatrix_sum2 )
+        genes_sum = calcNormFactors( genes_sum )
+        design_sum = model.matrix( form, info.tmp[idx,])
+        vobj_tmp_sum = voom( genes_sum, design_sum, plot=FALSE)
+        fit_lmFit_sum = lmFit(vobj_tmp_sum, design_sum)
+        fit_lmFit_sum = eBayes(fit_lmFit_sum)
+      })
+
+      # dupCor
+      # timeMethods$lmFit_dupCor = system.time({
+      #   design = model.matrix( ~ phenotype + batch, info.tmp)
+      #   dupcor <- duplicateCorrelation(vobj,design,block=info.tmp$indiv)
+      #   fitDupCor <- lmFit(vobj,design,block=info.tmp$indiv,correlation=dupcor$consensus)
+      #   fitDupCor <- eBayes(fitDupCor)
+      # })
+
+      genes = DGEList( countMatrix.tmp[isexpr,] )
+      genes = calcNormFactors( genes )
+      # form <- ~ phenotype + (1|indiv) + (1|batch)
+      form_rnd = as.formula(paste('~ phenotype + (1|indiv) + ',paste0('PC', 1:max(nPC,1), collapse=' + ')))
+
+      vobjDream = voomWithDreamWeights( genes, form_rnd, info.tmp, plot=FALSE, quiet=TRUE)    
+
+      # dream: Kenward-Roger approximation
+      # timeMethods$lmm_KR = system.time({
+      #   fit2KR = dream( vobjDream, form_rnd, info.tmp, ddf='Kenward-Roger')
+      # })
+
+      # # dream: Satterthwaite approximation
+      timeMethods$lmm_Sat = system.time({
+        fitSat = dream( vobjDream, form_rnd, info.tmp, quiet=TRUE)
+      })
+
+      # FMT         
+      fit_FMT.vc = eBayesFMT( fitSat, info.tmp, "indiv", "VC" )
+      fit_FMT.ws = eBayesFMT( fitSat, info.tmp, "indiv", "WS" )
+
+
+      # timeMethods$macau = system.time({
+      #   # create block diagonal relatedness matrix
+      #   K = matrix(0, nrow(info.tmp), nrow(info.tmp))
+      #   diag(K) = 1
+      #   rownames(K) = info.tmp$Experiment
+      #   colnames(K) = info.tmp$Experiment
+
+      #   for( ID in unique(info.tmp$indiv) ){
+      #     expr = info.tmp$Experiment[info.tmp$indiv==ID]
+      #     i = which(rownames(K) %in% expr)
+      #     K[i,i] = 1
+      #   }
+      #   dsgn = model.matrix(as.formula(paste('~ 0+',paste0('PC', 1:max(nPC,1), collapse=' + '))), info.tmp)
+
+      #   # K[1:5, 1:5]
+      #   macau_fit <- macau2(countMatrix.tmp[isexpr,], info.tmp$phenotype, dsgn, RelatednessMatrix=K, fit.model="PMM",numCore=1, filtering=FALSE)
+      # }) 
+      
+      de_res_p = data.frame(  EnsID           = rownames(countMatrix.tmp)[isexpr], 
+                              iter            = iter,
+                              n_reps          = n_reps,
+                              n_indivs_total  = n_indivs_total,
+                              # n_eff_tests     = n_eff_tests,
+                              stringsAsFactors=FALSE)
+
+      # AveExpr
+      df = data.frame(EnsID = rownames(fit_lmFit), 
+        AveExpr = topTable(fit_lmFit, coef='phenotype', sort.by="none", number=Inf)$AveExpr,
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+
+      # fit_lmFit
+      df = data.frame(EnsID = rownames(fit_lmFit), 
+        lmFit = topTable(fit_lmFit, coef='phenotype', sort.by="none", number=Inf)$P.Value,
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+
+      # DESeq2_single
+      df = data.frame(EnsID = rownames(dds_single), 
+        DESeq2_single = results(dds_single, name ='phenotype')$pvalue, 
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+
+      # lmFit_sum
+      df = data.frame(EnsID = rownames(fit_lmFit_sum), 
+        lmFit_sum = topTable(fit_lmFit_sum, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+
+      # DESeq2_sum
+      # df = data.frame(EnsID = rownames(dds_sum), 
+      #   DESeq2_sum = results(dds_sum, name ='phenotype')$pvalue,
+      #   stringsAsFactors=FALSE)
+      # de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+
+      # # lmFit2
+      # df = data.frame(EnsID = rownames(fit_lmFit2), 
+      #   lmFit2 = topTable(fit_lmFit2, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+      #   stringsAsFactors=FALSE)
+      # de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+
+      # # DESeq2
+      # df = data.frame(EnsID = rownames(dds), 
+      #   DESeq2 = results(dds, name = 'phenotype')$pvalue, 
+      #   stringsAsFactors=FALSE)
+      # de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+
+      # # macau2
+      # df = data.frame(EnsID = rownames(macau_fit), 
+      #   macau2 = macau_fit$pvalue, stringsAsFactors=FALSE)
+      # de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+      # # lmFit_dupCor
+      # df = data.frame(EnsID = rownames(fitDupCor), 
+      #   lmFit_dupCor = topTable(fitDupCor, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+      #   stringsAsFactors=FALSE)
+      # de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+
+      # # # lmm_Sat
+      df = data.frame(EnsID = rownames(fitSat), 
+        lmm_Sat = topTable(fitSat, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+
+
+      df = data.frame(EnsID = rownames(fit_FMT.vc), 
+        FMT.vc = topTable(fit_FMT.vc, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+
+      df = data.frame(EnsID = rownames(fit_FMT.vc), 
+        FMT.ws = topTable(fit_FMT.ws, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+
+      # lmm_KR
+      # df = data.frame(EnsID = rownames(fit2KR), 
+      #   lmm_KR = topTable(fit2KR, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+      #   stringsAsFactors=FALSE)
+      # de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+
+      rownames(de_res_p) = de_res_p$EnsID
+      de_res_p = de_res_p[,-1]
+
+      de_res_p
+    })
+    do.call(rbind, res)
+  })
+  do.call(rbind, res)
+})
+
+simResults = data.table(do.call(rbind, simResultsList))
+
+# assign full names
+i = match(colnames(simResults)[-c(1:4)], df_plots$method)
+colnames(simResults)[-c(1:4)] = as.character(df_plots$method.fancy[i])
+```
+
+# QQ plots
+```{r qqplot, cache=FALSE, fig.width=12}
+
+n_reps_array = unique(simResults$n_reps)
+figList = lapply(n_reps_array, function(n_reps){
+  n_indivs_total_array = unique(simResults$n_indivs_total)
+  figs = lapply(n_indivs_total_array, function(n_indivs_total){
+
+    idx = which(simResults$n_reps == n_reps & simResults$n_indivs_total == n_indivs_total)
+    df = simResults[idx,] 
+ 
+    main = paste0("# Donors: ", n_indivs_total,", # Repl: ", n_reps)
+    qqplot( df[,-c(1:4)], colors=colors, main=main, FALSE ) + theme(legend.position="none")
+  })
+  names(figs) = n_indivs_total_array
+  figs
+})
+names(figList) = n_reps_array
+
+do.call("grid.arrange", c(unlist(figList, recursive=FALSE), nrow=2))
+```
+
+
+# False positive rate
+```{r fpr, cache=FALSE, fig.width=18, fig.height=10}
+
+df_melt = data.table::melt(simResults, id.vars=c('iter', 'n_reps', 'n_indivs_total', 'AveExpr'))
+
+df_fpr = df_melt[,data.frame(FPR = sum(value<0.05, na.rm=TRUE) / length(value)), by=c('n_reps', 'n_indivs_total', 'variable') ]
+
+cols = colors[match( levels(df_fpr$variable), names(colors) )]
+
+ggplot(df_fpr, aes(variable, FPR, fill=variable)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype="dashed", color="grey20") + theme_bw(15) + theme(aspect.ratio=1) + coord_flip() + xlab("Method") + ylab("False positive rate") + facet_wrap(~n_reps + n_indivs_total, nrow=2) + scale_fill_manual("Method", values=cols) 
+```
+
+# False positive rate vs expression value
+```{r fpr.curve, cache=FALSE, fig.width=12}
+
+df_melt$isFP = (df_melt$value < 0.05) + 0
+
+cols = colors[match( levels(df_melt$variable), names(colors) )]
+
+ggplot(df_melt, aes(AveExpr, value, color=variable, fill=variable)) + facet_wrap(~n_reps + n_indivs_total, nrow=2) + geom_smooth() + theme_bw(15) + theme(aspect.ratio=1) + scale_fill_manual("Method", values=cols) + scale_color_manual("Method", values=cols) + ylab("p-value") + xlab(bquote(Average~Expression~(log[2]~CPM))) + geom_hline(yintercept=0.5, linetype = "dashed", color="grey20")
+
+ggplot(df_melt, aes(AveExpr, isFP, color=variable, fill=variable)) + facet_wrap(~n_reps + n_indivs_total, nrow=2) + geom_smooth(method="glm", method.args = list(family = "binomial")) + theme_bw(15) + theme(aspect.ratio=1) + scale_fill_manual("Method", values=cols) + scale_color_manual("Method", values=cols) + ylab("Probability is false positive") + xlab(bquote(Average~Expression~(log[2]~CPM))) + geom_hline(yintercept=0.05, linetype = "dashed", color="grey20") + ylim(0, NA)
+```
+
+
+
+
+
+
+
+
+
+

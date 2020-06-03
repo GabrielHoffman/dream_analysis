@@ -108,7 +108,7 @@ N_DE=500
 FC=3
 HSQ=0.4
 
-FOLDER=/sc/orga/projects/psychencode/gabriel/RNA_seq_sim/RNA_seq_sim_v3/
+FOLDER=/sc/arion/projects/psychencode/gabriel/RNA_seq_sim/RNA_seq_sim_v3/
 cd $FOLDER
 
 LOG=$FOLDER/logs
@@ -139,7 +139,7 @@ echo "#BSUB -J ${PFX}
 #BSUB -L /bin/bash
 
 module purge
-module load R/3.5.3
+module load R/3.6.0
 
 # load local version of variancePartition
 R_LIBS=\$R_LIBS_USER:\$R_LIBS
