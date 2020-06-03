@@ -48,12 +48,11 @@ colarray = c("Single replicate (limma/voom)", "#A6CEE3",
 "dream",  "#FF7F00",
 "dream (KR) [std p]", "#CAB2D6",
 "dream [std p]",  "#6A3D9A",
-"dream + FMT.vc",  'FMT.vc', "black",
-"dream + FMT.ws",  'FMT.ws', "grey")
+"dream + FMT.vc",  "orange",
+"dream + FMT.ws",  "orange3")
 df_plots = data.frame(matrix( colarray, ncol=2, byrow=TRUE), stringsAsFactors=FALSE)
 df_plots$X1 = factor(df_plots$X1, df_plots$X1)
 colnames(df_plots) = c("method", "color")
-
 
 if( opt$noEB ){
 	df_plots$color[df_plots$method == 'dream'] = '#6A3D9A'
@@ -107,6 +106,8 @@ resTime = foreach( prefix = prefixes, .combine=rbind ) %dopar% {
 	df_time$name[df_time$name == 'lmFit_dupCor']  = "duplicateCorrelation with limma/voom"
 	df_time$name[df_time$name == 'lmm_Sat'] = "dream"
 	df_time$name[df_time$name == 'lmm_KR'] = "dream (KR)"
+	df_time$name[df_time$name == 'FMT.vc'] = "dream + FMT.vc"
+	df_time$name[df_time$name == 'FMT.ws'] = "dream + FMT.ws"
 	df_time$name[df_time$name == 'macau'] = "macau2"
 	colnames(df_time)[1] = "method"
 
@@ -146,6 +147,11 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	# for DESeq2, set NA to 1
 	de_res[is.na(de_res)] = 1
 
+	if( opt$noEB ){
+		de_res[,colnames(de_res) == 'lmm_Sat_eBayes'] = c()
+		de_res[,colnames(de_res) == 'lmm_KR_eBayes'] = c()
+	}
+
 	colnames(de_res)[colnames(de_res) == 'lmFit' ] = "Single replicate (limma/voom)"
 	colnames(de_res)[colnames(de_res) == 'DESeq2_single' ] = "Single replicate (DESeq2)"
 	colnames(de_res)[colnames(de_res) == 'lmFit_sum' ] = "Sum reads (limma/voom)"
@@ -155,8 +161,10 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	colnames(de_res)[colnames(de_res) == 'lmFit_dupCor' ] = "duplicateCorrelation with limma/voom"
 	colnames(de_res)[colnames(de_res) == 'lmm_Sat_eBayes' ] = "dream"
 	colnames(de_res)[colnames(de_res) == 'lmm_KR_eBayes' ] = "dream (KR)"
-	colnames(de_res)[colnames(de_res) == 'lmm_Sat' ] = "dream [std p]"
-	colnames(de_res)[colnames(de_res) == 'lmm_KR' ] = "dream (KR) [std p]"
+	colnames(de_res)[colnames(de_res) == 'lmm_Sat' ] = "dream" #dream [std p]"
+	colnames(de_res)[colnames(de_res) == 'lmm_KR' ] = "dream (KR)" #"dream (KR) [std p]"
+	colnames(de_res)[colnames(de_res) == 'FMT.vc' ] = "dream + FMT.vc"
+	colnames(de_res)[colnames(de_res) == 'FMT.ws' ] = "dream + FMT.ws"
 
 	# raw p-values on right
 	keepRaw = TRUE
@@ -212,11 +220,11 @@ resList = foreach( prefix = prefixes ) %dopar% {
 
 		data.frame(n_donor, n_reps, key, p_cutoff, n_chosen, n_false, stringsAsFactors=FALSE)
 	}
-	df$key = factor(df$key, df_plots$method)
+	df$key = droplevels(factor(df$key, df_plots$method))
 	df$n_chosen = df$n_chosen / length(files)
 	df$n_false = df$n_false / length(files)
 
-	col = df_plots$color[df_plots$method %in% levels(df$key)]
+	col = df_plots$color[match(levels(df$key), as.character(df_plots$method))]
 
 	# plot false positive versus positives
 	fig_choose = ggplot(df, aes(n_chosen, n_false, color=key)) + geom_line() + xlim(0, 375) + ylim(0, 50) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_color_manual(values=col) + xlab("# genes selected") + ylab("# false positives")
@@ -261,11 +269,11 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	# aupr$value = foreach( method = names(prList), .combine=c ) %do% {
 	# 	prList[[method]]$auc.integral
 	# }
-	aupr$method = factor(aupr$method, df_plots$method)
+	aupr$method = droplevels(factor( as.character(aupr$method), df_plots$method))
 	# aupr$n_donor = n_donor
 	# aupr$n_reps = n_reps
 	aupr.rand.score = prList[[method]]$rand$auc.integral	
-	col = df_plots$color[df_plots$method %in% levels(aupr$method)]
+	col = df_plots$color[match(levels(aupr$method), as.character(df_plots$method))]
 
 	fig_aupr = ggplot(aupr, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_errorbar(aes(method, ymin=lower, ymax=upper), width=.2) + coord_flip() + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("AUPR") + geom_hline(yintercept=aupr.rand.score, linetype=2) 
 
@@ -280,8 +288,8 @@ resList = foreach( prefix = prefixes ) %dopar% {
 		res = data.frame(unique(pr), method)
 		res[order(res$precision, decreasing=TRUE),]
 	}
-	dfpr$method = factor(dfpr$method, df_plots$method)
-	col = df_plots$color[df_plots$method %in% levels(dfpr$method)]
+	dfpr$method = droplevels(factor(dfpr$method, df_plots$method))
+	col = df_plots$color[match(levels(dfpr$method), df_plots$method)]
 
 	rnd.value = prList[[1]]$rand$curve[1,2]
 	dfpr$rnd.value = rnd.value 
@@ -301,10 +309,10 @@ resList = foreach( prefix = prefixes ) %dopar% {
 		i = which.min(abs(pr$precision - 0.95))
 		pr$recall[i]
 	}
-	power_fdr_5$method = factor(power_fdr_5$method, df_plots$method)
+	power_fdr_5$method = droplevels(factor(power_fdr_5$method, df_plots$method))
 	power_fdr_5$n_donor = n_donor
 	power_fdr_5$n_reps = n_reps
-	col = df_plots$color[df_plots$method %in% levels(power_fdr_5$method)]
+	col = df_plots$color[match(levels(power_fdr_5$method), df_plots$method)]
 
 	fig_power_fdr_5 = ggplot(power_fdr_5, aes(method, value, fill=method)) + geom_bar(stat="identity") + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("Power at FDR 5%") + coord_flip()
 
@@ -313,7 +321,7 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	fpr = apply(de_res[de_res$true ==0,], 2, function(x) sum(x< 0.05)/length(x))
 	df_fpr = data.frame(method=names(fpr)[-1])
 	df_fpr$value = fpr[-1]
-	df_fpr$method = factor(df_fpr$method, df_plots$method)
+	df_fpr$method = droplevels(factor(df_fpr$method, df_plots$method))
 	df_fpr$n_donor = n_donor
 	df_fpr$n_reps = n_reps
 
@@ -321,41 +329,48 @@ resList = foreach( prefix = prefixes ) %dopar% {
 	n = sum(de_res$true==0) # total number of tests
 	df_fpr = cbind(df_fpr, binom.confint( df_fpr$value * n, n, method = 'asymptotic' )[,5:6])
 
-	col = df_plots$color[df_plots$method %in% levels(df_fpr$method)]
+	col = df_plots$color[match(levels(df_fpr$method), df_plots$method)]
 
 	fig_fpr = ggplot(df_fpr, aes(method, value, fill=method)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype=2) + geom_errorbar(aes(method, ymin=lower, ymax=upper), width=.2) + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("False positive rate at p<0.05") + coord_flip()
 
 	# FP after FDR
-	#============
-	files = dir(folder, paste0('^',prefix, '.*_p.adj.RDS'), full.names=TRUE)
-	de_res = foreach( file = files, .combine=rbind) %do% {
-		readRDS( file )
-	}
-	# for DESeq2, set NA to 1
-	de_res[is.na(de_res)] = 1
+	# #============
+	# files = dir(folder, paste0('^',prefix, '.*_p.adj.RDS'), full.names=TRUE)
+	# de_res = foreach( file = files, .combine=rbind) %do% {
+	# 	readRDS( file )
+	# }
+	# # for DESeq2, set NA to 1
+	# de_res[is.na(de_res)] = 1
 
-	colnames(de_res)[colnames(de_res) == 'lmFit' ] = "Single replicate (limma/voom)"
-	colnames(de_res)[colnames(de_res) == 'DESeq2_single' ] = "Single replicate (DESeq2)"
-	colnames(de_res)[colnames(de_res) == 'lmFit_sum' ] = "Sum reads (limma/voom)"
-	colnames(de_res)[colnames(de_res) == 'DESeq2_sum' ] = "Sum reads (DESeq2)"
-	colnames(de_res)[colnames(de_res) == 'lmFit2' ] = "Full data, ignore corr (limma/voom)"
-	colnames(de_res)[colnames(de_res) == 'DESeq2' ] = "Full data, ignore corr (DESeq2)"
-	colnames(de_res)[colnames(de_res) == 'lmFit_dupCor' ] = "duplicateCorrelation with limma/voom"
-	colnames(de_res)[colnames(de_res) == 'lmm_Sat_eBayes' ] = "dream"
-	colnames(de_res)[colnames(de_res) == 'lmm_KR_eBayes' ] = "dream (KR)"
-	colnames(de_res)[colnames(de_res) == 'lmm_Sat' ] = "dream [std p]"
-	colnames(de_res)[colnames(de_res) == 'lmm_KR' ] = "dream (KR) [std p]"
+	# if( opt$noEB ){
+	# 	de_res[,colnames(de_res) == 'lmm_Sat_eBayes'] = c()
+	# 	de_res[,colnames(de_res) == 'lmm_KR_eBayes'] = c()
+	# }
+
+	# colnames(de_res)[colnames(de_res) == 'lmFit' ] = "Single replicate (limma/voom)"
+	# colnames(de_res)[colnames(de_res) == 'DESeq2_single' ] = "Single replicate (DESeq2)"
+	# colnames(de_res)[colnames(de_res) == 'lmFit_sum' ] = "Sum reads (limma/voom)"
+	# colnames(de_res)[colnames(de_res) == 'DESeq2_sum' ] = "Sum reads (DESeq2)"
+	# colnames(de_res)[colnames(de_res) == 'lmFit2' ] = "Full data, ignore corr (limma/voom)"
+	# colnames(de_res)[colnames(de_res) == 'DESeq2' ] = "Full data, ignore corr (DESeq2)"
+	# colnames(de_res)[colnames(de_res) == 'lmFit_dupCor' ] = "duplicateCorrelation with limma/voom"
+	# # colnames(de_res)[colnames(de_res) == 'lmm_Sat_eBayes' ] = "dream"
+	# # colnames(de_res)[colnames(de_res) == 'lmm_KR_eBayes' ] = "dream (KR)"
+	# colnames(de_res)[colnames(de_res) == 'lmm_Sat' ] = "dream"
+	# colnames(de_res)[colnames(de_res) == 'lmm_KR' ] = "dream (KR)"
 
 	# de_res = de_res[,!(colnames(de_res) %in% c("lmm_Sat", "lmm_KR", "lmm_KR_eBayes" ))]
 
-	fd = apply(de_res[de_res$true ==0,], 2, function(x) sum(x< 0.05))
+	# fd = apply(de_res[de_res$true ==0,], 2, function(x) sum(x< 0.05))
+	fd = apply(de_res[de_res$true ==0,], 2, function(x) sum(p.adjust(x, "BH") < 0.05))
+
 	false_discoveries = data.frame(method=names(fd)[-1])
 	# divide false discoveries by number of analyses
 	false_discoveries$value = as.numeric(fd[-1] / length(files))
-	false_discoveries$method = factor(false_discoveries$method, df_plots$method)
+	false_discoveries$method = droplevels(factor(false_discoveries$method, df_plots$method))
 	false_discoveries$n_donor = n_donor
 	false_discoveries$n_reps = n_reps
-	col = df_plots$color[df_plots$method %in% levels(false_discoveries$method)]
+	col = df_plots$color[match(levels(false_discoveries$method), df_plots$method )]
 
 	fig_fd = ggplot(false_discoveries, aes(method, value, fill=method)) + geom_bar(stat="identity") + theme_bw(12) + theme(aspect.ratio=1, plot.title = element_text(hjust = 0.5)) + scale_fill_manual(values=col) + ylab("False discoveries at FDR <0.05") + coord_flip()
 
