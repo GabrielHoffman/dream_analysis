@@ -131,10 +131,10 @@ colarray = c("Single replicate (limma/voom)", "lmFit", "#A6CEE3",
 "Full data, ignore corr (DESeq2)", 'DESeq2', "#E31A1C",
 "macau2", 'macau2', "gold",
 "duplicateCorrelation with limma/voom", 'lmFit_dupCor', "#B15928",
+"dream + FMT.vc",  "orange",
+"dream + FMT.ws",  "orange3",
 "dream (KR)", 'lmm_KR', "#CAB2D6",
-"dream",  'lmm_Sat', "#6A3D9A",
-"dream + FMT.vc",  'FMT.vc', "black",
-"dream + FMT.ws",  'FMT.ws', "grey")
+"dream",  'lmm_Sat', "#6A3D9A")
 df_plots = data.frame(matrix( colarray, ncol=3, byrow=TRUE), stringsAsFactors=FALSE)
 df_plots$X1 = factor(df_plots$X1, df_plots$X1)
 colnames(df_plots) = c("method.fancy", "method", "color")
