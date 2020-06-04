@@ -199,7 +199,7 @@ ggplot(df, aes(PC1, PC2)) + geom_point() + theme_bw() + theme(aspect.ratio=1) + 
 
 
 ```{r}
-# countMatrix = countMatrix[1:1000,]
+countMatrix = countMatrix[1:2000,]
 ```
 
 ```{r run.permutations}
@@ -359,7 +359,7 @@ simResultsList = lapply(1:2, function(iter){
         dsgn = model.matrix(as.formula(paste('~ 0+',paste0('PC', 1:max(nPC,1), collapse=' + '))), info.tmp)
 
         # K[1:5, 1:5]
-        macau_fit <- macau2(countMatrix.tmp[isexpr,], info.tmp$phenotype, dsgn, RelatednessMatrix=K, fit.model="PMM",numCore=1, filtering=FALSE)
+        macau_fit <- macau2(countMatrix.tmp[isexpr,], info.tmp$phenotype, dsgn, RelatednessMatrix=K, fit.model="PMM",numCore=12, filtering=FALSE)
       }) 
       
       de_res_p = data.frame(  EnsID           = rownames(countMatrix.tmp)[isexpr], 
