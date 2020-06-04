@@ -118,8 +118,8 @@ resTime = data.table(resTime)
 
 summTime = resTime[,data.frame(mean=mean(time), sd=sd(time)),by=c("method", "n_donor", "n_reps")]
 
-summTime$method = factor(summTime$method, df_plots$method)
-col = df_plots$color[df_plots$method %in% levels(summTime$method)]
+summTime$method = droplevels(factor(summTime$method, df_plots$method))
+col = df_plots$color[match(levels(summTime$method),df_plots$method)]
 
 file = paste0(folder,'/../figures/combine_time.pdf')
 pdf( file )
