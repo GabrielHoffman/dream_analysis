@@ -203,7 +203,7 @@ ggplot(df, aes(PC1, PC2)) + geom_point() + theme_bw() + theme(aspect.ratio=1) + 
 ```
 
 ```{r run.permutations}
-simResultsList = lapply(1:5, function(iter){
+simResultsList = lapply(1:2, function(iter){
 
   set.seed(iter)
 
@@ -219,7 +219,7 @@ simResultsList = lapply(1:5, function(iter){
   res = lapply( 2:3, function(n_reps){
 
     # res = lapply( c(5, 10, 20, 40, 60, 90), function(n_indivs_total){ 
-    res = lapply( c(5, 10, 40, 60), function(n_indivs_total){ 
+    res = lapply( c(5), function(n_indivs_total){ 
       
       message(iter, " ", n_reps, " ", n_indivs_total)
 
@@ -315,12 +315,12 @@ simResultsList = lapply(1:5, function(iter){
       })
 
       # dupCor
-      # timeMethods$lmFit_dupCor = system.time({
-      #   design = model.matrix( ~ phenotype + batch, info.tmp)
-      #   dupcor <- duplicateCorrelation(vobj,design,block=info.tmp$indiv)
-      #   fitDupCor <- lmFit(vobj,design,block=info.tmp$indiv,correlation=dupcor$consensus)
-      #   fitDupCor <- eBayes(fitDupCor)
-      # })
+      timeMethods$lmFit_dupCor = system.time({
+        design = model.matrix( ~ phenotype + batch, info.tmp)
+        dupcor <- duplicateCorrelation(vobj,design,block=info.tmp$indiv)
+        fitDupCor <- lmFit(vobj,design,block=info.tmp$indiv,correlation=dupcor$consensus)
+        fitDupCor <- eBayes(fitDupCor)
+      })
 
       genes = DGEList( countMatrix.tmp[isexpr,] )
       genes = calcNormFactors( genes )
@@ -330,9 +330,9 @@ simResultsList = lapply(1:5, function(iter){
       vobjDream = voomWithDreamWeights( genes, form_rnd, info.tmp, plot=FALSE, quiet=TRUE)    
 
       # dream: Kenward-Roger approximation
-      # timeMethods$lmm_KR = system.time({
-      #   fit2KR = dream( vobjDream, form_rnd, info.tmp, ddf='Kenward-Roger')
-      # })
+      timeMethods$lmm_KR = system.time({
+        fit2KR = dream( vobjDream, form_rnd, info.tmp, ddf='Kenward-Roger')
+      })
 
       # # dream: Satterthwaite approximation
       timeMethods$lmm_Sat = system.time({
@@ -344,23 +344,23 @@ simResultsList = lapply(1:5, function(iter){
       fit_FMT.ws = eBayesFMT( fitSat, info.tmp, "indiv", "WS" )
 
 
-      # timeMethods$macau = system.time({
-      #   # create block diagonal relatedness matrix
-      #   K = matrix(0, nrow(info.tmp), nrow(info.tmp))
-      #   diag(K) = 1
-      #   rownames(K) = info.tmp$Experiment
-      #   colnames(K) = info.tmp$Experiment
+      timeMethods$macau = system.time({
+        # create block diagonal relatedness matrix
+        K = matrix(0, nrow(info.tmp), nrow(info.tmp))
+        diag(K) = 1
+        rownames(K) = info.tmp$Experiment
+        colnames(K) = info.tmp$Experiment
 
-      #   for( ID in unique(info.tmp$indiv) ){
-      #     expr = info.tmp$Experiment[info.tmp$indiv==ID]
-      #     i = which(rownames(K) %in% expr)
-      #     K[i,i] = 1
-      #   }
-      #   dsgn = model.matrix(as.formula(paste('~ 0+',paste0('PC', 1:max(nPC,1), collapse=' + '))), info.tmp)
+        for( ID in unique(info.tmp$indiv) ){
+          expr = info.tmp$Experiment[info.tmp$indiv==ID]
+          i = which(rownames(K) %in% expr)
+          K[i,i] = 1
+        }
+        dsgn = model.matrix(as.formula(paste('~ 0+',paste0('PC', 1:max(nPC,1), collapse=' + '))), info.tmp)
 
-      #   # K[1:5, 1:5]
-      #   macau_fit <- macau2(countMatrix.tmp[isexpr,], info.tmp$phenotype, dsgn, RelatednessMatrix=K, fit.model="PMM",numCore=1, filtering=FALSE)
-      # }) 
+        # K[1:5, 1:5]
+        macau_fit <- macau2(countMatrix.tmp[isexpr,], info.tmp$phenotype, dsgn, RelatednessMatrix=K, fit.model="PMM",numCore=1, filtering=FALSE)
+      }) 
       
       de_res_p = data.frame(  EnsID           = rownames(countMatrix.tmp)[isexpr], 
                               iter            = iter,
@@ -394,33 +394,33 @@ simResultsList = lapply(1:5, function(iter){
       de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
 
       # DESeq2_sum
-      # df = data.frame(EnsID = rownames(dds_sum), 
-      #   DESeq2_sum = results(dds_sum, name ='phenotype')$pvalue,
-      #   stringsAsFactors=FALSE)
-      # de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+      df = data.frame(EnsID = rownames(dds_sum), 
+        DESeq2_sum = results(dds_sum, name ='phenotype')$pvalue,
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
 
       # # lmFit2
-      # df = data.frame(EnsID = rownames(fit_lmFit2), 
-      #   lmFit2 = topTable(fit_lmFit2, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
-      #   stringsAsFactors=FALSE)
-      # de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+      df = data.frame(EnsID = rownames(fit_lmFit2), 
+        lmFit2 = topTable(fit_lmFit2, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
 
       # # DESeq2
-      # df = data.frame(EnsID = rownames(dds), 
-      #   DESeq2 = results(dds, name = 'phenotype')$pvalue, 
-      #   stringsAsFactors=FALSE)
-      # de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+      df = data.frame(EnsID = rownames(dds), 
+        DESeq2 = results(dds, name = 'phenotype')$pvalue, 
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
 
       # # macau2
-      # df = data.frame(EnsID = rownames(macau_fit), 
-      #   macau2 = macau_fit$pvalue, stringsAsFactors=FALSE)
-      # de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+      df = data.frame(EnsID = rownames(macau_fit), 
+        macau2 = macau_fit$pvalue, stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
       # # lmFit_dupCor
-      # df = data.frame(EnsID = rownames(fitDupCor), 
-      #   lmFit_dupCor = topTable(fitDupCor, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
-      #   stringsAsFactors=FALSE)
-      # de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
+      df = data.frame(EnsID = rownames(fitDupCor), 
+        lmFit_dupCor = topTable(fitDupCor, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
 
       # # # lmm_Sat
       df = data.frame(EnsID = rownames(fitSat), 
@@ -440,10 +440,10 @@ simResultsList = lapply(1:5, function(iter){
       de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
 
       # lmm_KR
-      # df = data.frame(EnsID = rownames(fit2KR), 
-      #   lmm_KR = topTable(fit2KR, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
-      #   stringsAsFactors=FALSE)
-      # de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+      df = data.frame(EnsID = rownames(fit2KR), 
+        lmm_KR = topTable(fit2KR, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+        stringsAsFactors=FALSE)
+      de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
 
       rownames(de_res_p) = de_res_p$EnsID
       de_res_p = de_res_p[,-1]
