@@ -504,6 +504,8 @@ ggplot(df_fpr, aes(variable, FPR, fill=variable)) + geom_bar(stat="identity") + 
 
 df_melt$isFP = (df_melt$value < 0.05) + 0
 
+df_melt$variable = droplevels(factor(df_melt$variable, levels(df_plots$method.fancy)))
+
 cols = colors[match( levels(df_melt$variable), names(colors) )]
 
 ggplot(df_melt, aes(AveExpr, value, color=variable, fill=variable)) + facet_wrap(~n_reps + n_indivs_total, nrow=2) + geom_smooth() + theme_bw(15) + theme(aspect.ratio=1) + scale_fill_manual("Method", values=cols) + scale_color_manual("Method", values=cols) + ylab("p-value") + xlab(bquote(Average~Expression~(log[2]~CPM))) + geom_hline(yintercept=0.5, linetype = "dashed", color="grey20")
