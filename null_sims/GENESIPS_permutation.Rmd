@@ -219,7 +219,7 @@ simResultsList = lapply(1:2, function(iter){
   res = lapply( 2:3, function(n_reps){
 
     # res = lapply( c(5, 10, 20, 40, 60, 90), function(n_indivs_total){ 
-    res = lapply( c(5), function(n_indivs_total){ 
+    res = lapply( c(5, 10), function(n_indivs_total){ 
       
       message(iter, " ", n_reps, " ", n_indivs_total)
 
@@ -343,25 +343,26 @@ simResultsList = lapply(1:2, function(iter){
       fit_FMT.vc = eBayesFMT( fitSat, info.tmp, "indiv", "VC" )
       fit_FMT.ws = eBayesFMT( fitSat, info.tmp, "indiv", "WS" )
 
+      if( n_indivs_total < 10 ){
+        timeMethods$macau = system.time({
+          # create block diagonal relatedness matrix
+          K = matrix(0, nrow(info.tmp), nrow(info.tmp))
+          diag(K) = 1
+          rownames(K) = info.tmp$Experiment
+          colnames(K) = info.tmp$Experiment
 
-      timeMethods$macau = system.time({
-        # create block diagonal relatedness matrix
-        K = matrix(0, nrow(info.tmp), nrow(info.tmp))
-        diag(K) = 1
-        rownames(K) = info.tmp$Experiment
-        colnames(K) = info.tmp$Experiment
+          for( ID in unique(info.tmp$indiv) ){
+            expr = info.tmp$Experiment[info.tmp$indiv==ID]
+            i = which(rownames(K) %in% expr)
+            K[i,i] = 1
+          }
+          dsgn = model.matrix(as.formula(paste('~ 0+',paste0('PC', 1:max(nPC,1), collapse=' + '))), info.tmp)
 
-        for( ID in unique(info.tmp$indiv) ){
-          expr = info.tmp$Experiment[info.tmp$indiv==ID]
-          i = which(rownames(K) %in% expr)
-          K[i,i] = 1
-        }
-        dsgn = model.matrix(as.formula(paste('~ 0+',paste0('PC', 1:max(nPC,1), collapse=' + '))), info.tmp)
+          # K[1:5, 1:5]
+          macau_fit <- macau2(countMatrix.tmp[isexpr,], info.tmp$phenotype, dsgn, RelatednessMatrix=K, fit.model="PMM",numCore=1, filtering=FALSE, verbose=TRUE)
+        }) 
+      }
 
-        # K[1:5, 1:5]
-        macau_fit <- macau2(countMatrix.tmp[isexpr,], info.tmp$phenotype, dsgn, RelatednessMatrix=K, fit.model="PMM",numCore=1, filtering=FALSE, verbose=TRUE)
-      }) 
-      
       de_res_p = data.frame(  EnsID           = rownames(countMatrix.tmp)[isexpr], 
                               iter            = iter,
                               n_reps          = n_reps,
@@ -411,10 +412,12 @@ simResultsList = lapply(1:2, function(iter){
         stringsAsFactors=FALSE)
       de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
 
-      # # macau2
-      df = data.frame(EnsID = rownames(macau_fit), 
-        macau2 = macau_fit$pvalue, stringsAsFactors=FALSE)
-      de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+      if( n_indivs_total < 10 ){
+        # # macau2
+        df = data.frame(EnsID = rownames(macau_fit), 
+          macau2 = macau_fit$pvalue, stringsAsFactors=FALSE)
+        de_res_p = merge( de_res_p, df, by="EnsID", all=TRUE )
+      }
 
       # # lmFit_dupCor
       df = data.frame(EnsID = rownames(fitDupCor), 
