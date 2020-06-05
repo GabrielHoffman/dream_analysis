@@ -202,7 +202,7 @@ ggplot(df, aes(PC1, PC2)) + geom_point() + theme_bw() + theme(aspect.ratio=1) + 
 countMatrix = countMatrix[1:2000,]
 ```
 
-```{r run.permutations}
+```{r run.permutations, message=TRUE}
 simResultsList = lapply(1:2, function(iter){
 
   set.seed(iter)
