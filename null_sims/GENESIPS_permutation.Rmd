@@ -492,6 +492,8 @@ df_melt = data.table::melt(simResults, id.vars=c('iter', 'n_reps', 'n_indivs_tot
 
 df_fpr = df_melt[,data.frame(FPR = sum(value<0.05, na.rm=TRUE) / length(value)), by=c('n_reps', 'n_indivs_total', 'variable') ]
 
+df_fpr$variable = droplevels(factor(df_fpr$variable, levels(df_plots$method.fancy)))
+
 cols = colors[match( levels(df_fpr$variable), names(colors) )]
 
 ggplot(df_fpr, aes(variable, FPR, fill=variable)) + geom_bar(stat="identity") + geom_hline(yintercept=0.05, linetype="dashed", color="grey20") + theme_bw(15) + theme(aspect.ratio=1) + coord_flip() + xlab("Method") + ylab("False positive rate") + facet_wrap(~n_reps + n_indivs_total, nrow=2) + scale_fill_manual("Method", values=cols) 
