@@ -199,11 +199,11 @@ ggplot(df, aes(PC1, PC2)) + geom_point() + theme_bw() + theme(aspect.ratio=1) + 
 
 
 ```{r}
-countMatrix = countMatrix[1:2000,]
+countMatrix = countMatrix[1:200,]
 ```
 
 ```{r run.permutations}
-simResultsList = lapply(1:2, function(iter){
+simResultsList = lapply(1:3, function(iter){
 
   set.seed(iter)
 
@@ -218,8 +218,8 @@ simResultsList = lapply(1:2, function(iter){
 
   res = lapply( 2:3, function(n_reps){
 
-    # res = lapply( c(5, 10, 20, 40, 60, 90), function(n_indivs_total){ 
-    res = lapply( c(5), function(n_indivs_total){ 
+    # res = lapply( c(5, 10, 20, 40, 60), function(n_indivs_total){ 
+    res = lapply( 5, function(n_indivs_total){ 
       
       message(iter, " ", n_reps, " ", n_indivs_total)
 
@@ -343,7 +343,7 @@ simResultsList = lapply(1:2, function(iter){
       fit_FMT.vc = variancePartition:::eBayesFMT( fitSat, info.tmp, "indiv", "VC" )
       fit_FMT.ws = variancePartition:::eBayesFMT( fitSat, info.tmp, "indiv", "WS" )
 
-      if( n_indivs_total < 10 ){
+      if( n_indivs_total < 90 ){
         timeMethods$macau = system.time({
           # create block diagonal relatedness matrix
           K = matrix(0, nrow(info.tmp), nrow(info.tmp))
@@ -359,7 +359,9 @@ simResultsList = lapply(1:2, function(iter){
           dsgn = model.matrix(as.formula(paste('~ 0+',paste0('PC', 1:max(nPC,1), collapse=' + '))), info.tmp)
 
           # K[1:5, 1:5]
+          message("start macau2\n")
           macau_fit <- macau2(countMatrix.tmp[isexpr,], info.tmp$phenotype, dsgn, RelatednessMatrix=K, fit.model="PMM",numCore=1, filtering=FALSE, verbose=TRUE)
+          message("end macau2\n")
         }) 
       }
 
@@ -412,7 +414,7 @@ simResultsList = lapply(1:2, function(iter){
         stringsAsFactors=FALSE)
       de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
 
-      if( n_indivs_total < 10 ){
+      if( n_indivs_total < 90 ){
         # # macau2
         df = data.frame(EnsID = rownames(macau_fit), 
           macau2 = macau_fit$pvalue, stringsAsFactors=FALSE)
