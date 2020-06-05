@@ -219,7 +219,7 @@ simResultsList = lapply(1:2, function(iter){
   res = lapply( 2:3, function(n_reps){
 
     # res = lapply( c(5, 10, 20, 40, 60, 90), function(n_indivs_total){ 
-    res = lapply( c(5, 10), function(n_indivs_total){ 
+    res = lapply( c(5), function(n_indivs_total){ 
       
       message(iter, " ", n_reps, " ", n_indivs_total)
 
@@ -340,8 +340,8 @@ simResultsList = lapply(1:2, function(iter){
       })
 
       # FMT         
-      fit_FMT.vc = eBayesFMT( fitSat, info.tmp, "indiv", "VC" )
-      fit_FMT.ws = eBayesFMT( fitSat, info.tmp, "indiv", "WS" )
+      fit_FMT.vc = variancePartition:::eBayesFMT( fitSat, info.tmp, "indiv", "VC" )
+      fit_FMT.ws = variancePartition:::eBayesFMT( fitSat, info.tmp, "indiv", "WS" )
 
       if( n_indivs_total < 10 ){
         timeMethods$macau = system.time({
@@ -433,12 +433,12 @@ simResultsList = lapply(1:2, function(iter){
 
 
       df = data.frame(EnsID = rownames(fit_FMT.vc), 
-        FMT.vc = topTable(fit_FMT.vc, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+        FMT.vc = variancePartition:::topTable(fit_FMT.vc, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
         stringsAsFactors=FALSE)
       de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
 
       df = data.frame(EnsID = rownames(fit_FMT.vc), 
-        FMT.ws = topTable(fit_FMT.ws, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
+        FMT.ws = variancePartition:::topTable(fit_FMT.ws, coef='phenotype', sort.by="none", number=Inf)$P.Value, 
         stringsAsFactors=FALSE)
       de_res_p = merge( de_res_p, df, by="EnsID", all=FALSE )
 
